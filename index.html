@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Premodern Quest</title>
+<title>Magic Quest</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -42,7 +42,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>PREMODERN QUEST</h1>
+  <h1>MAGIC QUEST</h1>
   <div class="screen"><canvas id="game" width="240" height="160" tabindex="0" aria-label="Juego de rol de acción con cartas"></canvas></div>
   <div class="keys">
     <span><kbd>Flechas</kbd>/<kbd>WASD</kbd> moverse</span>
@@ -2077,7 +2077,7 @@ function drawTitle(){
   ctx.drawImage(cache, 0, 0);
   ctx.fillStyle = 'rgba(8,16,20,.55)'; ctx.fillRect(0, 0, W, H);
   R(28, 14, 184, 46, '#1a1020'); R(30, 16, 180, 42, '#2e4a44'); R(32, 18, 176, 38, '#1c2a2e');
-  txt('PREMODERN', 120, 22, '#fcd84a', 'center', '#7a3a10', 16);
+  txt('MAGIC', 120, 22, '#fcd84a', 'center', '#7a3a10', 16);
   txt('QUEST', 120, 40, '#fff', 'center', '#2a5ac8', 16);
   // cards fan
   ['bolt','dread','specter','siege','angel'].forEach((id, i) => { ctx.save(); ctx.translate(46 + i * 37, 100); ctx.rotate((i - 2) * 0.08); drawCardSmall(id, -12, -17, true, 0); ctx.restore(); });
@@ -2234,7 +2234,7 @@ function drawArcade(){
 /* ============ FINAL ============ */
 const ENDING = ['¡CAMPEÓN NACIONAL DE PREMODERN!', '', 'Con los cinco guardianes derrotados', 'y la Liga Nacional ganada,', 'la Caja de Urza vuelve a tus manos.', '',
   'Esa noche, en el Bar El Muelle,', 'se brindó por el nuevo campeón.', 'Klaus pagó la primera ronda.', '',
-  'La caja quedó abierta.', 'Porque el Premodern chileno', 'nunca se cierra del todo.', '', 'MATÍAS · DAVIS · GUCHO · KLAUS', '', 'GRACIAS POR JUGAR', '', 'PREMODERN QUEST'];
+  'La caja quedó abierta.', 'Porque el Premodern chileno', 'nunca se cierra del todo.', '', 'MATÍAS · DAVIS · GUCHO · KLAUS', '', 'GRACIAS POR JUGAR', '', 'MAGIC QUEST'];
 function drawEnding(){
   R(0, 0, W, H, '#0e0a24');
   for (let i = 0; i < 40; i++) R(Math.round(hash(i) * 240), Math.round(hash(i + 40) * 160), 1, 1, (frame + i * 5) % 60 < 4 ? '#6a64a8' : '#fff');
