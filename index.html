@@ -619,117 +619,191 @@ function drawPerson(x, y, P, dir, f){
 }
 
 /* ============ MONSTERS ============ */
+// Color ramps: [light, base, shade]
+const RAMP = {
+  green:['#b8f070','#6ac040','#3a8a2a'], red:['#f07050','#c83a20','#7a1a10'], brown:['#c89060','#8a5a30','#5a3418'],
+  steel:['#f4f8fc','#b8c0cc','#6a7080'], orange:['#fcb070','#e07030','#a04818'], flame:['#fff0a0','#fcc030','#e86020'],
+  core:['#ffffff','#fff4b0','#fcd040'], flesh:['#e88070','#b84a40','#7a2020'], meat:['#c86050','#8a2a2a','#5a1414'],
+  purple:['#8a6ab8','#4a3a78','#241a40'], cloak:['#5a5078','#2e2640','#150f20'], neg:['#6a3a3a','#3a1a1a','#1a0a0a'],
+  white:['#ffffff','#ece6d6','#b8ae98'], gold:['#fff4a0','#f0c030','#a87818'], skin:['#ffe0c0','#f1c9a0','#c8946a'],
+  blue:['#a0d8ff','#3a8ad8','#1a4a90'], teal:['#c0f8f0','#58c8d8','#2a7890'], metal:['#d8c8a8','#9a8a70','#5a4a38'],
+  rust:['#e0905a','#b05a30','#6a3018'], bone:['#fffff0','#e8e0c8','#a89878'], eyeR:['#ffd0b0','#ff3020','#8a0a00'],
+};
+const r_ = (x, y, w, h, c) => ({ x, y, w, h, c });
+const c_ = (cx, cy, r, c) => ({ cx, cy, r, c });
+const d_ = (x, y, w, h, col) => ({ x, y, w, h, col, d:true });
+function renderShapes(x, y, sz, flip, shapes){
+  const O = '#1a1020';
+  const X = (rx, w) => flip ? x + sz - rx - w : x + rx;
+  const XC = cx => flip ? x + sz - cx : x + cx;
+  ctx.fillStyle = O;
+  for (const s of shapes) {
+    if (s.d) continue;
+    if (s.cx !== undefined) disc(XC(s.cx), y + s.cy, s.r + 1, O);
+    else { ctx.fillStyle = O; ctx.fillRect(X(s.x - 1, s.w + 2), y + s.y - 1, s.w + 2, s.h + 2); }
+  }
+  for (const s of shapes) {
+    if (s.d) { ctx.fillStyle = s.col; ctx.fillRect(X(s.x, s.w), y + s.y, s.w, s.h); continue; }
+    const [li, ba, sh] = RAMP[s.c];
+    if (s.cx !== undefined) {
+      const cx = XC(s.cx), cy = y + s.cy;
+      disc(cx, cy, s.r, sh);
+      disc(cx + (flip ? 0.5 : -0.5), cy - 0.7, Math.max(0.5, s.r - 0.9), ba);
+      if (s.r >= 2) disc(cx + (flip ? 1 : -1) * s.r * 0.35, cy - s.r * 0.4, Math.max(0.5, s.r * 0.3), li);
+    } else {
+      const X0 = X(s.x, s.w), Y0 = y + s.y;
+      ctx.fillStyle = ba; ctx.fillRect(X0, Y0, s.w, s.h);
+      const shH = s.h >= 3 ? Math.ceil(s.h / 3) : 0;
+      if (shH) { ctx.fillStyle = sh; ctx.fillRect(X0, Y0 + s.h - shH, s.w, shH); }
+      if (s.w >= 3) { ctx.fillStyle = sh; ctx.fillRect(flip ? X0 : X0 + s.w - 1, Y0, 1, s.h); }
+      if (s.h >= 3 || s.w >= 3) { ctx.fillStyle = li; ctx.fillRect(X0, Y0, s.w, 1); ctx.fillRect(flip ? X0 + s.w - 1 : X0, Y0, 1, Math.max(1, s.h - shH)); }
+    }
+  }
+}
 function drawMon(type, x, y, t, flip){
-  const O = '#1a1020', b = (t >> 3) & 1;
-  const sz = MON[type].size;
-  const q = (rx, ry, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(flip ? x + sz - rx - w : x + rx, y + ry, w, h); };
-  const qd = (cx, cy, r, c) => disc(flip ? x + sz - cx : x + cx, y + cy, r, c);
+  const b = (t >> 3) & 1, sz = MON[type].size;
+  const shadow = (w) => { ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x + (sz - w) / 2, y + sz - 2, w, 2); };
+  let S_ = [];
   switch (type) {
     case 'gob':
-      q(3, 14, 10, 2, 'rgba(0,0,0,.25)');
-      q(4, 13 + (b ? 0 : 1), 3, 2, '#4a3018'); q(9, 13 + (b ? 1 : 0), 3, 2, '#4a3018');
-      q(4, 9, 8, 5, O); q(5, 9, 6, 4, '#a83020'); q(5, 12, 6, 1, '#5a3018');
-      q(2, 9, 3, 3, O); q(3, 9, 2, 2, '#6ab040'); q(11, 9, 3, 3, O); q(11, 9, 2, 2, '#6ab040');
-      q(3, 2, 10, 8, O); q(4, 3, 8, 6, '#6ab040'); q(0, 3, 4, 3, O); q(1, 4, 3, 1, '#6ab040'); q(12, 3, 4, 3, O); q(12, 4, 3, 1, '#6ab040');
-      q(5, 5, 2, 2, '#f8e040'); q(9, 5, 2, 2, '#f8e040'); q(6, 6, 1, 1, '#000'); q(10, 6, 1, 1, '#000');
-      q(7, 6, 2, 2, '#4a8a28'); q(6, 8, 4, 1, '#2a4010'); q(7, 8, 1, 1, '#fff'); q(9, 8, 1, 1, '#fff');
-      q(14, 1, 1, 12, '#8a5a30'); q(13, 0, 3, 2, '#c8c8d0');
+      shadow(10);
+      S_ = [
+        r_(14, 2, 1, 12, 'brown'), r_(13, 0, 3, 2, 'steel'),
+        r_(5, 12, 2, 2, 'green'), r_(9, 12, 2, 2, 'green'),
+        r_(4 - b, 14, 3, 2, 'brown'), r_(9 + b, 14, 3, 2, 'brown'),
+        r_(4, 8, 8, 5, 'red'), r_(2, 8, 2, 4, 'green'), r_(12, 8, 2, 3, 'green'),
+        r_(0, 3, 3, 2, 'green'), c_(8, 5, 5, 'green'), r_(12, 3, 3, 2, 'green'),
+        d_(4, 11, 8, 1, '#5a3418'), d_(7, 11, 2, 1, '#fce040'), d_(1, 3, 1, 1, '#f8b0a0'),
+        d_(7, 3, 2, 1, '#2a4a10'), d_(10, 3, 2, 1, '#2a4a10'),
+        d_(7, 4, 2, 2, '#fce040'), d_(10, 4, 2, 2, '#fce040'), d_(8, 5, 1, 1, '#000'), d_(11, 5, 1, 1, '#000'),
+        d_(11, 6, 2, 1, '#3a8a2a'), d_(7, 8, 5, 1, '#3a1010'), d_(8, 8, 1, 1, '#fff'), d_(10, 8, 1, 1, '#fff'),
+      ];
       break;
     case 'pup':
-      q(2, 14, 12, 2, 'rgba(0,0,0,.25)');
-      q(3, 11, 2, 3 + b, '#7a3a18'); q(6, 11, 2, 4 - b, '#7a3a18'); q(9, 11, 2, 3 + b, '#7a3a18'); q(12, 11, 2, 4 - b, '#7a3a18');
-      q(0, 5, 3, 3, O); q(1, 6, 2, 1, '#c86a30');
-      q(2, 6, 11, 6, O); q(3, 7, 9, 4, '#c86a30'); q(4, 10, 7, 1, '#f0b070');
-      q(10, 2, 6, 7, O); q(11, 3, 4, 5, '#c86a30'); q(11, 0, 2, 3, O); q(14, 0, 2, 3, O); q(13, 4, 1, 1, '#f8e040'); q(15, 5, 1, 2, O);
-      q(5, 5, 2, 2, '#f8a020'); q(8, 5, 2, 1, '#f8a020');
+      shadow(12);
+      S_ = [
+        c_(2, 6, 2, 'flame'),
+        r_(3, 11, 2, 4 - b, 'orange'), r_(6, 11, 2, 3 + b, 'orange'), r_(9, 11, 2, 4 - b, 'orange'), r_(12, 11, 2, 3 + b, 'orange'),
+        r_(3, 7, 10, 5, 'orange'), r_(10, 1, 2, 3, 'orange'), r_(13, 1, 2, 3, 'orange'), c_(12, 6, 3, 'orange'), r_(14, 6, 2, 3, 'orange'),
+        d_(5, 11, 6, 1, '#fcd8a8'), d_(11, 2, 1, 1, '#f8b0a0'), d_(14, 2, 1, 1, '#f8b0a0'),
+        d_(12, 5, 2, 2, '#fce040'), d_(13, 5, 1, 1, '#000'), d_(15, 6, 1, 1, '#1a1020'), d_(14, 8, 2, 1, '#6a1a08'),
+        d_(5, 6, 2, 1, '#fcc030'), d_(8, 6, 2, 1, '#fcc030'), d_(1, 3 + ((t >> 2) & 1), 1, 2, '#fff0a0'), d_(0, 5, 1, 1, '#fce040'),
+      ];
       break;
     case 'ball': {
-      disc(x + 8, y + 15, 3, 'rgba(0,0,0,.25)');
-      disc(x + 8, y + 8, 7, O); disc(x + 8, y + 8, 6, '#f88820'); disc(x + 8, y + 8, 4, '#fce060'); disc(x + 8, y + 7, 2, '#fff');
-      q(4, 6, 3, 2, O); q(9, 6, 3, 2, O); q(4, 5, 3, 1, O); q(9, 5, 3, 1, O);
-      for (let k = 0; k < 4; k++) { const a = t * 0.3 + k * 1.57; R(Math.round(x + 7 + Math.cos(a) * 9), Math.round(y + 7 + Math.sin(a) * 9), 2, 2, '#fce060'); }
-      break; }
+      const s = [
+        c_(8, 8, 6.5, 'flame'), c_(8, 8, 3.5, 'core'),
+        d_(4, 5, 3, 1, '#7a1a00'), d_(9, 5, 3, 1, '#7a1a00'), d_(5, 6, 2, 2, '#7a1a00'), d_(9, 6, 2, 2, '#7a1a00'),
+        d_(6, 10, 4, 1, '#7a1a00'), d_(5, 9, 1, 1, '#7a1a00'), d_(10, 9, 1, 1, '#7a1a00'),
+      ];
+      for (let k = 0; k < 5; k++) { const a = t * 0.25 + k * 1.256, rr = 9 + ((t + k * 3) % 6 < 3 ? 1 : 0); s.push(d_(Math.round(7 + Math.cos(a) * rr), Math.round(7 + Math.sin(a) * rr), 2, 2, k % 2 ? '#fff4b0' : '#fce040')); }
+      s.push(d_(1, 1 + ((t >> 2) & 3), 2, 1, '#fff'), d_(13, 12 - ((t >> 2) & 3), 2, 1, '#fff'));
+      ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(x + 4, y + 15, 8, 1);
+      S_ = s; break; }
     case 'carno':
-      q(3, 14, 10, 2, 'rgba(0,0,0,.25)');
-      q(5, 12, 2, 3 + b, '#3a1010'); q(9, 12, 2, 4 - b, '#3a1010');
-      q(4, 7, 8, 6, O); q(5, 7, 6, 5, '#8a2a2a'); q(6, 8, 4, 1, '#c86a60'); q(6, 10, 4, 1, '#c86a60');
-      q(2, 7, 2, 5, '#b85a50'); q(12, 7, 2, 5, '#b85a50'); q(1, 12, 1, 2, '#fff'); q(14, 12, 1, 2, '#fff');
-      q(4, 1, 8, 7, O); q(5, 2, 6, 5, '#b85a50'); q(6, 4, 1, 1, '#f8e040'); q(9, 4, 1, 1, '#f8e040'); q(6, 6, 4, 1, '#3a0a0a'); q(6, 6, 1, 1, '#fff'); q(9, 6, 1, 1, '#fff');
-      q(5, 0, 1, 2, '#3a1010'); q(8, 0, 1, 2, '#3a1010'); q(10, 1, 1, 1, '#3a1010');
+      shadow(10);
+      S_ = [
+        r_(5, 12, 2, 2 + b, 'flesh'), r_(9, 12, 2, 3 - b, 'flesh'), r_(4, 14 + b, 3, 1, 'meat'), r_(9, 15 - b, 3, 1, 'meat'),
+        r_(4, 7, 8, 6, 'meat'), r_(2, 7, 2, 6, 'flesh'), r_(12, 7, 2, 6, 'flesh'), c_(8, 4, 4, 'flesh'),
+        d_(5, 8, 6, 1, '#e89080'), d_(5, 10, 6, 1, '#e89080'), d_(1, 13, 1, 2, '#fff'), d_(3, 13, 1, 2, '#fff'), d_(12, 13, 1, 2, '#fff'), d_(14, 13, 1, 2, '#fff'),
+        d_(5, 3, 2, 2, '#fce040'), d_(9, 3, 2, 2, '#fce040'), d_(6, 4, 1, 1, '#000'), d_(9, 4, 1, 1, '#000'),
+        d_(5, 6, 6, 1, '#3a0a0a'), d_(5, 6, 1, 1, '#fff'), d_(7, 6, 1, 1, '#fff'), d_(9, 6, 1, 1, '#fff'),
+        d_(6, 0, 1, 1, '#3a1010'), d_(8, -1, 1, 1, '#3a1010'), d_(10, 0, 1, 1, '#3a1010'), d_(11, 7, 1, 2, '#e02020'),
+      ];
       break;
-    case 'shade':
-      disc(x + 8, y + 9, 8, 'rgba(70,20,110,.3)');
-      q(5, 13, 1, 2, O); q(10, 13, 1, 2, O);
-      q(5, 6, 6, 8, O); q(6, 7, 4, 6, '#3a2a58');
-      q(5, 1, 6, 5, O); q(6, 2, 4, 3, '#4a3a70'); q(6, 3, 1, 1, '#b0f040'); q(9, 3, 1, 1, '#b0f040'); q(5, 0, 1, 1, O); q(10, 0, 1, 1, O);
-      q(2, 5 - b, 3, 1, O); q(1, 6 - b, 1, 5, O); q(11, 5 - b, 3, 1, O); q(14, 6 - b, 1, 5, O);
-      break;
-    case 'specter': {
-      const bob = Math.round(Math.sin(t * 0.1) * 1.5);
-      q(3, 14, 10, 2, 'rgba(0,0,0,.2)');
-      const yy = y + bob, w = b;
-      const r2 = (rx, ry, ww, hh, c) => { ctx.fillStyle = c; ctx.fillRect(flip ? x + 16 - rx - ww : x + rx, yy + ry, ww, hh); };
-      r2(0, 3 + w, 4, 6, O); r2(1, 4 + w, 2, 4, '#3a3a50'); r2(12, 3 + w, 4, 6, O); r2(13, 4 + w, 2, 4, '#3a3a50');
-      r2(3, 1, 10, 12, O); r2(4, 2, 8, 10, '#2a2238'); r2(4, 12, 2, 2, O); r2(8, 12, 2, 2, O); r2(11, 12, 1, 2, O);
-      r2(5, 3, 6, 4, '#0a0810'); r2(6, 4, 1, 1, '#ff40ff'); r2(9, 4, 1, 1, '#ff40ff');
+    case 'shade': {
+      disc(x + 8, y + 9, 8, 'rgba(90,30,140,.25)');
+      const glow = (t >> 4) & 1 ? '#d0ff60' : '#90e030';
+      S_ = [
+        d_(4, 12, 1, 3, '#1a1020'), d_(7, 13, 1, 3, '#1a1020'), d_(10, 12, 1, 3, '#1a1020'),
+        c_(6, 11, 3.5, 'purple'), r_(7, 5, 4, 6, 'purple'), c_(10, 3, 2.5, 'purple'),
+        r_(11, 5 - b, 4, 1, 'purple'), r_(14, 5 - b, 1, 5, 'purple'), r_(3, 6 + b, 3, 1, 'purple'), r_(2, 6 + b, 1, 4, 'purple'),
+        d_(10, 2, 2, 2, glow), d_(12, 3, 1, 1, glow), d_(9, 0, 1, 1, '#1a1020'), d_(12, 0, 1, 1, '#1a1020'),
+        d_(5, 10, 1, 1, glow), d_(7, 12, 1, 1, glow), d_(8, 7, 2, 1, '#8a6ab8'),
+      ];
       break; }
-    case 'negator':
-      q(3, 22, 18, 2, 'rgba(0,0,0,.25)');
-      q(6, 17, 4, 5, O); q(14, 17, 4, 5, O); q(7, 17, 2, 4 + b, '#3a1a1a'); q(15, 17, 2, 5 - b, '#3a1a1a');
-      q(3, 7, 18, 12, O); q(4, 8, 16, 10, '#3a1a1a'); q(5, 6, 2, 2, '#e8e0c8'); q(11, 5, 2, 2, '#e8e0c8'); q(17, 6, 2, 2, '#e8e0c8');
-      q(9, 11, 6, 1, '#e04020'); q(11, 12, 2, 3, '#e04020'); q(7, 14, 3, 1, '#e04020');
-      q(0, 9, 4, 8, O); q(1, 10, 2, 6, '#3a1a1a'); q(0, 17, 1, 2, '#e8e0c8'); q(2, 17, 1, 2, '#e8e0c8');
-      q(20, 9, 4, 8, O); q(21, 10, 2, 6, '#3a1a1a'); q(21, 17, 1, 2, '#e8e0c8'); q(23, 17, 1, 2, '#e8e0c8');
-      q(7, 1, 10, 8, O); q(8, 2, 8, 6, '#4a2020'); q(5, 0, 3, 2, '#e8e0c8'); q(4, 0, 1, 4, '#e8e0c8'); q(16, 0, 3, 2, '#e8e0c8'); q(19, 0, 1, 4, '#e8e0c8');
-      q(9, 4, 2, 2, '#ff3020'); q(13, 4, 2, 2, '#ff3020'); q(10, 7, 4, 1, '#ff8040');
-      break;
+    case 'specter': {
+      const bob = Math.round(Math.sin(t * 0.1) * 1.5), w = b;
+      ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(x + 3, y + 15, 10, 1);
+      S_ = [
+        r_(0, 3 + w, 4, 6, 'cloak'), r_(12, 3 + w, 4, 6, 'cloak'),
+        r_(4, 3, 8, 10, 'cloak'), r_(4, 12, 2, 3, 'cloak'), r_(7, 12, 2, 2, 'cloak'), r_(10, 12, 2, 3, 'cloak'), c_(8, 4, 3.5, 'cloak'),
+        d_(1, 5 + w, 2, 1, '#6a5a90'), d_(13, 5 + w, 2, 1, '#6a5a90'), d_(1, 7 + w, 2, 1, '#6a5a90'), d_(13, 7 + w, 2, 1, '#6a5a90'),
+        d_(6, 4, 4, 3, '#050308'), d_(6, 5, 1, 1, '#ff50ff'), d_(9, 5, 1, 1, '#ff50ff'),
+        d_(4, 11, 8, 1, '#8a3ad0'), d_(7, 8, 2, 2, '#8a3ad0'),
+      ].map(s => (s.cy !== undefined ? { ...s, cy:s.cy + bob } : { ...s, y:s.y + bob }));
+      break; }
     case 'warden':
-      q(3, 14, 10, 2, 'rgba(0,0,0,.2)');
-      q(3, 6, 10, 9, O); q(4, 7, 8, 7, '#f0ece0'); q(4, 13, 8, 1, '#d8b040'); q(7, 7, 2, 7, '#d8b040');
-      q(5, 1, 6, 6, O); q(6, 2, 4, 4, '#f1c9a0'); q(5, 1, 6, 2, '#f0ece0'); q(7, 4, 1, 1, '#000'); q(9, 4, 1, 1, '#000');
-      q(5, -1 + b, 6, 1, '#fce060');
-      q(13, 2, 1, 12, '#8a5a30'); q(12, 1, 3, 2, '#fce060');
+      shadow(10);
+      S_ = [
+        r_(13, 2, 1, 13, 'brown'), c_(13, 1, 1.5, 'gold'),
+        r_(4, 6, 8, 9, 'white'), r_(2, 7, 2, 4, 'white'), r_(12, 7, 2, 4, 'white'), c_(8, 4, 3, 'skin'), r_(4, 1, 8, 2, 'white'),
+        d_(4, 14, 8, 1, '#f0c030'), d_(7, 6, 2, 8, '#f0c030'), d_(6, 4, 1, 1, '#2a2030'), d_(9, 4, 1, 1, '#2a2030'), d_(7, 6, 2, 1, '#c86050'),
+        d_(5, -1 - b, 6, 1, '#fce040'), d_(4, -2 - b, 1, 1, '#fce040'), d_(11, -2 - b, 1, 1, '#fce040'),
+        d_(2 + ((t >> 3) % 3), 2, 1, 1, '#fff8c0'),
+      ];
+      break;
+    case 'merfolk':
+      shadow(10);
+      S_ = [
+        r_(5, 12, 6, 2, 'blue'), r_(3, 14, 3, 2, 'teal'), r_(10, 14, 3, 2, 'teal'),
+        r_(4, 6, 8, 7, 'blue'), r_(2, 7, 2, 4, 'blue'), r_(12, 7, 2, 4, 'blue'), c_(13, 11 + b, 2.5, 'brown'),
+        r_(6, -1, 4, 2, 'teal'), c_(8, 4, 4, 'blue'),
+        d_(6, 8, 4, 4, '#c0ecff'), d_(5, 7, 1, 1, '#a0d8ff'), d_(10, 10, 1, 1, '#a0d8ff'),
+        d_(5, 3, 2, 2, '#fff'), d_(9, 3, 2, 2, '#fff'), d_(6, 4, 1, 1, '#000'), d_(10, 4, 1, 1, '#000'),
+        d_(7, 6, 3, 1, '#10305a'), d_(4, 5, 1, 2, '#1a4a90'), d_(12, 10 + b, 2, 1, '#fce040'),
+      ];
+      break;
+    case 'negator':
+      shadow(18);
+      S_ = [
+        r_(6, 17, 4, 5, 'neg'), r_(14, 17, 4, 5, 'neg'), r_(5, 21 + b, 5, 2, 'bone'), r_(14, 22 - b, 5, 2, 'bone'),
+        r_(1, 9, 4, 9, 'neg'), r_(19, 9, 4, 9, 'neg'), c_(12, 12, 7, 'neg'),
+        r_(4, 7, 2, 2, 'bone'), r_(18, 7, 2, 2, 'bone'), r_(8, 5, 2, 2, 'bone'),
+        r_(5, 0, 3, 2, 'bone'), r_(4, 1, 1, 4, 'bone'), r_(16, 0, 3, 2, 'bone'), r_(19, 1, 1, 4, 'bone'), c_(12, 5, 4.5, 'neg'),
+        d_(1, 18, 1, 2, '#fffff0'), d_(3, 18, 1, 2, '#fffff0'), d_(20, 18, 1, 2, '#fffff0'), d_(22, 18, 1, 2, '#fffff0'),
+        d_(10, 4, 2, 2, '#ff3020'), d_(13, 4, 2, 2, '#ff3020'), d_(10, 4, 1, 1, '#ffd040'), d_(13, 4, 1, 1, '#ffd040'),
+        d_(10, 7, 5, 1, '#ff8040'), d_(10, 11, 5, 1, '#ff5020'), d_(12, 12, 1, 3, '#ff5020'), d_(8, 14, 3, 1, '#ff5020'), d_(15, 15, 2, 1, '#ff5020'),
+      ];
       break;
     case 'angel': {
-      const bob = Math.round(Math.sin(t * 0.08) * 2);
-      q(5, 22, 14, 2, 'rgba(0,0,0,.2)');
-      const r2 = (rx, ry, ww, hh, c) => { ctx.fillStyle = c; ctx.fillRect(flip ? x + 24 - rx - ww : x + rx, y + bob + ry, ww, hh); };
-      const wf = b ? -1 : 1;
-      r2(0, 4 + wf, 7, 12, O); r2(1, 5 + wf, 5, 10, '#f8f8f0'); r2(2, 8 + wf, 4, 1, '#c8c8d8'); r2(2, 11 + wf, 4, 1, '#c8c8d8');
-      r2(17, 4 + wf, 7, 12, O); r2(18, 5 + wf, 5, 10, '#f8f8f0'); r2(18, 8 + wf, 4, 1, '#c8c8d8'); r2(18, 11 + wf, 4, 1, '#c8c8d8');
-      r2(7, 8, 10, 14, O); r2(8, 9, 8, 12, '#f8f4e0'); r2(8, 14, 8, 1, '#d8b040');
-      r2(8, 1, 8, 8, O); r2(9, 2, 6, 6, '#f6d0a8'); r2(9, 1, 6, 2, '#fce060'); r2(8, 2, 1, 5, '#fce060'); r2(15, 2, 1, 5, '#fce060');
-      r2(10, 4, 1, 1, '#2a6ad8'); r2(13, 4, 1, 1, '#2a6ad8'); r2(9, -1, 6, 1, '#fce060');
-      r2(19, 6, 1, 12, '#e0e8f0'); r2(18, 17, 3, 1, '#d8b040');
+      const bob = Math.round(Math.sin(t * 0.08) * 2), wf = b ? -1 : 1;
+      ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(x + 6, y + 22, 12, 2);
+      S_ = [
+        c_(4, 9 + wf, 4, 'white'), c_(3, 14 + wf, 3.5, 'white'), c_(20, 9 + wf, 4, 'white'), c_(21, 14 + wf, 3.5, 'white'),
+        r_(19, 5, 1, 12, 'steel'),
+        r_(8, 9, 8, 13, 'white'), r_(6, 10, 2, 5, 'skin'), r_(16, 10, 2, 5, 'skin'), c_(12, 5, 3.5, 'skin'),
+        r_(8, 1, 8, 3, 'gold'), r_(8, 3, 1, 5, 'gold'), r_(15, 3, 1, 5, 'gold'),
+        d_(2, 9 + wf, 4, 1, '#c8c8d8'), d_(2, 12 + wf, 4, 1, '#c8c8d8'), d_(18, 9 + wf, 4, 1, '#c8c8d8'), d_(18, 12 + wf, 4, 1, '#c8c8d8'),
+        d_(8, 14, 8, 1, '#f0c030'), d_(11, 15, 2, 7, '#f0c030'), d_(17, 15, 5, 1, '#f0c030'),
+        d_(10, 5, 1, 1, '#2a6ad8'), d_(13, 5, 1, 1, '#2a6ad8'), d_(11, 7, 2, 1, '#c86050'),
+        d_(9, -1, 6, 1, '#fce040'), d_(8, -2, 1, 1, '#fce040'), d_(15, -2, 1, 1, '#fce040'),
+      ].map(s => (s.cy !== undefined ? { ...s, cy:s.cy + bob } : { ...s, y:s.y + bob }));
       break; }
-    case 'merfolk':
-      q(3, 14, 10, 2, 'rgba(0,0,0,.2)');
-      q(5, 12, 6, 3, '#2a6ab8'); q(4, 14, 3, 2, '#58c8e8'); q(9, 14, 3, 2, '#58c8e8');
-      q(4, 6, 8, 7, O); q(5, 7, 6, 5, '#3a8ad8'); q(6, 8, 1, 1, '#88c8f8'); q(9, 9, 1, 1, '#88c8f8'); q(6, 10, 4, 2, '#a8e0f0');
-      q(2, 7, 2, 4, '#3a8ad8'); q(12, 7, 2, 4, '#3a8ad8'); q(12, 10 + b, 3, 3, '#b8864a');
-      q(4, 1, 8, 6, O); q(5, 2, 6, 4, '#3a8ad8'); q(6, 0, 4, 2, '#58c8e8');
-      q(5, 3, 2, 2, '#fff'); q(9, 3, 2, 2, '#fff'); q(6, 4, 1, 1, '#000'); q(10, 4, 1, 1, '#000'); q(7, 5, 2, 1, '#1a3a6a');
-      break;
     case 'siege':
       ctx.save(); ctx.translate(flip ? x + 32 : x, y); ctx.scale(flip ? -2 : 2, 2);
       drawMon('gob', 0, 0, t, false);
-      R(4, 0, 8, 3, O); R(5, 1, 6, 2, '#9aa0a8'); R(7, -2, 2, 2, '#9aa0a8'); R(4, 2, 8, 1, '#6a7078');
-      R(-1, 2, 1, 12, '#8a5a30'); R(-5, 2, 4, 4, '#d83020'); R(-4, 3, 2, 1, '#fce060');
+      renderShapes(0, 0, 16, false, [r_(4, 0, 8, 2, 'steel'), r_(7, -2, 2, 2, 'steel'), r_(0, 2, 1, 12, 'brown'), r_(-4, 2, 4, 4, 'red'), d_(-3, 3, 2, 1, '#fce040'), d_(4, 2, 8, 1, '#6a7080')]);
       ctx.restore();
-      break;
+      return;
     case 'dread':
-      q(4, 29, 24, 3, 'rgba(0,0,0,.3)');
-      q(3, 20, 5, 10, O); q(4, 21, 3, 8 + b, '#6a5a4a'); q(10, 22, 5, 8, O); q(11, 23, 3, 7 - b, '#6a5a4a');
-      q(18, 22, 5, 8, O); q(19, 23, 3, 6 + b, '#6a5a4a'); q(25, 20, 5, 10, O); q(26, 21, 3, 8 - b, '#6a5a4a');
-      q(2, 8, 28, 16, O); q(3, 9, 26, 14, '#8a7a64'); q(3, 9, 26, 2, '#aa9a80'); q(3, 16, 26, 1, '#6a5a4a');
-      for (let i = 0; i < 5; i++) q(5 + i * 4, 13, 1, 1, '#3a3028');
-      q(8, 4, 3, 5, O); q(9, 5, 1, 4, '#6a6a70'); q(18, 3, 3, 6, O); q(19, 4, 1, 5, '#6a6a70');
-      if ((t >> 4) % 2) { q(8, 1, 2, 2, 'rgba(200,200,200,.5)'); q(19, 0, 2, 2, 'rgba(200,200,200,.5)'); }
-      q(22, 14, 8, 7, O); q(23, 14, 1, 2, '#e8e0c8'); q(25, 14, 1, 2, '#e8e0c8'); q(27, 14, 1, 2, '#e8e0c8'); q(24, 19, 1, 1, '#e8e0c8'); q(26, 19, 1, 1, '#e8e0c8');
-      q(23, 9, 5, 4, O); q(24, 10, 3, 2, '#ff3020'); q(25, 10, 1, 1, '#ffd040');
-      q(28, 21, 4, 4, O); q(29, 22, 2, 2, '#c8c8d0');
+      shadow(24);
+      S_ = [
+        r_(8, 3, 3, 6, 'steel'), r_(18, 2, 3, 7, 'steel'),
+        r_(4, 20, 5, 9 + b, 'metal'), r_(11, 22, 5, 7 - b, 'metal'), r_(18, 22, 5, 6 + b, 'metal'), r_(25, 20, 5, 9 - b, 'metal'),
+        r_(2, 8, 27, 15, 'metal'), r_(6, 6, 2, 2, 'bone'), r_(12, 5, 2, 3, 'bone'), r_(15, 5, 2, 3, 'bone'),
+        r_(22, 12, 9, 9, 'rust'), c_(26, 10, 2.5, 'eyeR'),
+        d_(3, 13, 19, 1, '#5a4a38'), d_(3, 18, 19, 1, '#5a4a38'), d_(9, 9, 1, 13, '#5a4a38'), d_(16, 9, 1, 13, '#5a4a38'),
+        d_(5, 11, 1, 1, '#2a2018'), d_(12, 11, 1, 1, '#2a2018'), d_(19, 11, 1, 1, '#2a2018'), d_(5, 16, 1, 1, '#2a2018'), d_(12, 16, 1, 1, '#2a2018'),
+        d_(4, 20, 3, 2, '#b05a30'), d_(13, 15, 2, 2, '#b05a30'),
+        d_(22, 17, 9, 2, '#1a0a08'), d_(23, 16, 1, 2, '#fffff0'), d_(25, 16, 1, 2, '#fffff0'), d_(27, 16, 1, 2, '#fffff0'), d_(29, 16, 1, 2, '#fffff0'),
+        d_(24, 19, 1, 1, '#fffff0'), d_(26, 19, 1, 1, '#fffff0'), d_(28, 19, 1, 1, '#fffff0'),
+        d_(3, 28 + b, 2, 2, '#c8c8d0'), d_(26, 28 - b, 2, 2, '#c8c8d0'),
+      ];
+      if ((t >> 4) % 2) S_.push(d_(8, 0, 2, 2, 'rgba(210,210,210,.6)'), d_(19, -1, 2, 2, 'rgba(210,210,210,.6)'));
       break;
   }
+  renderShapes(x, y, sz, flip, S_);
 }
 
 /* ============ CARDS ============ */
@@ -1468,7 +1542,13 @@ function drawWorld(){
   for (const e of G.enemies) list.push({ y:e.y + e.h, f:() => {
     if (e.flash > 0 && (e.flash >> 1) & 1) return;
     drawMon(e.type, Math.round(e.x - 2), Math.round(e.y - 2), e.t, e.flip);
-    if (!MON[e.type].boss && e.hp < e.max) { R(Math.round(e.x), Math.round(e.y - 5), e.w, 2, '#3a1010'); R(Math.round(e.x), Math.round(e.y - 5), Math.round(e.w * e.hp / e.max), 2, '#e83040'); }
+  } });
+  for (const e of G.enemies) list.push({ y:1000, f:() => {
+    const m = MON[e.type], cx = Math.round(e.x + e.w / 2), top = Math.round(e.y - 2) - (m.size > 16 ? 2 : 0);
+    const nm = norm(m.n), w = nm.length * 4 + 3, ly = Math.max(1, top - 10);
+    ctx.fillStyle = 'rgba(10,8,20,.6)'; ctx.fillRect(cx - Math.ceil(w / 2), ly - 1, w, 7);
+    tiny(nm, cx, ly, m.boss ? '#ffb040' : '#f4f0ff', 'center');
+    if (!m.boss && e.hp < e.max) { R(cx - 6, ly + 6, 12, 2, '#3a1010'); R(cx - 6, ly + 6, Math.round(12 * e.hp / e.max), 2, '#e83040'); }
   } });
   for (const o of othersHere()) list.push({ y:o.ry + 8, f:() => {
     const x = Math.round(o.rx), y = Math.round(o.ry);
@@ -1759,7 +1839,23 @@ function step(){
   netTick();
   tickMusic();
 }
+function drawBestiary(){
+  R(0, 0, W, H, '#5cae44');
+  txt('BESTIARIO', 120, 3, '#fcd84a', 'center', '#000');
+  const small = ['gob','pup','ball','carno','shade','specter','warden','merfolk'];
+  small.forEach((k, i) => {
+    const x = 6 + (i % 4) * 58, y = 20 + Math.floor(i / 4) * 44;
+    ctx.save(); ctx.translate(x + 13, y + 6); ctx.scale(2, 2); drawMon(k, 0, 0, frame, false); ctx.restore();
+    tiny(MON[k].n, x + 29, y, '#fff', 'center');
+  });
+  [['negator',6],['angel',64],['siege',124],['dread',184]].forEach(([k, x]) => {
+    const sz = MON[k].size, s = sz === 24 ? 1.5 : 1;
+    ctx.save(); ctx.translate(x + 26 - sz * s / 2, 118); ctx.scale(s, s); drawMon(k, 0, 0, frame, false); ctx.restore();
+    tiny(MON[k].n.split(' ').pop(), x + 26, 111, '#fff', 'center');
+  });
+}
 function render(){
+  if (location.hash === '#bestiario') { drawBestiary(); return; }
   if (G.state === 'title') drawTitle();
   else if (G.state === 'select') drawSelect();
   else if (G.state === 'tour') drawTour();
