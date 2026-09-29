@@ -588,11 +588,16 @@ function newSave(ci){
   return { v:1, ch:ci, lvl:1, xp:0, st:{...ch.st}, hp:6, maxHp:6, coins:10, cards:{}, swords:['palo'], eq:'palo',
     chests:{}, bosses:{}, trophies:0, buzz:0, beers:0, room:'pueblo', x:7*TS+3, y:6*TS+6, complete:{}, visited:{}, ligaWins:0, arcadeBest:0, lore:false };
 }
-function saveGame(){ if (!S) return; try { localStorage.setItem('pmq_save', JSON.stringify(S)); } catch(_) {} }
-function loadSave(){
+const SLOTS = 3, slotKey = n => 'pmq_save_' + n;
+function saveGame(){ if (!S) return; try { localStorage.setItem(slotKey(S.slot || 1), JSON.stringify(S)); localStorage.setItem('pmq_last', String(S.slot || 1)); } catch(_) {} }
+function deleteSlot(n){ try { localStorage.removeItem(slotKey(n)); if (n === 1) localStorage.removeItem('pmq_save'); } catch(_) {} }
+function loadSave(n){
   try {
-    const s = JSON.parse(localStorage.getItem('pmq_save') || 'null');
+    if (n === undefined) n = +(localStorage.getItem('pmq_last') || 1) || 1;
+    if (n === 1 && !localStorage.getItem(slotKey(1)) && localStorage.getItem('pmq_save')) localStorage.setItem(slotKey(1), localStorage.getItem('pmq_save'));
+    const s = JSON.parse(localStorage.getItem(slotKey(n)) || 'null');
     if (!s || s.v !== 1) return null;
+    s.slot = n;
     s.visited = s.visited || {}; s.ligaWins = s.ligaWins || 0; s.arcadeBest = s.arcadeBest || 0; s.complete = s.complete || {};
     if (!ROOMS[s.room] && !WILD[s.room] && !String(s.room).startsWith('D:')) { s.room = 'pueblo'; s.x = 7 * TS + 3; s.y = 6 * TS + 6; }
     return s;
@@ -1799,6 +1804,11 @@ function updateMenu(){
   if (pressed('a')) {
     if (m.tab === 0) { m.deck = m.sel; m.cs = 0; SFX.ok(); }
     else if (m.tab === 1) { S.eq = sortedSwords()[m.sel]; SFX.ok(); saveGame(); }
+    else if (m.tab === 2) {
+      S.x = PL.x; S.y = PL.y; saveGame(); netLeave(true);
+      G.menu = null; G.dialog = null; G.cardGet = null; G.cardQueue = []; G.dead = 0;
+      G.state = 'title'; G.titleSel = 1; G.map = null; playMusic(null); SFX.back();
+    }
   }
 }
 const THEME_COL = { town:'#d8b060', forest:'#3e8a36', dirt:'#a88050', swamp:'#4a6a40', meadow:'#88c860', sand:'#e8d098' };
@@ -1915,7 +1925,7 @@ function drawMenu(){
     tiny('ESPADA: ' + SWORDS[S.eq].n, 76, 112, '#c8d8d0');
     tiny('CARTAS: ' + totalCards() + '/' + ALL_CARDS.length + '   MAZOS COMPLETOS: ' + DECKS.filter(d => deckDone(d.id)).length + '/6', 76, 120, '#c8d8d0');
     if (S.buzz) tiny('CERVEZA: +' + S.buzz + ' INT EN EL PROXIMO TORNEO', 76, 128, '#fcd84a');
-    tiny('LA PARTIDA SE GUARDA SOLA', 120, 151, '#6a8a80', 'center');
+    tiny('SE GUARDA SOLA.  ' + (TOUCH ? 'A' : 'Z') + ': VOLVER AL TITULO / OTRO PERSONAJE', 120, 151, '#fcd84a', 'center');
   }
 }
 
@@ -2062,7 +2072,7 @@ function drawTitle(){
   // cards fan
   ['bolt','dread','specter','siege','angel'].forEach((id, i) => { ctx.save(); ctx.translate(46 + i * 37, 100); ctx.rotate((i - 2) * 0.08); drawCardSmall(id, -12, -17, true, 0); ctx.restore(); });
   const has = !!loadSave();
-  const opts = has ? ['CONTINUAR', 'NUEVA PARTIDA'] : ['NUEVA PARTIDA'];
+  const opts = has ? ['CONTINUAR', 'PARTIDAS'] : ['NUEVA PARTIDA'];
   opts.forEach((o, i) => {
     const y = 126 + i * 13, sel = i === G.titleSel;
     txt(o, 120, y, sel ? '#fcd84a' : '#c8d8d0', 'center', '#000');
@@ -2076,7 +2086,41 @@ function updateTitle(){
   if (pressed('a') || pressed('menu')) {
     audioInit(); SFX.ok();
     if (has && G.titleSel === 0) { S = loadSave(); G.state = 'world'; loadRoom(S.room, S.x, S.y); }
-    else { G.state = 'select'; G.sel = 0; }
+    else { G.state = 'slots'; G.slotSel = 0; G.delSlot = null; }
+  }
+}
+function drawSlots(){
+  R(0, 0, W, H, '#10161a');
+  txt('PARTIDAS', 120, 6, '#fcd84a', 'center', '#7a3a10');
+  for (let i = 0; i < SLOTS; i++) {
+    const s = loadSave(i + 1), y = 20 + i * 42, sel = i === G.slotSel, del = G.delSlot === i;
+    R(8, y, 224, 38, sel ? (del ? '#e83040' : '#fcd84a') : '#2e4a44'); R(10, y + 2, 220, 34, del ? '#3a1018' : '#1c2a2e');
+    tiny('PARTIDA ' + (i + 1), 16, y + 5, '#6a8a80');
+    if (s) {
+      ctx.save(); ctx.translate(16, y + 12); ctx.scale(1.25, 1.25); drawPerson(0, 0, CHARS[s.ch], 0, sel ? (frame >> 4) & 1 : 0); ctx.restore();
+      txt(CHARS[s.ch].n, 44, y + 6, '#fff', 'left', null);
+      tiny('NIVEL ' + s.lvl + '   $' + s.coins + '   CARTAS ' + ALL_CARDS.filter(id => (s.cards[id] || 0) > 0).length + '/' + ALL_CARDS.length, 44, y + 18, '#c8d8d0');
+      tiny('GUARDIANES ' + GUARDIANS.filter(g => s.bosses[g]).length + '/5   EN: ' + (SHORT[zoneOf(s.room)] || 'VILLA'), 44, y + 26, '#9db8a8');
+      if (del) tiny('¿BORRAR? APRIETA X OTRA VEZ', 226, y + 5, '#ffb0b8', 'right');
+    } else {
+      txt('VACÍA', 44, y + 8, '#6a8a80', 'left', null);
+      tiny('CREAR UN PERSONAJE NUEVO', 44, y + 22, sel ? '#fcd84a' : '#9db8a8');
+    }
+  }
+  tiny(TOUCH ? 'A: JUGAR O CREAR   B: BORRAR   MENU: VOLVER' : 'Z: JUGAR O CREAR   X: BORRAR   ENTER: VOLVER', 120, 150, '#6a8a80', 'center');
+}
+function updateSlots(){
+  if (pressed('up')) { G.slotSel = (G.slotSel + SLOTS - 1) % SLOTS; G.delSlot = null; SFX.move(); }
+  if (pressed('down')) { G.slotSel = (G.slotSel + 1) % SLOTS; G.delSlot = null; SFX.move(); }
+  if (pressed('menu')) { G.state = 'title'; SFX.back(); return; }
+  const n = G.slotSel + 1, s = loadSave(n);
+  if (pressed('b') && s) {
+    if (G.delSlot === G.slotSel) { deleteSlot(n); G.delSlot = null; SFX.lose(); } else { G.delSlot = G.slotSel; SFX.back(); }
+  }
+  if (pressed('a')) {
+    SFX.ok(); G.delSlot = null;
+    if (s) { S = s; saveGame(); G.state = 'world'; loadRoom(S.room, S.x, S.y); }
+    else { G.newSlot = n; G.state = 'select'; G.sel = 0; }
   }
 }
 function drawSelect(){
@@ -2101,10 +2145,10 @@ function drawSelect(){
 function updateSelect(){
   if (pressed('left')) { G.sel = (G.sel + 2) % 3; SFX.move(); }
   if (pressed('right')) { G.sel = (G.sel + 1) % 3; SFX.move(); }
-  if (pressed('b')) { G.state = 'title'; SFX.back(); }
+  if (pressed('b')) { G.state = 'slots'; SFX.back(); }
   if (pressed('a') || pressed('menu')) {
     SFX.ok();
-    S = newSave(G.sel); G.state = 'world';
+    S = newSave(G.sel); S.slot = G.newSlot || 1; G.state = 'world';
     loadRoom('pueblo', S.x, S.y);
     say(['Bienvenido a VILLA PREMODERN, ' + CHARS[G.sel].n + '.',
       'Por aquí las criaturas salen de las cartas... y cuando las derrotas, sueltan cartas.',
@@ -2332,6 +2376,7 @@ function step(){
   readInput(); frame++; G.t++;
   if (G.state === 'title') updateTitle();
   else if (G.state === 'select') updateSelect();
+  else if (G.state === 'slots') updateSlots();
   else if (G.state === 'tour') updateTour();
   else if (G.state === 'arcade') updateArcade();
   else if (G.state === 'ending') { if (G.t > 200 && pressed('a')) { G.state = 'world'; playMusic(G.def.music); } }
@@ -2385,6 +2430,7 @@ function render(){
   if (location.hash === '#zonas') { if (!G.zonesDone) { drawZonesPreview(); G.zonesDone = true; } return; }
   if (G.state === 'title') drawTitle();
   else if (G.state === 'select') drawSelect();
+  else if (G.state === 'slots') drawSlots();
   else if (G.state === 'tour') drawTour();
   else if (G.state === 'arcade') drawArcade();
   else if (G.state === 'ending') drawEnding();
