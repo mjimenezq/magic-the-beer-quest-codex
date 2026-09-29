@@ -592,7 +592,7 @@ const ATK = 14;
 function newSave(ci){
   const ch = CHARS[ci];
   return { v:1, ch:ci, lvl:1, xp:0, st:{...ch.st}, hp:6, maxHp:6, coins:10, cards:{}, swords:['palo'], eq:'palo',
-    chests:{}, bosses:{}, trophies:0, buzz:0, beers:0, room:'pueblo', x:7*TS+3, y:6*TS+6, complete:{}, visited:{}, ligaWins:0, arcadeBest:0, lore:false };
+    chests:{}, bosses:{}, trophies:0, buzz:0, beers:0, room:'pueblo', x:7*TS+3, y:6*TS+6, complete:{}, visited:{}, ligaWins:0, arcadeBest:0, lore:false, quests:{}, kills:{}, killsTotal:0, beerTotal:0 };
 }
 const SLOTS = 3, slotKey = n => 'pmq_save_' + n;
 function saveGame(){ if (!S) return; try { localStorage.setItem(slotKey(S.slot || 1), JSON.stringify(S)); localStorage.setItem('pmq_last', String(S.slot || 1)); } catch(_) {} }
@@ -604,6 +604,7 @@ function loadSave(n){
     const s = JSON.parse(localStorage.getItem(slotKey(n)) || 'null');
     if (!s || s.v !== 1) return null;
     s.slot = n;
+    s.quests = s.quests || {}; s.kills = s.kills || {}; s.killsTotal = s.killsTotal || 0; s.beerTotal = s.beerTotal || 0;
     s.visited = s.visited || {}; s.ligaWins = s.ligaWins || 0; s.arcadeBest = s.arcadeBest || 0; s.complete = s.complete || {};
     if (!ROOMS[s.room] && !WILD[s.room] && !String(s.room).startsWith('D:')) { s.room = 'pueblo'; s.x = 7 * TS + 3; s.y = 6 * TS + 6; }
     return s;
@@ -1228,7 +1229,7 @@ function dropLoot(e){
 }
 function killEnemy(e){
   if (e.dead) return;
-  e.dead = true; SFX.kill();
+  e.dead = true; SFX.kill(); questKill(e.type);
   if (NET.role === 'host') sendAll({ t:'kill', room:G.roomId, id:e.nid, type:e.type, x:Math.round(e.x), y:Math.round(e.y) });
   for (let i = 0; i < 8; i++) G.parts.push({ k:'smoke', x:e.x + e.w / 2, y:e.y + e.h / 2, vx:Math.cos(i * 0.785) * 1.2, vy:Math.sin(i * 0.785) * 1.2, t:0 });
   dropLoot(e);
@@ -1505,13 +1506,100 @@ function drawDialog(){
 /* ============ NPC TALK ============ */
 function missingCards(){ return ALL_CARDS.filter(id => !owned(id)); }
 function dupes(){ const out = []; for (const id of ALL_CARDS) for (let i = 1; i < (S.cards[id] || 0); i++) out.push(id); return out; }
+/* ============ ENCARGOS (quests secundarias que suben atributos) ============ */
+const BLACK_MON = ['carno','shade','specter','negator'];
+const QUESTS = {
+  q_gob:{ giver:'vecina', title:'Plaga goblin', desc:'Derrota 8 goblins.', type:'kill', target:['gob'], n:8, reward:{ st:{fue:1}, coins:20 } },
+  q_mapa:{ giver:'cronista', title:'Cartógrafo', desc:'Visita 10 zonas distintas del mapa.', type:'visit', n:10, reward:{ st:{agi:1,int:1} } },
+  q_guard:{ giver:'cronista', title:'Leyenda viva', desc:'Derrota a los 5 guardianes de la Caja de Urza.', type:'guardians', n:5, reward:{ st:{fue:1,des:1,agi:1,int:1}, maxHp:2 } },
+  q_cerveza:{ giver:'cantinero', title:'Cliente frecuente', desc:'Tómate 3 cervezas.', type:'beer', n:3, reward:{ maxHp:2 } },
+  q_klaus:{ giver:'klaus', title:'Fuego en el bosque', desc:'Derrota 5 Jackal Pup o Ball Lightning.', type:'kill', target:['pup','ball'], n:5, reward:{ st:{agi:1}, coins:15 } },
+  q_torneo:{ giver:'organizador', title:'Primer trofeo', desc:'Gana un torneo en la Arena.', type:'trophy', n:1, reward:{ st:{int:1}, coins:30 } },
+  q_merfolk:{ giver:'pescador', title:'Ladrones de choritos', desc:'Derrota 6 Merfolk Looter.', type:'kill', target:['merfolk'], n:6, reward:{ st:{des:1}, coins:20 } },
+  q_sombras:{ giver:'marinero', title:'Sombras del pantano', desc:'Derrota 6 criaturas negras (Carnophage, Shade, Specter o Negator).', type:'kill', target:BLACK_MON, n:6, reward:{ st:{fue:1,des:1} } },
+  q_resist:{ giver:'viejo', title:'Resistencia', desc:'Derrota 30 criaturas en total.', type:'killAll', n:30, reward:{ maxHp:2 } },
+  q_mazo:{ giver:'juez', title:'Mazo en regla', desc:'Completa 2 mazos de 8 cartas.', type:'decks', n:2, reward:{ st:{int:2} } },
+  q_minas:{ giver:'fan2', title:'El rey de las minas', desc:'Derrota al Rey de las Minas, al fondo de las Minas de Mishra.', type:'boss', target:'reyMinas', n:1, reward:{ st:{fue:2} } },
+  q_cartas:{ giver:'tendero', title:'Coleccionista', desc:'Junta 25 cartas distintas.', type:'cards', n:25, reward:{ st:{int:1,des:1}, coins:30 } },
+  q_warden:{ giver:'posadera', title:'Paz en la pradera', desc:'Derrota 5 Soul Warden.', type:'kill', target:['warden'], n:5, reward:{ st:{int:1}, coins:15 } },
+  q_arcade:{ giver:'arcadeOrg', title:'Récord del arcade', desc:'Haz 25 puntos en Goblin Smash.', type:'arcade', n:25, reward:{ st:{des:2} } },
+  q_langost:{ giver:'coleccionista', title:'Caza del Langostino', desc:'Derrota al Langostino del islote, al sur de la costa.', type:'boss', target:'dread', n:1, reward:{ st:{agi:2}, coins:40 } },
+};
+const GIVER_PLACE = { vecina:'VILLA', cronista:'VILLA', cantinero:'TABERNA DE LA VILLA', klaus:'TABERNA DE LA VILLA', coleccionista:'TABERNA DE LA VILLA',
+  organizador:'ARENA DE LA VILLA', pescador:'VALPO', marinero:'VALPO', viejo:'CASA DEL VIEJO (VALPO)', juez:'TOLARIA', fan2:'TOLARIA',
+  tendero:'TIENDA (TOLARIA)', posadera:'POSADA (TOLARIA)', arcadeOrg:'ARCADE (TOLARIA)' };
+const STN = { fue:'FUE', des:'DES', agi:'AGI', int:'INT' };
+const rewardText = r => [Object.entries(r.st || {}).map(([k, v]) => '+' + v + ' ' + STN[k]).join(' '), r.maxHp ? '+' + r.maxHp / 2 + ' CORAZÓN' : '', r.coins ? '$' + r.coins : ''].filter(Boolean).join(', ');
+const killsOf = ts => ts.reduce((a, t) => a + ((S.kills || {})[t] || 0), 0);
+function questBase(q){ const Q = QUESTS[q]; return Q.type === 'kill' ? killsOf(Q.target) : Q.type === 'killAll' ? (S.killsTotal || 0) : Q.type === 'beer' ? (S.beerTotal || 0) : 0; }
+function questProg(q){
+  const Q = QUESTS[q], st = S.quests[q], base = st ? st.base : 0;
+  switch (Q.type) {
+    case 'kill': return killsOf(Q.target) - base;
+    case 'killAll': return (S.killsTotal || 0) - base;
+    case 'beer': return (S.beerTotal || 0) - base;
+    case 'visit': return Object.keys(S.visited || {}).length;
+    case 'guardians': return guardiansDone();
+    case 'trophy': return S.trophies;
+    case 'decks': return DECKS.filter(d => deckDone(d.id)).length;
+    case 'boss': return S.bosses[Q.target] ? 1 : 0;
+    case 'cards': return totalCards();
+    case 'arcade': return S.arcadeBest || 0;
+  }
+  return 0;
+}
+const questsOf = id => Object.keys(QUESTS).filter(q => QUESTS[q].giver === id);
+function questMarker(id){
+  if (!S || !S.quests) return null;
+  const list = questsOf(id); if (!list.length) return null;
+  if (list.some(q => S.quests[q] && S.quests[q].st === 'active' && questProg(q) >= QUESTS[q].n)) return '?';
+  if (!list.some(q => S.quests[q] && S.quests[q].st === 'active') && list.some(q => !S.quests[q])) return '!';
+  return null;
+}
+function questHook(id, npc){
+  const list = questsOf(id), who = NPCDEF[id] ? NPCDEF[id].n : id.toUpperCase();
+  if (!list.length) return false;
+  for (const q of list) {
+    const st = S.quests[q], Q = QUESTS[q];
+    if (st && st.st === 'active' && questProg(q) >= Q.n) {
+      st.st = 'done';
+      for (const [k, v] of Object.entries(Q.reward.st || {})) S.st[k] += v;
+      if (Q.reward.maxHp) { S.maxHp += Q.reward.maxHp; }
+      S.hp = S.maxHp; S.coins += Q.reward.coins || 0;
+      SFX.lvl(); saveGame();
+      say([who + ': ¡Cumpliste el encargo "' + Q.title + '"! Muchas gracias.', 'Recompensa: ' + rewardText(Q.reward) + '. Tus atributos subieron para siempre.']);
+      return true;
+    }
+  }
+  if (list.some(q => S.quests[q] && S.quests[q].st === 'active')) return false;
+  const next = list.find(q => !S.quests[q]);
+  if (!next) return false;
+  const Q = QUESTS[next];
+  say([who + ': Oye, tengo un encargo para ti: "' + Q.title + '". ' + Q.desc, 'Recompensa: ' + rewardText(Q.reward) + '.'],
+    [{ t:'ACEPTAR', fn:() => { S.quests[next] = { st:'active', base:questBase(next) }; SFX.ok(); toast('NUEVO ENCARGO: ' + Q.title, '#fcd84a'); saveGame(); } },
+     { t:'AHORA NO', fn:() => talkTo(id, npc, true) }]);
+  return true;
+}
+function questKill(type){
+  S.kills = S.kills || {}; S.kills[type] = (S.kills[type] || 0) + 1; S.killsTotal = (S.killsTotal || 0) + 1;
+  for (const q in S.quests || {}) {
+    const Q = QUESTS[q], st = S.quests[q];
+    if (!Q || st.st !== 'active' || (Q.type !== 'kill' && Q.type !== 'killAll')) continue;
+    if (Q.type === 'kill' && !Q.target.includes(type)) continue;
+    const p = questProg(q);
+    if (p === Q.n) toast('ENCARGO LISTO: VUELVE A HABLAR CON ' + (NPCDEF[Q.giver] ? NPCDEF[Q.giver].n : ''), '#60e070');
+    else if (p < Q.n && (Q.type === 'kill' || p % 5 === 0)) toast(Q.title + ' ' + p + '/' + Q.n, '#c8e8d8');
+  }
+}
+
 const FRIEND_LINES = {
   0:['Wena. Yo ando buscando un Force of Will hace años. Si te sale uno, avísame, cachai.','¿Vamos a la Torre de Serra? Dicen que la Ángel Ascendida invoca Soul Wardens sin parar.'],
   1:['Oe, si vas a la Cripta de Tourach lleva harta vida. El Negator Ancestral pega como camión.','Yo juego Burn: Bolt, Chain, Fireblast y a la cara. Sin miedo.'],
   3:['Yo no juego rápido, juego bien. Por eso gano los torneos... a veces.','Tip de Klaus: la cerveza sube la INT para el torneo. Es ciencia, cachai.'],
   2:['¿Una partida? Te juego mi Replenish contra lo que traigas. Pierde el que paga la ronda.','En las Minas de Mishra hay un Rey Goblin con corona. Me pegó tan fuerte que volví a pie a Tolaria.'],
 };
-function talkTo(id, npc){
+function talkTo(id, npc, skipQuest){
+  if (!skipQuest && questHook(id, npc)) return;
   if (id === 'friend') {
     const c = npc && npc.ch !== undefined ? npc.ch : 0;
     say([CHARS[c].n + ': ' + pick(FRIEND_LINES[c]), CHARS[c].n + ': ' + pick(['Salud por el Premodern. Cuarta Edición a Scourge, como Dios manda.','Si juntamos a los tres, en línea, no hay guardián que aguante.','La otra semana gané con un Goblin Lackey en el turno uno. Nadie me cree.'])]);
@@ -1612,7 +1700,7 @@ function talkTo(id, npc){
     say(['¡Bienvenido a la Taberna El Mazo! ¿Una cerveza? Son $5. Te recupera la vida y te pone más picado para el torneo.'],
       [{ t:'SÍ, UNA ($5)', fn:() => {
           if (S.coins < 5) { say(['No te alcanza. Anda a pegarle a unos monos y vuelve.']); return; }
-          S.coins -= 5; S.hp = S.maxHp; S.beers++; S.buzz = Math.min(3, S.buzz + 1); SFX.beer();
+          S.coins -= 5; S.hp = S.maxHp; S.beers++; S.beerTotal = (S.beerTotal || 0) + 1; S.buzz = Math.min(3, S.buzz + 1); SFX.beer();
           for (let i = 0; i < 8; i++) G.parts.push({ k:'bubble', x:PL.x + 5 + (Math.random() - 0.5) * 10, y:PL.y - 8, vx:0, vy:-0.5 - Math.random() * 0.4, t:0 });
           say(['¡Salud! Vida al máximo. +' + S.buzz + ' INT para tu próximo torneo.']); saveGame();
         } }, { t:'NO, GRACIAS', fn:null }]);
@@ -1806,7 +1894,7 @@ function updateMenu(){
   if (pressed('menu') || pressed('b')) { G.menu = null; SFX.back(); saveGame(); return; }
   if (pressed('left')) { m.tab = (m.tab + 4) % 5; m.sel = 0; SFX.move(); }
   if (pressed('right')) { m.tab = (m.tab + 1) % 5; m.sel = 0; SFX.move(); }
-  const n = m.tab === 0 ? DECKS.length : m.tab === 1 ? S.swords.length : 0;
+  const n = m.tab === 0 ? DECKS.length : m.tab === 1 ? S.swords.length : m.tab === 4 ? 2 : 0;
   if (n) { if (pressed('up')) { m.sel = (m.sel + n - 1) % n; SFX.move(); } if (pressed('down')) { m.sel = (m.sel + 1) % n; SFX.move(); } }
   if (pressed('a')) {
     if (m.tab === 0) { m.deck = m.sel; m.cs = 0; SFX.ok(); }
@@ -1840,7 +1928,29 @@ function drawWorldMap(){
   tiny('ESTAS EN: ' + SHORT[cur] + floor, 120, 146, '#fcd84a', 'center');
   tiny('ROJO: GUARDIAN VIVO  VERDE: DERROTADO', 120, 153, '#6a8a80', 'center');
 }
+function drawQuests(){
+  txt('ENCARGOS', 8, 21, '#fcd84a', 'left', '#000');
+  const all = Object.keys(QUESTS), done = all.filter(q => S.quests[q] && S.quests[q].st === 'done');
+  tiny('COMPLETADOS ' + done.length + '/' + all.length, 232, 23, '#9db8a8', 'right');
+  const active = all.filter(q => S.quests[q] && S.quests[q].st === 'active');
+  const avail = all.filter(q => !S.quests[q] && !questsOf(QUESTS[q].giver).some(o => S.quests[o] && S.quests[o].st === 'active') && questsOf(QUESTS[q].giver).find(o => !S.quests[o]) === q);
+  let y = 34;
+  if (!active.length) { tiny('NO TIENES ENCARGOS ACTIVOS.', 8, y, '#c8d8d0'); tiny('BUSCA A LOS PERSONAJES CON UN ! AMARILLO SOBRE LA CABEZA.', 8, y + 7, '#c8d8d0'); y += 16; }
+  for (const q of active.slice(0, 6)) {
+    const Q = QUESTS[q], p = Math.min(Q.n, questProg(q)), ok = p >= Q.n;
+    tiny(Q.title, 8, y, ok ? '#60e070' : '#fff');
+    tiny(ok ? 'LISTO: VUELVE CON ' + (NPCDEF[Q.giver] ? NPCDEF[Q.giver].n : '') : p + '/' + Q.n, 232, y, ok ? '#60e070' : '#fcd84a', 'right');
+    tiny(Q.desc.length > 58 ? Q.desc.slice(0, 57) + '.' : Q.desc, 12, y + 7, '#9db8a8');
+    y += 16;
+  }
+  if (avail.length && y < 128) {
+    tiny('DISPONIBLES:', 8, y + 2, '#fcd84a'); y += 10;
+    for (const q of avail) { if (y > 138) break; const Q = QUESTS[q]; tiny('"' + Q.title + '" - ' + (NPCDEF[Q.giver] ? NPCDEF[Q.giver].n : '') + ', ' + GIVER_PLACE[Q.giver], 12, y, '#c8d8d0'); y += 8; }
+  }
+  tiny('ARRIBA/ABAJO: MISION PRINCIPAL / ENCARGOS', 120, 151, '#6a8a80', 'center');
+}
 function drawMissions(){
+  if (G.menu && G.menu.sel === 1) { drawQuests(); return; }
   txt('LA CAJA DE URZA', 8, 21, '#fcd84a', 'left', '#000');
   const items = [
     ['Completa tu primer mazo de 8 cartas', DECKS.some(d => deckDone(d.id))],
@@ -1859,7 +1969,8 @@ function drawMissions(){
     if (ok) { R(10, y + 3, 1, 1, '#1a1020'); R(11, y + 4, 1, 1, '#1a1020'); R(12, y + 2, 1, 2, '#1a1020'); }
     tiny(t, 20, y + 1, ok ? '#9db8a8' : '#fff');
   });
-  tiny('GUARDIANES ' + guardiansDone() + '/5   CARTAS ' + totalCards() + '/' + ALL_CARDS.length + '   MAZOS ' + DECKS.filter(d => deckDone(d.id)).length + '/6', 120, 148, '#fcd84a', 'center');
+  tiny('GUARDIANES ' + guardiansDone() + '/5   CARTAS ' + totalCards() + '/' + ALL_CARDS.length + '   MAZOS ' + DECKS.filter(d => deckDone(d.id)).length + '/6', 120, 144, '#fcd84a', 'center');
+  tiny('ABAJO: VER ENCARGOS (SUBEN TUS ATRIBUTOS)', 120, 152, '#6a8a80', 'center');
 }
 function goToTitle(){
   if (S && G.state === 'world' && !G.dead) { S.x = PL.x; S.y = PL.y; }
@@ -1995,6 +2106,11 @@ function drawWorld(){
   const list = [];
   for (const it of G.items) list.push({ y:it.y + 8, f:() => drawItem(it) });
   for (const n of G.npcs) list.push({ y:n.y + n.h, f:() => drawPerson(n.x - 3, n.y - 8, n.id === 'friend' ? Object.assign({}, CHARS[n.ch], { mug:true }) : NPCDEF[n.id], n.dir, 0) });
+  for (const n of G.npcs) { const mk = questMarker(n.id); if (mk) list.push({ y:1001, f:() => {
+    const bx = n.x + 1, by = n.y - 26 + Math.round(Math.sin(frame * 0.12) * 1.5);
+    R(bx, by, 8, 10, '#1a1020'); R(bx + 1, by + 1, 6, 8, mk === '?' ? '#60e070' : '#fcd84a');
+    txt(mk, bx + 4, by + 1, '#1a1020', 'center', null);
+  } }); }
   for (const e of G.enemies) list.push({ y:e.y + e.h, f:() => {
     if (e.flash > 0 && (e.flash >> 1) & 1) return;
     drawMon(e.type, Math.round(e.x - 2), Math.round(e.y - 2), e.t, e.flip);
