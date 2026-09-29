@@ -158,41 +158,120 @@ const SFX = {
   summon:() => tone(200, 420, 0.2, 'square', 0.4),
   heal:  () => seq([1047, 1319, 1568], 0.04, 'triangle', 0.3),
 };
+/* ============ MÚSICA (temas originales estilo RPG de Super Nintendo) ============ */
+const midiF = m => 440 * Math.pow(2, (m - 69) / 12);
 const NOTE = n => {
   if (n === '-') return 0;
-  const m = /^([A-G])(#?)(\d)$/.exec(n);
-  const idx = {C:0,D:2,E:4,F:5,G:7,A:9,B:11}[m[1]] + (m[2] ? 1 : 0);
-  return 440 * Math.pow(2, (idx - 9) / 12 + (+m[3] - 4));
+  const mm = /^([A-G])(#?)(\d)$/.exec(n);
+  const idx = {C:0,D:2,E:4,F:5,G:7,A:9,B:11}[mm[1]] + (mm[2] ? 1 : 0);
+  return midiF(12 * (+mm[3] + 1) + idx);
 };
-const parse = s => s.trim().split(/\s+/).map(t => { const [n, d] = t.split(':'); return [NOTE(n), +d]; });
+const parse = s => s.trim().split(/\s+/).map(t => { const [n, d] = t.split(':'); return [n.includes('+') ? n.split('+').map(NOTE) : NOTE(n), +d]; });
+const PC = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+function chordInfo(c){
+  const mm = /^([A-G])(b|#)?(m|dim)?$/.exec(c);
+  const root = (PC[mm[1]] + (mm[2] === 'b' ? -1 : mm[2] === '#' ? 1 : 0) + 12) % 12;
+  return { root, third: mm[3] ? 3 : 4, fifth: mm[3] === 'dim' ? 6 : 7 };
+}
+const DRUMS = {
+  none:[], soft:['K:2 -:2 H:2 -:2'], march:['K:1 H:1 S:1 H:1 K:1 K:1 S:1 H:1'],
+  battle:['K:1 H:1 S:1 K:1 K:1 H:1 S:1 H:1'], reel:['K:1 H:1 -:1 H:1 K:1 H:1 -:1 H:1'], dark:['K:4 -:2 H:2'],
+};
+function makeSong(o){
+  const pad = [], bass = [], arp = [], drum = [];
+  for (const c of o.chords) {
+    const { root, third, fifth } = chordInfo(c), r3 = 48 + root;
+    pad.push([[midiF(r3), midiF(r3 + third), midiF(r3 + fifth)], 8]);
+    const b2 = 36 + root;
+    if (o.bass === 'pump') for (let i = 0; i < 8; i++) bass.push([midiF(i % 2 ? b2 + 12 : b2), 1]);
+    else if (o.bass === 'walk') { bass.push([midiF(b2), 2], [midiF(b2 + fifth), 2], [midiF(b2 + 12), 2], [midiF(b2 + fifth), 2]); }
+    else if (o.bass === 'whole') bass.push([midiF(b2), 8]);
+    else bass.push([midiF(b2), 4], [midiF(b2 + fifth), 4]);
+    const tri = [r3 + 12, r3 + 12 + third, r3 + 12 + fifth, r3 + 24];
+    const pat = o.arpPat || [0, 1, 2, 3, 2, 1, 2, 1];
+    for (const k of pat) arp.push([midiF(tri[k]), 1]);
+    for (const t of ((DRUMS[o.drums || 'none'][0]) || '-:8').trim().split(/\s+/)) { const [s, d] = t.split(':'); drum.push([s, +d]); }
+  }
+  const lead = parse(o.lead), total = o.chords.length * 8;
+  let len = lead.reduce((a, [, d]) => a + d, 0);
+  if (len < total) lead.push([0, total - len]);
+  const tracks = [
+    { inst:o.leadInst || 'lead', vol:o.leadVol || 0.13, notes:lead },
+    { inst:'strings', vol:o.padVol ?? 0.035, notes:pad },
+    { inst:'bass', vol:o.bassVol || 0.32, notes:bass },
+  ];
+  if (o.arp !== false) tracks.push({ inst:o.arpInst || 'harp', vol:o.arpVol || 0.07, notes:arp });
+  if (o.drums && o.drums !== 'none') tracks.push({ inst:'drum', vol:o.drumVol || 0.3, notes:drum.map(([s, d]) => [s, d]) });
+  if (o.counter) tracks.push({ inst:'flute', vol:0.06, notes:parse(o.counter) });
+  return { bpm:o.bpm, tracks };
+}
+// los nombres con 'b' (Bb, Eb, Ab) son acordes; las melodías usan sostenidos (A#4 = Si bemol)
 const SONGS = {
-  town: { bpm:120, lw:'square', lv:0.16,
-    lead: parse('E5:2 G5:1 E5:1 D5:2 C5:2 D5:1 E5:1 G5:2 A5:2 G5:2 E5:2 C5:1 D5:1 E5:2 D5:4 -:2 E5:2 G5:1 A5:1 B5:2 A5:2 G5:1 E5:1 D5:2 E5:2 C5:2 D5:1 E5:1 C5:4 -:4'),
-    bass: parse('C3:2 G3:2 C4:2 G3:2 A2:2 E3:2 A3:2 E3:2 F2:2 C3:2 F3:2 C3:2 G2:2 D3:2 G3:2 D3:2') },
-  field: { bpm:144, lw:'square', lv:0.15,
-    lead: parse('A4:1 C5:1 E5:2 A5:2 G5:1 E5:1 F5:2 D5:2 -:1 D5:1 E5:1 F5:1 G5:2 E5:2 C5:2 A4:2 B4:1 C5:1 D5:2 E5:4 A4:1 C5:1 E5:2 A5:2 B5:1 C6:1 B5:2 A5:2 G5:1 F5:1 E5:2 D5:1 C5:1 B4:2 G#4:2 A4:4 -:2'),
-    bass: parse('A2:2 E3:2 A2:2 E3:2 F2:2 C3:2 F2:2 C3:2 D3:2 A3:2 E2:2 B2:2 A2:2 E3:2 A3:2 E3:2') },
-  dark: { bpm:110, lw:'square', lv:0.13,
-    lead: parse('E4:2 G4:2 A#4:2 A4:2 G4:2 E4:2 -:2 D4:2 E4:2 G4:2 A#4:1 A4:1 G4:2 D5:4 -:2 C5:2 A#4:2 A4:2 G4:4 E4:4 -:4'),
-    bass: parse('E2:4 E2:4 C3:4 B2:4 E2:4 E2:4 A2:4 B2:4') },
-  tavern: { bpm:170, lw:'triangle', lv:0.35,
-    lead: parse('D5:1 F#5:1 A5:1 F#5:1 D5:1 F#5:1 G5:1 E5:1 C#5:1 E5:1 G5:1 E5:1 D5:1 F#5:1 A5:1 D6:1 C#6:1 B5:1 A5:1 G5:1 F#5:1 E5:1 D5:2 -:1 A4:1 D5:1 F#5:1 E5:1 D5:1 C#5:1 E5:1 A5:1 G5:1 F#5:1 E5:1 D5:3 -:3'),
-    bass: parse('D3:3 A3:3 A2:3 E3:3 D3:3 A3:3 A2:3 D3:3') },
+  title: makeSong({ bpm:96, chords:['Cm','Ab','Eb','Bb','Cm','Ab','Bb','Bb'], leadInst:'brass', leadVol:0.1, bass:'half', drums:'soft', padVol:0.045,
+    lead:'G4:4 C5:2 D5:2 D#5:4 D5:2 C5:2 G5:6 F5:1 D#5:1 D5:8 C5:2 D5:2 D#5:2 G5:2 G#5:4 G5:2 F5:2 F5:3 D#5:1 D5:2 F5:2 G5:8' }),
+  town: makeSong({ bpm:92, chords:['F','C','Dm','Bb','F','C','Bb','C'], leadInst:'flute', leadVol:0.1, bass:'half', drums:'none', arpPat:[0,1,2,1,3,1,2,1],
+    lead:'C5:3 A4:1 F4:2 A4:2 G4:3 E4:1 C4:2 E4:2 F4:2 A4:2 D5:3 C5:1 A#4:4 A4:2 G4:2 A4:3 C5:1 F5:2 E5:1 D5:1 C5:4 G4:2 A4:1 A#4:1 D5:3 C5:1 A#4:2 A4:2 G4:6 -:2' }),
+  field: makeSong({ bpm:132, chords:['Dm','Bb','F','C','Dm','Bb','C','A','Gm','Dm','Bb','C','Dm','Bb','A','A'], leadInst:'brass', leadVol:0.1, bass:'pump', drums:'march',
+    lead:'D5:3 A4:1 D5:2 F5:2 F5:3 D5:1 A#4:2 D5:2 A4:2 C5:2 F5:3 E5:1 E5:4 G5:2 E5:2 D5:3 A4:1 D5:2 F5:2 A#5:3 A5:1 G5:2 F5:2 G5:3 F5:1 E5:2 C5:2 C#5:4 E5:2 A5:2 ' +
+         'A#5:3 A5:1 G5:2 D5:2 F5:3 E5:1 D5:2 A4:2 A#4:2 D5:2 F5:2 A#5:2 A5:3 G5:1 E5:2 C5:2 D5:3 E5:1 F5:2 A5:2 G5:3 F5:1 D5:2 A#4:2 C#5:3 E5:1 A5:2 G5:2 A5:6 -:2' }),
+  dark: makeSong({ bpm:84, chords:['Am','F','E','Am','Dm','Am','E','E'], leadInst:'flute', leadVol:0.09, bass:'whole', drums:'dark', padVol:0.05, arpPat:[0,2,1,2,0,2,1,2], arpVol:0.05,
+    lead:'A4:6 C5:2 A4:4 F4:4 G#4:6 B4:2 A4:8 F4:4 A4:2 D5:2 C5:4 E4:4 G#4:3 A4:1 B4:2 E5:2 E5:8' }),
+  boss: makeSong({ bpm:152, chords:['Em','C','D','B','Em','C','Am','B'], leadInst:'brass', leadVol:0.11, bass:'pump', drums:'battle', drumVol:0.34, arpInst:'lead', arpVol:0.035,
+    lead:'E5:1 E5:1 G5:1 E5:1 B5:2 A5:2 G5:2 E5:2 C5:2 E5:2 F#5:2 D5:2 A5:2 F#5:2 D#5:4 F#5:2 B5:2 E5:1 E5:1 G5:1 B5:1 E6:2 D6:2 C6:2 B5:2 G5:2 E5:2 A5:2 C6:2 E6:2 C6:2 B5:6 D#5:2' }),
+  tavern: makeSong({ bpm:168, chords:['D','G','D','A','D','G','A','D'], leadInst:'flute', leadVol:0.1, bass:'walk', drums:'reel', drumVol:0.22, arpVol:0.05,
+    lead:'F#5:1 A5:1 D6:1 A5:1 F#5:1 A5:1 F#5:1 E5:1 D5:1 G5:1 B5:1 G5:1 D5:1 G5:1 B5:1 D6:1 A5:1 F#5:1 D5:1 F#5:1 A5:2 F#5:1 D5:1 E5:1 C#5:1 A4:1 C#5:1 E5:2 A5:2 ' +
+         'F#5:1 A5:1 D6:1 A5:1 F#5:1 D5:1 E5:1 F#5:1 G5:1 B5:1 D6:1 B5:1 G5:2 E5:2 E5:1 F#5:1 G5:1 E5:1 C#5:1 A4:1 C#5:1 E5:1 D5:4 A4:2 D5:2' }),
+  fanfare: makeSong({ bpm:120, chords:['C','F','G','C','Am','F','G','G'], leadInst:'brass', leadVol:0.11, bass:'walk', drums:'march',
+    lead:'G4:2 C5:2 E5:2 G5:2 F5:3 E5:1 D5:2 C5:2 D5:3 E5:1 F5:2 D5:2 E5:4 C5:2 G4:2 A4:2 C5:2 E5:2 A5:2 F5:3 G5:1 A5:2 F5:2 G5:3 F5:1 E5:2 D5:2 D5:6 -:2' }),
 };
-let music = null, musicName = null;
+let music = null, musicName = null, musicBus = null, noiseBuf = null;
+function ensureBus(){
+  if (musicBus || !AC) return;
+  musicBus = AC.createGain(); musicBus.gain.value = 0.9; musicBus.connect(master);
+  const dl = AC.createDelay(1), fb = AC.createGain(), wet = AC.createGain();
+  dl.delayTime.value = 0.27; fb.gain.value = 0.3; wet.gain.value = 0.28;
+  musicBus.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(wet); wet.connect(master);
+  noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.3, AC.sampleRate);
+  const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+}
+function voice(inst, f, t, dur, vol){
+  const g = AC.createGain(); g.connect(musicBus);
+  const env = (a, rel) => { g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + a); g.gain.setValueAtTime(vol, Math.max(t + a, t + dur - rel)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur + rel * 0.5); };
+  const osc = (type, fr, det = 0, dest = g) => { const o = AC.createOscillator(); o.type = type; o.frequency.setValueAtTime(fr, t); o.detune.value = det; o.connect(dest); o.start(t); o.stop(t + dur + 0.4); return o; };
+  const vib = (o, depth) => { if (dur < 0.3) return; const l = AC.createOscillator(), lg = AC.createGain(); l.frequency.value = 5.5; lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(depth, t + 0.25); l.connect(lg); lg.connect(o.frequency); l.start(t); l.stop(t + dur + 0.4); };
+  switch (inst) {
+    case 'lead': env(0.015, 0.08); vib(osc('square', f), f * 0.006); break;
+    case 'flute': env(0.05, 0.12); vib(osc('triangle', f), f * 0.008); osc('sine', f * 2, 0, (() => { const h = AC.createGain(); h.gain.value = 0.25; h.connect(g); return h; })()); break;
+    case 'brass': { const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(900, t); lp.frequency.linearRampToValueAtTime(2600, t + 0.08); lp.connect(g); env(0.03, 0.1); vib(osc('sawtooth', f, -5, lp), f * 0.005); osc('sawtooth', f, 6, lp); break; }
+    case 'strings': { const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1300; lp.connect(g); env(Math.min(0.35, dur * 0.3), 0.3); for (const fr of (Array.isArray(f) ? f : [f])) { osc('sawtooth', fr, -7, lp); osc('sawtooth', fr, 7, lp); } break; }
+    case 'harp': g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + Math.min(0.9, dur * 2 + 0.2)); osc('triangle', f); break;
+    case 'bass': env(0.01, 0.06); osc('triangle', f); osc('sine', f / 2, 0, (() => { const h = AC.createGain(); h.gain.value = 0.5; h.connect(g); return h; })()); break;
+    case 'drum': {
+      if (f === 'K') { const o = AC.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.12); g.gain.setValueAtTime(vol * 1.6, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18); o.connect(g); o.start(t); o.stop(t + 0.2); }
+      else { const s = AC.createBufferSource(), hp = AC.createBiquadFilter(); s.buffer = noiseBuf; hp.type = 'highpass'; hp.frequency.value = f === 'S' ? 1400 : 7000; s.connect(hp); hp.connect(g);
+        const len = f === 'S' ? 0.14 : 0.04; g.gain.setValueAtTime(vol * (f === 'S' ? 0.9 : 0.35), t); g.gain.exponentialRampToValueAtTime(0.0001, t + len); s.start(t); s.stop(t + len + 0.02); }
+      break; }
+  }
+}
 function playMusic(name){
   if (musicName === name && music) return;
   musicName = name;
   if (!AC || muted || !name) { music = null; return; }
-  const t = AC.currentTime + 0.08;
-  music = { li:0, bi:0, tl:t, tb:t };
+  ensureBus();
+  const t = AC.currentTime + 0.1;
+  music = { t0:t, idx:SONGS[name].tracks.map(() => 0), tt:SONGS[name].tracks.map(() => t) };
 }
 function tickMusic(){
   if (!music || !AC || muted || !musicName) return;
-  const s = SONGS[musicName], u = 60 / s.bpm / 2, now = AC.currentTime, hz = now + 0.2;
-  if (music.tl < now - 0.1) music.tl = now; if (music.tb < now - 0.1) music.tb = now;
-  while (music.tl < hz) { const [f, d] = s.lead[music.li]; if (f) noteAt(f, music.tl, d * u * 0.9, s.lw, s.lv); music.tl += d * u; music.li = (music.li + 1) % s.lead.length; }
-  while (music.tb < hz) { const [f, d] = s.bass[music.bi]; if (f) noteAt(f, music.tb, d * u * 0.85, 'triangle', 0.42); music.tb += d * u; music.bi = (music.bi + 1) % s.bass.length; }
+  const s = SONGS[musicName], u = 60 / s.bpm / 2, now = AC.currentTime, hz = now + 0.25;
+  s.tracks.forEach((tr, k) => {
+    if (music.tt[k] < now - 0.2) music.tt[k] = now + 0.05;
+    while (music.tt[k] < hz) {
+      const [f, d] = tr.notes[music.idx[k]], dur = d * u;
+      if (f && f !== '-') voice(tr.inst, f, music.tt[k], tr.inst === 'drum' ? dur : dur * 0.92, tr.vol);
+      music.tt[k] += dur; music.idx[k] = (music.idx[k] + 1) % tr.notes.length;
+    }
+  });
 }
 function toggleMute(){ muted = !muted; const n = musicName; musicName = null; music = null; if (!muted) playMusic(n); else musicName = n; }
 
@@ -623,124 +702,275 @@ const deckDone = d => deckCount(d) === 8;
 const xpNeed = () => 8 + S.lvl * 6;
 const totalCards = () => ALL_CARDS.filter(owned).length;
 
-/* ============ TILES ============ */
+/* ============ TILES (estilo SNES / Chrono Trigger) ============ */
+function rng(seed){ let s = (Math.floor(seed * 2147483646) | 0) || 12345; return () => { s = (Math.imul(s, 1103515245) + 12345) | 0; return ((s >>> 1) & 0x3fffffff) / 0x3fffffff; }; }
+const GRASS = {
+  town:['#64b640','#5cad3a','#3e8a2c','#9ad86a'], forest:['#4f9c37','#489331','#2c6c22','#7cc454'], meadow:['#8fce64','#86c55c','#5e9e42','#c0ec94'],
+};
+const TREEPAL = {
+  def:['#123412','#1c5a1c','#2e8230','#4eaa3c','#9ad660'], meadow:['#1a4a1a','#2a7028','#3e9a36','#66c24a','#b4e880'],
+  swamp:['#141e10','#2a3e22','#3e5a30','#5a7a42','#8aa060'], dirt:['#1a3016','#2a5020','#3e7230','#5e9440','#9ac068'],
+};
+function grassTile(x, y, tx, ty, pal){
+  const r = rng(h2(tx, ty) + 0.37);
+  R(x, y, 16, 16, h2(tx >> 1, ty >> 1) < 0.5 ? pal[0] : pal[1]);
+  for (let i = 0; i < 5; i++) {
+    const bx = x + Math.floor(r() * 13), by = y + Math.floor(r() * 12);
+    R(bx, by + 1, 1, 2, pal[2]); R(bx + 1, by, 1, 2, pal[2]); R(bx + 2, by + 1, 1, 2, pal[2]);
+    if (r() < 0.6) R(bx + 1, by, 1, 1, pal[3]);
+  }
+  for (let i = 0; i < 3; i++) R(x + Math.floor(r() * 15), y + Math.floor(r() * 15), 1, 1, pal[3]);
+}
 function ground(x, y, tx, ty, theme){
-  const h = h2(tx, ty);
-  if (theme === 'mine') { R(x, y, 16, 16, '#6a5038'); R(x + (h * 13 | 0) % 12 + 2, y + (h * 29 | 0) % 12 + 2, 2, 1, '#54402c'); R(x + (h * 71 | 0) % 13 + 1, y + (h * 43 | 0) % 13 + 1, 1, 1, '#8a6a48'); if (h < 0.15) { R(x + 5, y + 7, 6, 1, '#4a3a2a'); } return; }
-  if (theme === 'crypt') { R(x, y, 16, 16, '#3a3848'); R(x, y + 7, 16, 1, '#2a2838'); R(x + ((tx + ty) % 2 ? 7 : 0), y, 1, 7, '#2a2838'); R(x + ((tx + ty) % 2 ? 0 : 9), y + 8, 1, 8, '#2a2838'); if (h < 0.2) R(x + 4, y + 3, 2, 1, '#4a4858'); return; }
-  if (theme === 'tower') { R(x, y, 16, 16, (tx + ty) % 2 ? '#e8e4f0' : '#d8d2e4'); R(x, y, 16, 1, '#c8c0d8'); R(x, y, 1, 16, '#c8c0d8'); if (h < 0.25) R(x + 6, y + 6, 4, 1, '#f8f4ff'); return; }
-  if (theme === 'sand') { R(x, y, 16, 16, '#f0d8a0'); R(x + (h * 20 | 0) % 12 + 2, y + (h * 97 | 0) % 12 + 2, 2, 1, '#d8b878'); R(x + (h * 53 | 0) % 13 + 1, y + (h * 31 | 0) % 13 + 1, 1, 1, '#fff0c8'); return; }
-  if (theme === 'dirt') { R(x, y, 16, 16, '#b89060'); R(x + (h * 13 | 0) % 12 + 2, y + (h * 29 | 0) % 12 + 2, 2, 2, '#98704a'); R(x + (h * 71 | 0) % 13 + 1, y + (h * 43 | 0) % 13 + 1, 1, 1, '#d8b088'); return; }
-  if (theme === 'swamp') { R(x, y, 16, 16, '#6a7a50'); R(x + (h * 13 | 0) % 10 + 2, y + (h * 29 | 0) % 10 + 3, 4, 1, '#58684a'); R(x + (h * 71 | 0) % 12 + 2, y + (h * 43 | 0) % 12 + 2, 1, 2, '#8a9a60'); return; }
-  const base = theme === 'meadow' ? '#98d870' : theme === 'forest' ? '#5cae44' : '#70c048';
-  const dark = theme === 'meadow' ? '#78b858' : theme === 'forest' ? '#46903a' : '#58a838';
-  R(x, y, 16, 16, base);
-  const a = (h * 16 | 0) % 12 + 1, b = (h * 97 | 0) % 11 + 2;
-  R(x + a, y + b, 1, 2, dark); R(x + a + 2, y + b + 1, 1, 1, dark); R(x + (a + 6) % 13, y + (b + 7) % 13, 1, 2, dark);
+  const h = h2(tx, ty), r = rng(h + 0.11), hb = h2(tx >> 1, ty >> 1) < 0.5;
+  const speck = (n, c, w = 1, hh = 1) => { for (let i = 0; i < n; i++) R(x + Math.floor(r() * (16 - w)), y + Math.floor(r() * (16 - hh)), w, hh, c); };
+  switch (theme) {
+    case 'town': case 'forest': case 'meadow': grassTile(x, y, tx, ty, GRASS[theme]); return;
+    case 'sand': R(x, y, 16, 16, hb ? '#eed69c' : '#e8ce92'); speck(4, '#d0b074'); speck(3, '#fff4d0'); if (h < 0.08) { R(x + 6, y + 7, 3, 2, '#f8e0e0'); R(x + 7, y + 6, 1, 1, '#e0a0a0'); } return;
+    case 'dirt': R(x, y, 16, 16, hb ? '#b48c5c' : '#ac8454'); for (let i = 0; i < 3; i++) { const px = x + Math.floor(r() * 13), py = y + Math.floor(r() * 13); R(px, py + 1, 3, 2, '#8a6a42'); R(px, py, 2, 1, '#d4ac7a'); } speck(4, '#9a784c'); return;
+    case 'swamp': R(x, y, 16, 16, hb ? '#607248' : '#5a6a44'); speck(4, '#48583a', 2, 1); speck(3, '#7e9258'); if (h < 0.15) { R(x + 4, y + 9, 7, 3, '#40503a'); R(x + 5, y + 9, 5, 1, '#6a8060'); } return;
+    case 'mine': R(x, y, 16, 16, hb ? '#6c5238' : '#644b32'); for (let i = 0; i < 2; i++) { const px = x + Math.floor(r() * 12), py = y + Math.floor(r() * 12); R(px, py + 1, 4, 2, '#4e3a26'); R(px, py, 3, 1, '#8c6c4a'); } speck(3, '#56412c'); return;
+    case 'crypt': {
+      R(x, y, 16, 16, '#3c3a4c');
+      const bev = (bx, by, bw, bh) => { R(x + bx, y + by, bw, bh, hb ? '#403e52' : '#3a384a'); R(x + bx, y + by, bw, 1, '#56546c'); R(x + bx, y + by, 1, bh, '#4c4a62'); R(x + bx, y + by + bh - 1, bw, 1, '#26243a'); R(x + bx + bw - 1, y + by, 1, bh, '#2c2a40'); };
+      if ((tx + ty) % 2) { bev(0, 0, 9, 8); bev(9, 0, 7, 8); bev(0, 8, 5, 8); bev(5, 8, 11, 8); } else { bev(0, 0, 6, 8); bev(6, 0, 10, 8); bev(0, 8, 11, 8); bev(11, 8, 5, 8); }
+      if (h < 0.2) R(x + 3, y + 11, 3, 1, '#1e1c2c'); return; }
+    case 'tower': {
+      const c = (tx + ty) % 2 ? '#ece8f4' : '#dcd6e8';
+      R(x, y, 16, 16, c); R(x, y, 16, 1, '#fbf9ff'); R(x, y, 1, 16, '#f4f0fc'); R(x, y + 15, 16, 1, '#b8b0cc'); R(x + 15, y, 1, 16, '#c4bcd8');
+      if (h < 0.3) { R(x + 4, y + 5, 5, 1, '#c8c0da'); R(x + 8, y + 6, 3, 1, '#c8c0da'); } return; }
+  }
+  grassTile(x, y, tx, ty, GRASS.town);
 }
 const T = (tx, ty) => (tx < 0 || ty < 0 || tx > 14 || ty > 9) ? null : G.map[ty][tx];
+const TALL = new Set(['R','W','D','Q','P','x','B','Z','k','K']);
+function treeTile(x, y, tx, ty, theme){
+  const pal = TREEPAL[theme] || TREEPAL.def, h = h2(tx, ty), ox = h < 0.5 ? 0 : 1;
+  ctx.fillStyle = 'rgba(0,0,0,.28)'; for (let i = 0; i < 4; i++) ctx.fillRect(x + 3 - i + 1, y + 12 + i, 12 + i * 2 - 2, 1);
+  R(x + 6, y + 10, 5, 6, '#2a160a'); R(x + 7, y + 10, 3, 6, '#6a4020'); R(x + 7, y + 11, 1, 4, '#8a5a30'); R(x + 5, y + 15, 2, 1, '#4a2a14'); R(x + 10, y + 15, 2, 1, '#4a2a14');
+  disc(x + 8 + ox, y + 7, 8, pal[0]); disc(x + 8 + ox, y + 7, 7, pal[1]);
+  disc(x + 7 + ox, y + 6, 6, pal[2]); disc(x + 10 + ox, y + 8, 3, pal[2]);
+  disc(x + 6 + ox, y + 4, 4, pal[3]); disc(x + 10 + ox, y + 5, 2, pal[3]);
+  R(x + 4 + ox, y + 2, 2, 1, pal[4]); R(x + 3 + ox, y + 3, 1, 1, pal[4]); R(x + 8 + ox, y + 2, 1, 1, pal[4]); R(x + 10 + ox, y + 4, 1, 1, pal[4]);
+  const r = rng(h + 0.5); for (let i = 0; i < 6; i++) R(x + 3 + ox + Math.floor(r() * 11), y + 4 + Math.floor(r() * 9), 1, 1, pal[1]);
+  R(x + 11 + ox, y + 10, 3, 1, pal[0]); R(x + 2 + ox, y + 9, 2, 1, pal[1]);
+}
 function drawTile(c, tx, ty, theme){
-  const x = tx * TS, y = ty * TS;
+  const x = tx * TS, y = ty * TS, h = h2(tx, ty);
+  const grassPal = GRASS[theme] || GRASS.town;
   switch (c) {
     case '.': ground(x, y, tx, ty, theme); break;
-    case ',': ground(x, y, tx, ty, theme);
-      R(x + 3, y + 4, 2, 2, '#fff'); R(x + 4, y + 5, 1, 1, '#f8d040'); R(x + 10, y + 9, 2, 2, '#f06080'); R(x + 11, y + 10, 1, 1, '#fff'); R(x + 6, y + 12, 2, 2, '#fff'); R(x + 7, y + 12, 1, 1, '#f8d040'); break;
+    case ',': {
+      ground(x, y, tx, ty, theme);
+      const FL = [['#ffffff','#f8d040'],['#f878a8','#fff0f0'],['#78a8f8','#fff8a0'],['#f8e050','#e86020']], r = rng(h + 0.9);
+      for (let i = 0; i < 3; i++) { const [p, cc] = FL[Math.floor(r() * 4)], fx = x + 2 + Math.floor(r() * 11), fy = y + 2 + Math.floor(r() * 11);
+        R(fx, fy + 3, 1, 2, grassPal[2]); R(fx - 1, fy, 1, 1, p); R(fx + 1, fy, 1, 1, p); R(fx, fy - 1, 1, 1, p); R(fx, fy + 1, 1, 1, p); R(fx, fy, 1, 1, cc); }
+      break; }
     case '=': {
-      R(x, y, 16, 16, '#e2c088');
-      const h = h2(tx, ty); R(x + (h * 13 | 0) % 12 + 2, y + (h * 29 | 0) % 12 + 2, 2, 1, '#c8a068'); R(x + (h * 71 | 0) % 12 + 2, y + (h * 43 | 0) % 12 + 2, 1, 1, '#c8a068');
-      const e = n => n !== null && n !== '=' && n !== 'S' && n !== 'o' && n !== 'D';
-      if (e(T(tx, ty - 1))) R(x, y, 16, 1, '#b89058'); if (e(T(tx, ty + 1))) R(x, y + 15, 16, 1, '#b89058');
-      if (e(T(tx - 1, ty))) R(x, y, 1, 16, '#b89058'); if (e(T(tx + 1, ty))) R(x + 15, y, 1, 16, '#b89058');
+      const r = rng(h + 0.3);
+      R(x, y, 16, 16, h2(tx >> 1, ty >> 1) < 0.5 ? '#dcb67c' : '#d6ae72');
+      for (let i = 0; i < 3; i++) { const px = x + 1 + Math.floor(r() * 12), py = y + 1 + Math.floor(r() * 12); R(px, py + 1, 3, 2, '#b88e58'); R(px, py, 2, 1, '#f2d6a2'); }
+      for (let i = 0; i < 4; i++) R(x + Math.floor(r() * 15), y + Math.floor(r() * 15), 1, 1, '#c49a64');
+      const e = n => n !== null && n !== '=' && n !== 'S' && n !== 'o' && n !== 'D' && n !== '~' && n !== 's' && n !== 'U' && n !== 'V';
+      const gp = GRASS[theme] || GRASS.town;
+      if (e(T(tx, ty - 1))) for (let i = 0; i < 16; i += 2) { const k = 1 + (h2(tx * 16 + i, ty) < 0.5 ? 1 : 0); R(x + i, y, 2, k, gp[0]); R(x + i, y + k, 2, 1, '#b8905a'); }
+      if (e(T(tx, ty + 1))) for (let i = 0; i < 16; i += 2) { const k = 1 + (h2(tx * 16 + i, ty + 99) < 0.5 ? 1 : 0); R(x + i, y + 16 - k, 2, k, gp[0]); }
+      if (e(T(tx - 1, ty))) for (let i = 0; i < 16; i += 2) { const k = 1 + (h2(tx, ty * 16 + i) < 0.5 ? 1 : 0); R(x, y + i, k, 2, gp[0]); R(x + k, y + i, 1, 2, '#b8905a'); }
+      if (e(T(tx + 1, ty))) for (let i = 0; i < 16; i += 2) { const k = 1 + (h2(tx + 99, ty * 16 + i) < 0.5 ? 1 : 0); R(x + 16 - k, y + i, k, 2, gp[0]); }
       break; }
-    case 'T': ground(x, y, tx, ty, theme === 'town' ? 'forest' : theme);
-      R(x + 6, y + 12, 4, 4, '#1a1020'); R(x + 7, y + 12, 2, 4, '#6a4020');
-      disc(x + 8, y + 7, 8, theme === 'swamp' ? '#1a2a18' : '#1e4a1c'); disc(x + 8, y + 7, 7, theme === 'swamp' ? '#3a5a30' : '#2e7a2a');
-      disc(x + 6, y + 5, 4, theme === 'swamp' ? '#4a6a3a' : '#3e9a36'); disc(x + 5, y + 4, 2, theme === 'swamp' ? '#6a8a50' : '#6cc050'); break;
-    case 'b': ground(x, y, tx, ty, theme); disc(x + 8, y + 9, 6, '#1e4a1c'); disc(x + 8, y + 9, 5, '#48b040'); disc(x + 6, y + 7, 2, '#88e070'); R(x + 10, y + 11, 1, 1, '#1e4a1c'); R(x + 5, y + 12, 1, 1, '#1e4a1c'); break;
-    case 'r': ground(x, y, tx, ty, theme); disc(x + 8, y + 9, 6, '#2a2a34'); disc(x + 8, y + 9, 5, '#9a9aa8'); disc(x + 6, y + 7, 2, '#d0d0dc'); R(x + 4, y + 13, 8, 1, '#6a6a78'); break;
-    case 'x': ground(x, y, tx, ty, theme); R(x + 3, y + 15, 10, 1, 'rgba(0,0,0,.3)'); R(x + 6, y + 4, 4, 12, '#1a1020'); R(x + 7, y + 4, 2, 11, '#4a3020');
-      R(x + 3, y + 5, 4, 1, '#4a3020'); R(x + 2, y + 3, 1, 2, '#4a3020'); R(x + 9, y + 3, 4, 1, '#4a3020'); R(x + 13, y + 1, 1, 2, '#4a3020'); R(x + 7, y + 1, 1, 3, '#4a3020'); break;
-    case 'm': R(x, y, 16, 16, '#5a4a34'); R(x + 3, y + 4, 4, 2, '#4a3a28'); R(x + 9, y + 10, 5, 2, '#4a3a28'); R(x + 11, y + 3, 1, 1, '#7a6a4a'); break;
-    case 's': R(x, y, 16, 16, '#e6c888'); { const h = h2(tx, ty); R(x + (h * 13 | 0) % 12 + 2, y + (h * 29 | 0) % 12 + 2, 1, 1, '#c8a060'); R(x + (h * 71 | 0) % 12 + 2, y + (h * 43 | 0) % 12 + 2, 2, 1, '#f8e0b0'); } break;
+    case 'T': treeTile(x, y, tx, ty, theme === 'town' || theme === 'forest' ? 'def' : theme); break;
+    case 'b': {
+      ground(x, y, tx, ty, theme);
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x + 3, y + 13, 11, 2);
+      disc(x + 8, y + 9, 6, '#143a14'); disc(x + 8, y + 9, 5, '#2e7e2a'); disc(x + 7, y + 8, 4, '#48a83a'); disc(x + 6, y + 7, 2, '#8ad660');
+      R(x + 10, y + 11, 1, 1, '#1c5a1c'); R(x + 4, y + 10, 1, 1, '#1c5a1c'); if (h < 0.35) { R(x + 9, y + 8, 1, 1, '#e83040'); R(x + 6, y + 11, 1, 1, '#e83040'); }
+      break; }
+    case 'r': {
+      ground(x, y, tx, ty, theme);
+      ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fillRect(x + 3, y + 13, 12, 2);
+      disc(x + 8, y + 9, 6, '#26242e'); disc(x + 8, y + 9, 5, '#6c6a7a'); disc(x + 7, y + 8, 4, '#8e8c9c'); disc(x + 6, y + 7, 2, '#c4c2d2');
+      R(x + 9, y + 9, 1, 3, '#4a4858'); R(x + 10, y + 11, 2, 1, '#4a4858');
+      if (h < 0.45) { R(x + 5, y + 4, 4, 1, '#5e9a3e'); R(x + 4, y + 5, 2, 1, '#5e9a3e'); }
+      break; }
+    case 'x': {
+      ground(x, y, tx, ty, theme);
+      ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fillRect(x + 3, y + 14, 11, 2);
+      R(x + 6, y + 4, 4, 12, '#140c08'); R(x + 7, y + 4, 2, 11, '#4a3222'); R(x + 7, y + 5, 1, 9, '#6a4a32');
+      R(x + 3, y + 5, 4, 1, '#4a3222'); R(x + 2, y + 3, 1, 2, '#4a3222'); R(x + 9, y + 3, 4, 1, '#4a3222'); R(x + 13, y + 1, 1, 2, '#4a3222'); R(x + 7, y + 1, 1, 3, '#4a3222');
+      R(x + 4, y + 6, 1, 3, '#6a8a50'); R(x + 11, y + 4, 1, 4, '#6a8a50');
+      break; }
+    case 'm': R(x, y, 16, 16, '#54442e'); R(x + 3, y + 4, 5, 2, '#44361f'); R(x + 9, y + 10, 5, 2, '#44361f'); R(x + 4, y + 4, 3, 1, '#6c5a3c'); R(x + 11, y + 3, 1, 1, '#7a6a4a'); R(x + 6, y + 12, 2, 1, '#6c5a3c'); break;
+    case 's': { R(x, y, 16, 16, '#e2c486'); const r = rng(h + 0.2); for (let i = 0; i < 4; i++) R(x + Math.floor(r() * 15), y + Math.floor(r() * 15), 1, 1, '#c0a064'); R(x + Math.floor(r() * 12), y + Math.floor(r() * 14), 3, 1, '#f4dca8'); break; }
     case 'R': {
-      const RC = { red:['#c84830','#8a2a18','#e87050'], blue:['#3a6ad0','#22408a','#6a9af0'], purple:['#7a3ab0','#4a1a78','#a868e0'], green:['#3a9a4a','#1e6a2a','#6ac878'] };
+      const RC = { red:['#e87858','#c84830','#8a2a18','#5a1408'], blue:['#78a8f0','#3e6ed4','#24428c','#101e50'], purple:['#b078e8','#7a3ab0','#4a1a78','#280840'], green:['#78d088','#3a9a4a','#1e6a2a','#0c3a14'] };
       const rk = G.def && G.def.roof ? G.def.roof(tx, ty) : (tx < 7 ? 'red' : 'blue');
-      const [col, dk, lt] = RC[rk];
+      const [lt, col, dk, ol] = RC[rk];
       R(x, y, 16, 16, col);
-      for (let r = 0; r < 16; r += 5) { R(x, y + r + 4, 16, 1, dk); R(x + ((r / 5) % 2 ? 4 : 12), y + r, 1, 4, dk); }
-      if (T(tx, ty - 1) !== 'R') { R(x, y, 16, 2, '#1a1020'); R(x, y + 2, 16, 1, lt); }
-      if (T(tx, ty + 1) !== 'R') R(x, y + 14, 16, 2, '#1a1020');
-      if (T(tx - 1, ty) !== 'R') R(x, y, 1, 16, '#1a1020'); if (T(tx + 1, ty) !== 'R') R(x + 15, y, 1, 16, '#1a1020');
+      for (let r = 0; r < 16; r += 4) {
+        R(x, y + r, 16, 1, lt); R(x, y + r + 3, 16, 1, dk);
+        const off = (r / 4) % 2 ? 2 : 6; for (let k = off; k < 16; k += 8) R(x + k, y + r, 1, 3, dk);
+      }
+      const upR = T(tx, ty - 1) === 'R', dnR = T(tx, ty + 1) === 'R';
+      if (!upR) { R(x, y, 16, 2, ol); R(x, y + 2, 16, 1, lt); if (tx % 4 === 1) { R(x + 9, y - 5, 5, 7, ol); R(x + 10, y - 4, 3, 6, '#8a6a5a'); R(x + 10, y - 4, 3, 1, '#b8988a'); } }
+      if (!dnR) { R(x, y + 13, 16, 3, ol); R(x, y + 12, 16, 1, dk); } else { ctx.fillStyle = 'rgba(0,0,0,.06)'; ctx.fillRect(x, y + 8, 16, 8); }
+      if (T(tx - 1, ty) !== 'R') { R(x, y, 2, 16, ol); R(x + 2, y, 1, 16, lt); }
+      if (T(tx + 1, ty) !== 'R') { R(x + 14, y, 2, 16, ol); R(x + 13, y, 1, 16, dk); }
       break; }
-    case 'W': R(x, y, 16, 16, '#f0e0b8'); R(x, y, 16, 2, '#8a5a30'); R(x, y + 14, 16, 2, '#8a5a30');
-      if (T(tx - 1, ty) !== 'W' && T(tx - 1, ty) !== 'D') R(x, y, 2, 16, '#8a5a30');
-      if (T(tx + 1, ty) !== 'W' && T(tx + 1, ty) !== 'D') R(x + 14, y, 2, 16, '#8a5a30');
-      if (T(tx - 1, ty) === 'W' || T(tx + 1, ty) === 'W') { R(x + 4, y + 4, 8, 7, '#8a5a30'); R(x + 5, y + 5, 6, 5, '#88c8f8'); R(x + 7, y + 5, 1, 5, '#8a5a30'); R(x + 5, y + 7, 6, 1, '#8a5a30'); R(x + 5, y + 5, 2, 1, '#e0f4ff'); }
+    case 'W': {
+      R(x, y, 16, 16, '#f2e2bc'); R(x, y, 16, 1, '#fff4d8');
+      R(x, y + 11, 16, 5, '#8a8494'); for (let k = 0; k < 16; k += 5) R(x + k + (ty % 2 ? 2 : 0), y + 11, 1, 5, '#5e5868'); R(x, y + 13, 16, 1, '#5e5868'); R(x, y + 11, 16, 1, '#aaa4b4');
+      R(x, y, 16, 2, '#7a4a24'); R(x, y + 2, 16, 1, '#4a2a12');
+      const lw = T(tx - 1, ty), rw = T(tx + 1, ty);
+      if (lw !== 'W' && lw !== 'D') { R(x, y, 2, 11, '#7a4a24'); R(x + 2, y, 1, 11, '#4a2a12'); }
+      if (rw !== 'W' && rw !== 'D') { R(x + 14, y, 2, 11, '#7a4a24'); R(x + 13, y, 1, 11, '#c8b890'); }
+      if (lw === 'W' || rw === 'W') {
+        R(x + 3, y + 3, 10, 8, '#4a2a12'); R(x + 4, y + 4, 8, 6, '#5a8ac8'); R(x + 4, y + 4, 8, 2, '#a8d0f8'); R(x + 5, y + 4, 2, 1, '#ffffff');
+        R(x + 7, y + 4, 2, 6, '#4a2a12'); R(x + 2, y + 3, 1, 8, '#2a6a3a'); R(x + 13, y + 3, 1, 8, '#2a6a3a');
+        R(x + 3, y + 10, 10, 1, '#7a4a24'); if (h < 0.6) { R(x + 4, y + 9, 1, 1, '#e83060'); R(x + 7, y + 9, 1, 1, '#f8d040'); R(x + 10, y + 9, 1, 1, '#e83060'); }
+      }
+      break; }
+    case 'D':
+      R(x, y, 16, 16, '#f2e2bc'); R(x, y, 16, 2, '#7a4a24');
+      R(x + 2, y + 3, 12, 13, '#2a160a'); disc(x + 8, y + 5, 5, '#2a160a');
+      R(x + 3, y + 5, 10, 11, '#8a5428'); disc(x + 8, y + 6, 4, '#8a5428');
+      R(x + 5, y + 4, 1, 12, '#6a3c18'); R(x + 8, y + 3, 1, 13, '#6a3c18'); R(x + 11, y + 4, 1, 12, '#6a3c18');
+      R(x + 3, y + 8, 10, 1, '#3a3a44'); R(x + 3, y + 13, 10, 1, '#3a3a44'); R(x + 10, y + 10, 2, 2, '#e8c040'); R(x + 3, y + 5, 1, 6, '#a86c38');
       break;
-    case 'D': R(x, y, 16, 16, '#f0e0b8'); R(x, y, 16, 2, '#8a5a30'); R(x + 3, y + 2, 10, 14, '#3a2010'); R(x + 4, y + 3, 8, 13, '#8a5a30'); R(x + 7, y + 3, 1, 13, '#5a3418'); R(x + 10, y + 9, 1, 1, '#fce060'); break;
-    case 'S': ground(x, y, tx, ty, '='.includes(c) ? 'town' : theme); R(x, y, 16, 16, '#e2c088');
-      R(x + 7, y + 9, 2, 6, '#6a4020'); R(x + 2, y + 2, 12, 8, '#1a1020'); R(x + 3, y + 3, 10, 6, '#c8904a'); R(x + 5, y + 5, 6, 1, '#8a5a30'); R(x + 5, y + 7, 4, 1, '#8a5a30'); break;
-    case 'o': (theme === 'town' ? R(x, y, 16, 16, '#e2c088') : ground(x, y, tx, ty, theme));
-      disc(x + 8, y + 8, 7, '#1a1020'); disc(x + 8, y + 8, 6, '#9a9aa8'); disc(x + 8, y + 8, 4, '#3888e0'); R(x + 6 + ((frame >> 4) % 3), y + 6, 2, 1, '#c8e8ff'); break;
-    case 'f': ground(x, y, tx, ty, theme); R(x, y + 6, 16, 2, '#8a5a30'); R(x, y + 10, 16, 2, '#8a5a30'); R(x + 2, y + 4, 2, 10, '#5a3418'); R(x + 12, y + 4, 2, 10, '#5a3418'); break;
-    case 'P': (G.def && G.def.interior ? floorA(x, y, tx, ty) : ground(x, y, tx, ty, theme));
-      R(x + 3, y, 10, 16, '#1a1020'); R(x + 4, y, 8, 16, '#e8e4d8'); R(x + 6, y, 1, 16, '#c8c4b8'); R(x + 9, y, 1, 16, '#c8c4b8'); R(x + 3, y, 10, 3, '#d0ccc0'); R(x + 2, y + 13, 12, 3, '#b8b4a8'); break;
-    case 'c': ground(x, y, tx, ty, theme); R(x + 2, y + 4, 12, 10, '#1a1020'); R(x + 3, y + 5, 10, 8, '#b8702c'); R(x + 3, y + 5, 10, 3, '#d89048'); R(x + 3, y + 8, 10, 1, '#1a1020'); R(x + 7, y + 7, 2, 3, '#fce060'); R(x + 3, y + 5, 1, 8, '#fce060'); R(x + 12, y + 5, 1, 8, '#fce060'); break;
-    case 'C': ground(x, y, tx, ty, theme); R(x + 2, y + 3, 12, 11, '#1a1020'); R(x + 3, y + 4, 10, 3, '#8a5020'); R(x + 3, y + 8, 10, 5, '#b8702c'); R(x + 4, y + 7, 8, 2, '#2a1810'); break;
-    case 'k': R(x, y, 16, 16, '#4a2c18'); R(x, y + 5, 16, 1, '#3a2010'); R(x, y + 11, 16, 1, '#3a2010'); R(x + ((tx % 2) ? 5 : 11), y, 1, 5, '#3a2010'); R(x + ((tx % 2) ? 11 : 4), y + 6, 1, 5, '#3a2010');
-      if (T(tx, ty + 1) && 'FAEKBtP'.includes(T(tx, ty + 1))) { R(x, y + 13, 16, 3, '#2a180c'); R(x, y + 12, 16, 1, '#6a4428'); } break;
+    case 'S':
+      if (theme === 'town' || G.map[ty] && (T(tx - 1, ty) === '=' || T(tx + 1, ty) === '=')) drawTile('=', tx, ty, theme); else ground(x, y, tx, ty, theme);
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x + 4, y + 14, 9, 2);
+      R(x + 7, y + 8, 2, 7, '#3a2210'); R(x + 7, y + 8, 1, 7, '#6a4020');
+      R(x + 1, y + 1, 14, 9, '#2a160a'); R(x + 2, y + 2, 12, 7, '#b87c40'); R(x + 2, y + 2, 12, 1, '#dca060'); R(x + 2, y + 8, 12, 1, '#8a5428');
+      R(x + 4, y + 4, 8, 1, '#6a3c18'); R(x + 4, y + 6, 6, 1, '#6a3c18');
+      break;
+    case 'o':
+      if (theme === 'town') drawTile('=', tx, ty, theme); else ground(x, y, tx, ty, theme);
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x + 2, y + 13, 14, 3);
+      disc(x + 8, y + 8, 7, '#26242e'); disc(x + 8, y + 8, 6, '#9a98a8'); disc(x + 7, y + 7, 6, '#b8b6c6'); disc(x + 8, y + 8, 4, '#2c6ab8'); disc(x + 8, y + 8, 3, '#4a98e8');
+      R(x + 3, y + 5, 2, 1, '#e0e0ec'); R(x + 6 + ((frame >> 4) % 3), y + 7, 2, 1, '#c8e8ff');
+      break;
+    case 'f':
+      ground(x, y, tx, ty, theme);
+      ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(x, y + 13, 16, 2);
+      R(x, y + 5, 16, 3, '#3a2210'); R(x, y + 5, 16, 1, '#a8703c'); R(x, y + 9, 16, 3, '#3a2210'); R(x, y + 9, 16, 1, '#a8703c');
+      R(x + 2, y + 2, 3, 12, '#3a2210'); R(x + 3, y + 2, 1, 11, '#8a5428'); R(x + 11, y + 2, 3, 12, '#3a2210'); R(x + 12, y + 2, 1, 11, '#8a5428');
+      break;
+    case 'P':
+      if (G.def && G.def.interior) floorA(x, y, tx, ty); else ground(x, y, tx, ty, theme);
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x + 12, y + 4, 4, 12);
+      R(x + 3, y, 10, 16, '#2a2838'); R(x + 4, y, 8, 16, '#e8e4d8'); R(x + 4, y, 2, 16, '#fbf8ee'); R(x + 10, y, 2, 16, '#b8b4a6'); R(x + 7, y, 1, 16, '#cfcabc');
+      R(x + 2, y, 12, 3, '#d8d4c8'); R(x + 2, y, 12, 1, '#fbf8ee'); R(x + 2, y + 13, 12, 3, '#b4b0a2'); R(x + 2, y + 13, 12, 1, '#d8d4c8');
+      if (!(G.def && G.def.interior) && h < 0.6) { R(x + 4, y + 6, 1, 5, '#4e9a36'); R(x + 5, y + 8, 1, 3, '#4e9a36'); R(x + 5, y + 7, 1, 1, '#7cc454'); }
+      break;
+    case 'c': case 'C': {
+      ground(x, y, tx, ty, theme);
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x + 3, y + 13, 12, 2);
+      if (c === 'c') {
+        R(x + 2, y + 4, 12, 10, '#2a160a'); R(x + 3, y + 5, 10, 8, '#a8602a'); R(x + 3, y + 5, 10, 3, '#d08840'); R(x + 3, y + 5, 10, 1, '#f0b060');
+        R(x + 3, y + 8, 10, 1, '#2a160a'); R(x + 3, y + 5, 1, 8, '#e8c040'); R(x + 12, y + 5, 1, 8, '#e8c040'); R(x + 7, y + 7, 2, 3, '#f8e070'); R(x + 7, y + 9, 2, 1, '#8a6a10');
+      } else {
+        R(x + 2, y + 2, 12, 12, '#2a160a'); R(x + 3, y + 3, 10, 3, '#7a4418'); R(x + 3, y + 8, 10, 5, '#a8602a'); R(x + 4, y + 6, 8, 3, '#1a0c06'); R(x + 3, y + 8, 1, 5, '#e8c040'); R(x + 12, y + 8, 1, 5, '#e8c040');
+      }
+      break; }
+    case 'k': {
+      R(x, y, 16, 16, '#4a2c18');
+      for (let k = 0; k < 16; k += 4) { R(x + k, y, 1, 16, '#3a2010'); R(x + k + 1, y, 1, 16, '#5a3820'); }
+      R(x, y, 16, 2, '#2a160a'); R(x, y + 2, 16, 1, '#6a4428');
+      const below = T(tx, ty + 1);
+      if (below && 'FAEKBtPZ'.includes(below)) { R(x, y + 11, 16, 5, '#3a2010'); R(x, y + 11, 16, 1, '#7a5030'); R(x, y + 15, 16, 1, '#1a0c06'); }
+      break; }
     case 'F': if (G.roomId === 'arcade') { R(x, y, 16, 16, '#1a1430'); R(x + ((tx + ty) % 2 ? 3 : 11), y + ((tx * 3 + ty) % 2 ? 4 : 11), 2, 2, (tx + ty) % 3 ? '#3a2a78' : '#0a6a5a'); } else floorF(x, y, tx, ty); break;
     case 'A': floorA(x, y, tx, ty); break;
-    case 'K': (G.roomId === 'arena' ? floorA(x, y, tx, ty) : floorF(x, y, tx, ty)); R(x, y, 16, 16, '#1a1020'); R(x, y + 1, 16, 5, '#b8804a'); R(x, y + 6, 16, 9, '#7a4a24'); R(x + 2, y + 8, 12, 1, '#5a3418');
-      if (tx % 3 === 0) { R(x + 6, y - 1, 4, 5, '#1a1020'); R(x + 7, y, 2, 3, '#fce060'); R(x + 7, y, 2, 1, '#fff'); } break;
-    case 'B': floorF(x, y, tx, ty); R(x + 2, y + 1, 12, 14, '#1a1020'); R(x + 3, y + 2, 10, 12, '#a8683a'); R(x + 3, y + 4, 10, 1, '#5a5a60'); R(x + 3, y + 11, 10, 1, '#5a5a60'); R(x + 5, y + 2, 1, 12, '#c8884a'); break;
-    case 't': floorF(x, y, tx, ty); disc(x + 8, y + 8, 7, '#1a1020'); disc(x + 8, y + 7, 6, '#b8804a'); R(x + 5, y + 3, 4, 5, '#1a1020'); R(x + 6, y + 4, 2, 3, '#fce060'); R(x + 6, y + 4, 2, 1, '#fff'); break;
-    case 'E': floorF(x, y, tx, ty); R(x + 2, y + 3, 12, 12, '#6a1a10'); R(x + 3, y + 4, 10, 10, '#c84030'); R(x + 5, y + 7, 6, 1, '#f0a040'); R(x + 7, y + 9, 2, 3, '#f0a040'); break;
+    case 'K':
+      if (G.roomId === 'arena' || G.roomId === 'liga') floorA(x, y, tx, ty); else floorF(x, y, tx, ty);
+      R(x, y, 16, 16, '#1a0c06'); R(x, y + 1, 16, 5, '#c08850'); R(x, y + 1, 16, 1, '#e8b478'); R(x, y + 6, 16, 9, '#7a4a24'); R(x, y + 6, 16, 1, '#4a2a12');
+      R(x + 2, y + 8, 12, 5, '#6a3e1c'); R(x + 2, y + 8, 12, 1, '#8a5a30');
+      if (tx % 3 === 0) { R(x + 6, y - 2, 5, 6, '#1a1020'); R(x + 7, y - 1, 3, 4, '#f0c030'); R(x + 7, y - 1, 3, 1, '#ffffff'); R(x + 10, y, 1, 2, '#f0c030'); }
+      break;
+    case 'B':
+      floorF(x, y, tx, ty); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x + 3, y + 13, 12, 3);
+      R(x + 2, y + 1, 12, 14, '#1a0c06'); R(x + 3, y + 2, 10, 12, '#9a5c30'); R(x + 3, y + 2, 3, 12, '#c07a42'); R(x + 11, y + 2, 2, 12, '#6a3a1a');
+      R(x + 3, y + 4, 10, 1, '#5a5a66'); R(x + 3, y + 11, 10, 1, '#5a5a66'); R(x + 3, y + 4, 3, 1, '#9a9aa8'); R(x + 3, y + 11, 3, 1, '#9a9aa8'); R(x + 4, y + 1, 8, 2, '#6a3a1a');
+      break;
+    case 't':
+      floorF(x, y, tx, ty); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x + 3, y + 12, 12, 3);
+      disc(x + 8, y + 8, 7, '#1a0c06'); disc(x + 8, y + 7, 6, '#a8703c'); disc(x + 7, y + 6, 4, '#c88c50'); R(x + 3, y + 4, 2, 1, '#e8b078');
+      R(x + 5, y + 3, 4, 5, '#1a1020'); R(x + 6, y + 4, 2, 3, '#f0c030'); R(x + 6, y + 4, 2, 1, '#fff'); R(x + 10, y + 7, 3, 2, '#e8e0d0');
+      break;
+    case 'E': floorF(x, y, tx, ty); R(x + 2, y + 3, 12, 12, '#5a1008'); R(x + 3, y + 4, 10, 10, '#b83828'); R(x + 4, y + 5, 8, 8, '#d85040'); R(x + 5, y + 7, 6, 1, '#f0b040'); R(x + 7, y + 9, 2, 3, '#f0b040'); break;
     case 'Q': {
-      const th = theme;
-      const base = th === 'crypt' ? ['#28243a','#3e3854','#141020'] : th === 'tower' ? ['#b8b0cc','#ded8ec','#8a82a0'] : ['#4a3a2a','#6a5440','#2a2018'];
-      R(x, y, 16, 16, base[0]);
-      if (th === 'mine') { disc(x + 5, y + 5, 4, base[1]); disc(x + 11, y + 10, 4, base[1]); R(x + 3, y + 3, 2, 1, '#8a7258'); R(x + 10, y + 8, 2, 1, '#8a7258'); }
-      else { for (let r = 0; r < 16; r += 5) { R(x, y + r + 4, 16, 1, base[2]); R(x + ((r / 5) % 2 ? 3 : 10), y + r, 1, 4, base[2]); } R(x, y, 16, 1, base[1]); }
-      const below = T(tx, ty + 1);
-      if (below && below !== 'Q') { R(x, y + 13, 16, 3, base[2]); if (h2(tx, ty) < 0.22 && th !== 'tower') { R(x + 7, y + 6, 2, 5, '#5a3418'); } }
+      const th = theme, below = T(tx, ty + 1), face = below && below !== 'Q';
+      const P = th === 'crypt' ? ['#16121e','#2c2840','#46405e','#5c5678','#0c0a12'] : th === 'tower' ? ['#8a82a0','#b4acc8','#d4cee4','#f0ecfa','#6a6280'] : ['#1e140c','#3e2e1e','#5c4630','#7c6244','#120c06'];
+      if (!face) {
+        R(x, y, 16, 16, P[0]); const r = rng(h + 0.6); for (let i = 0; i < 4; i++) R(x + Math.floor(r() * 14), y + Math.floor(r() * 14), 2, 1, P[1]);
+        if (T(tx, ty - 1) !== 'Q' && T(tx, ty - 1) !== null) R(x, y, 16, 1, P[2]);
+      } else {
+        R(x, y, 16, 4, P[0]); R(x, y + 3, 16, 1, P[3]);
+        R(x, y + 4, 16, 12, P[1]);
+        if (th === 'mine') { disc(x + 4, y + 9, 3, P[2]); disc(x + 11, y + 11, 3, P[2]); R(x + 3, y + 7, 2, 1, P[3]); R(x + 10, y + 9, 2, 1, P[3]); R(x + 7, y + 13, 2, 2, P[4]); }
+        else { for (let r = 4; r < 16; r += 4) { R(x, y + r, 16, 1, P[4]); const off = (r / 4) % 2 ? 3 : 9; R(x + off, y + r, 1, 4, P[4]); R(x + off + 1, y + r + 1, 5, 1, P[2]); } }
+        R(x, y + 15, 16, 1, P[4]);
+        if (h < 0.22 && th !== 'tower') { R(x + 7, y + 7, 2, 6, '#3a2210'); R(x + 6, y + 12, 4, 1, '#5a3418'); }
+        if (th === 'tower' && h < 0.2) { R(x + 5, y + 6, 6, 7, '#4a3a78'); R(x + 6, y + 7, 4, 5, '#8a78c8'); R(x + 6, y + 7, 2, 2, '#c8b8f8'); }
+      }
       break; }
-    case 'U': ground(x, y, tx, ty, theme); for (let i = 0; i < 4; i++) { R(x + 2, y + 12 - i * 3, 12, 3, i % 2 ? '#8a8298' : '#b8b0c8'); R(x + 2, y + 12 - i * 3, 12, 1, '#e8e4f0'); } R(x + 1, y + 2, 1, 13, '#1a1020'); R(x + 14, y + 2, 1, 13, '#1a1020'); break;
-    case 'V': ground(x, y, tx, ty, theme); R(x + 1, y + 1, 14, 14, '#1a1020'); for (let i = 0; i < 4; i++) R(x + 2, y + 2 + i * 3, 12 - i * 2, 2, i % 2 ? '#4a4258' : '#6a6280'); R(x + 3, y + 13, 10, 2, '#000'); break;
+    case 'U': ground(x, y, tx, ty, theme); R(x + 1, y + 1, 14, 15, '#1a1020'); for (let i = 0; i < 4; i++) { R(x + 2, y + 12 - i * 3, 12, 3, i % 2 ? '#8a8298' : '#b0a8c0'); R(x + 2, y + 12 - i * 3, 12, 1, '#e8e4f0'); } break;
+    case 'V': ground(x, y, tx, ty, theme); R(x + 1, y + 1, 14, 14, '#0a0810'); for (let i = 0; i < 4; i++) { R(x + 2 + i, y + 2 + i * 3, 12 - i * 2, 2, i % 2 ? '#3a3448' : '#5a5270'); R(x + 2 + i, y + 2 + i * 3, 12 - i * 2, 1, '#7a7290'); } R(x + 6, y + 13, 4, 2, '#000'); break;
     case 'M': {
       const dk = G.def && G.def.dungeon;
       ground(x, y, tx, ty, theme);
-      if (dk === 'torre') { R(x + 1, y, 14, 16, '#1a1020'); R(x + 2, y + 1, 12, 15, '#e8e4f0'); R(x + 4, y + 4, 8, 12, '#3a2a58'); disc(x + 8, y + 4, 4, '#3a2a58'); R(x + 2, y + 1, 12, 2, '#f0c030'); }
-      else if (dk === 'cripta') { R(x + 1, y + 1, 14, 15, '#1a1020'); R(x + 2, y + 2, 12, 14, '#4a4858'); R(x + 4, y + 5, 8, 11, '#0a0810'); R(x + 5, y + 2, 6, 2, '#6a6880'); R(x + 7, y + 7, 2, 2, '#b060e0'); }
-      else { disc(x + 8, y + 9, 8, '#2a2018'); disc(x + 8, y + 9, 7, '#6a5440'); disc(x + 8, y + 11, 5, '#0a0806'); R(x + 3, y + 14, 10, 2, '#0a0806'); R(x + 2, y + 5, 2, 1, '#8a7258'); }
+      ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(x + 1, y + 14, 15, 2);
+      if (dk === 'torre') { R(x + 1, y, 14, 16, '#2a2838'); R(x + 2, y + 1, 12, 15, '#e8e4f0'); R(x + 2, y + 1, 3, 15, '#fbf8ff'); R(x + 4, y + 5, 8, 11, '#2a1a48'); disc(x + 8, y + 5, 4, '#2a1a48'); R(x + 2, y + 1, 12, 2, '#f0c030'); R(x + 7, y + 7, 2, 2, '#c8a0ff'); }
+      else if (dk === 'cripta') { R(x + 1, y + 1, 14, 15, '#16121e'); R(x + 2, y + 2, 12, 14, '#4a4660'); R(x + 2, y + 2, 12, 1, '#6a6680'); R(x + 4, y + 5, 8, 11, '#06040a'); R(x + 5, y + 2, 6, 2, '#6a6880'); R(x + 7, y + 7, 2, 2, '#b060e0'); R(x + 3, y + 14, 1, 2, '#4e7a3a'); }
+      else { disc(x + 8, y + 9, 8, '#1a120a'); disc(x + 8, y + 9, 7, '#6a5440'); disc(x + 7, y + 8, 6, '#846a50'); disc(x + 8, y + 11, 5, '#060403'); R(x + 3, y + 14, 10, 2, '#060403'); R(x + 3, y + 4, 3, 1, '#a88a68'); R(x + 3, y + 10, 1, 5, '#6a4020'); R(x + 12, y + 10, 1, 5, '#6a4020'); R(x + 3, y + 9, 10, 1, '#6a4020'); }
       break; }
     case 'O': ground(x, y, tx, ty, theme); break;
     case 'Z': {
       floorF(x, y, tx, ty);
       const cc = ['#c83a20','#2a6ad8','#48a860','#8a3ad0','#e8a028'][(tx * 3 + ty) % 5];
-      R(x + 1, y, 14, 16, '#1a1020'); R(x + 2, y + 1, 12, 14, cc); R(x + 3, y + 2, 10, 6, '#0a0a18'); R(x + 2, y + 9, 12, 2, '#1a1020');
-      R(x + 4, y + 11, 2, 2, '#fce040'); R(x + 9, y + 11, 2, 2, '#f84040'); R(x + 11, y + 12, 1, 1, '#40a0f0'); R(x + 3, y + 1, 10, 1, 'rgba(255,255,255,.35)');
+      R(x + 1, y, 14, 16, '#1a1020'); R(x + 2, y + 1, 12, 14, cc); R(x + 2, y + 1, 2, 14, 'rgba(255,255,255,.25)'); R(x + 3, y + 2, 10, 6, '#0a0a18'); R(x + 2, y + 9, 12, 2, '#1a1020');
+      R(x + 4, y + 11, 2, 2, '#fce040'); R(x + 9, y + 11, 2, 2, '#f84040'); R(x + 11, y + 12, 1, 1, '#40a0f0');
       break; }
-    case '~': case 'w': break; // animated, drawn every frame
+    case '~': case 'w': break;
     default: ground(x, y, tx, ty, theme);
   }
 }
-function floorF(x, y, tx, ty){ R(x, y, 16, 16, '#c89058'); R(x, y + 7, 16, 1, '#a87040'); R(x, y + 15, 16, 1, '#a87040'); R(x + ((tx + ty) % 2 ? 4 : 12), y, 1, 7, '#a87040'); R(x + ((tx + ty) % 2 ? 10 : 2), y + 8, 1, 7, '#a87040'); }
-function floorA(x, y, tx, ty){ R(x, y, 16, 16, ((tx + ty) % 2) ? '#c8c0b0' : '#b8b0a0'); R(x, y, 16, 1, '#a8a090'); }
+function floorF(x, y, tx, ty){
+  const row = ty * 2, tones = ['#c48a52','#bc844c','#c89058'];
+  for (let i = 0; i < 2; i++) {
+    const py = y + i * 8, tone = tones[(row + i + (tx >> 1)) % 3];
+    R(x, py, 16, 8, tone); R(x, py, 16, 1, '#dca66c'); R(x, py + 7, 16, 1, '#8a5a30');
+    const seam = (tx * 7 + (row + i) * 5) % 16; R(x + seam, py, 1, 8, '#8a5a30');
+    R(x + (seam + 5) % 16, py + 3, 3, 1, '#b07a44'); R(x + (seam + 3) % 16, py + 2, 1, 1, '#6a4020');
+  }
+}
+function floorA(x, y, tx, ty){
+  const c = ((tx + ty) % 2) ? '#c8c0b0' : '#b8b0a0';
+  R(x, y, 16, 16, c); R(x, y, 16, 1, '#e0d8c8'); R(x, y, 1, 16, '#d8d0c0'); R(x, y + 15, 16, 1, '#8a8474'); R(x + 15, y, 1, 16, '#9a9484');
+}
 function drawWater(tx, ty, c){
   const x = tx * TS, y = ty * TS;
+  const n = (a, b) => { const t = T(a, b); return t !== null && t !== c; };
   if (c === '~') {
-    R(x, y, 16, 16, '#3888e0');
-    const o = ((frame >> 4) + tx + ty) % 4;
-    R(x + o * 3, y + 4, 4, 1, '#88c8f8'); R(x + ((o * 3 + 8) % 13), y + 10, 4, 1, '#88c8f8');
-    const n = (a, b) => { const t = T(a, b); return t !== null && t !== '~'; };
-    if (n(tx, ty - 1)) R(x, y, 16, 2, '#e8f8ff'); if (n(tx, ty + 1)) R(x, y + 15, 16, 1, '#e8f8ff');
-    if (n(tx - 1, ty)) R(x, y, 1, 16, '#e8f8ff'); if (n(tx + 1, ty)) R(x + 15, y, 1, 16, '#e8f8ff');
+    const deep = !n(tx, ty - 1) && !n(tx, ty + 1) && !n(tx - 1, ty) && !n(tx + 1, ty);
+    R(x, y, 16, 16, deep ? '#2466c4' : '#2c78d8');
+    if (h2(tx >> 1, ty >> 1) < 0.5) R(x, y + 8, 16, 8, deep ? '#205cb4' : '#2870cc');
+    const o = ((frame >> 3) + tx * 5 + ty * 3) % 16;
+    R(x + o % 12, y + 4, 4, 1, '#5aa4f0'); R(x + (o + 7) % 12, y + 11, 4, 1, '#5aa4f0'); R(x + (o + 3) % 13, y + 7, 3, 1, '#3e8ae0');
+    if (((frame >> 2) + tx * 11 + ty * 7) % 40 === 0) { R(x + 7, y + 5, 1, 3, '#ffffff'); R(x + 6, y + 6, 3, 1, '#ffffff'); }
+    const f = (frame >> 4) & 1;
+    if (n(tx, ty - 1)) { R(x, y, 16, 4, '#4a98e8'); R(x, y, 16, 2, '#dff4ff'); for (let i = f; i < 16; i += 3) R(x + i, y + 2, 1, 1, '#ffffff'); }
+    if (n(tx, ty + 1)) { R(x, y + 13, 16, 3, '#3a88e0'); R(x, y + 15, 16, 1, '#dff4ff'); }
+    if (n(tx - 1, ty)) { R(x, y, 3, 16, '#4a98e8'); R(x, y, 1, 16, '#dff4ff'); for (let i = f; i < 16; i += 3) R(x + 1, y + i, 1, 1, '#ffffff'); }
+    if (n(tx + 1, ty)) { R(x + 13, y, 3, 16, '#4a98e8'); R(x + 15, y, 1, 16, '#dff4ff'); }
   } else {
-    R(x, y, 16, 16, '#34503a');
+    R(x, y, 16, 16, '#30482e'); if (h2(tx >> 1, ty >> 1) < 0.5) R(x, y + 8, 16, 8, '#2c422a');
     const o = ((frame >> 5) + tx * 3 + ty) % 5;
-    R(x + 3 + o, y + 5, 5, 1, '#4e7050'); R(x + 9 - o, y + 11, 4, 1, '#4e7050');
-    if (((frame >> 3) + tx * 7 + ty * 3) % 24 === 0) R(x + 7, y + 7, 2, 2, '#8aaa70');
+    R(x + 3 + o, y + 5, 5, 1, '#4a6a48'); R(x + 9 - o, y + 11, 4, 1, '#4a6a48');
+    const h = h2(tx, ty);
+    if (h < 0.35) { disc(x + 5 + (h * 20 | 0) % 6, y + 9, 3, '#2a6a2a'); disc(x + 5 + (h * 20 | 0) % 6, y + 9, 2, '#48943a'); R(x + 5 + (h * 20 | 0) % 6, y + 7, 1, 2, '#30482e'); if (h < 0.1) R(x + 6 + (h * 20 | 0) % 6, y + 8, 1, 1, '#f080b0'); }
+    if (((frame >> 3) + tx * 7 + ty * 3) % 24 === 0) R(x + 10, y + 4, 2, 2, '#8aaa70');
+    if (n(tx, ty - 1)) R(x, y, 16, 2, '#4e6444'); if (n(tx - 1, ty)) R(x, y, 2, 16, '#4e6444');
   }
 }
 let cache = null;
@@ -751,21 +981,50 @@ function buildCache(){
   R(0, 0, W, H, '#000');
   const theme = G.def.theme;
   for (let ty = 0; ty < 10; ty++) for (let tx = 0; tx < 15; tx++) drawTile(G.map[ty][tx], tx, ty, theme);
-  // building plaques & decorations
+  // sombras proyectadas (luz desde arriba a la izquierda)
+  ctx.fillStyle = 'rgba(0,0,20,.22)';
+  for (let ty = 0; ty < 10; ty++) for (let tx = 0; tx < 15; tx++) {
+    const c = G.map[ty][tx]; if (!TALL.has(c) || c === 'k' || c === 'Q') continue;
+    const b = T(tx, ty + 1), r = T(tx + 1, ty);
+    if (b && !TALL.has(b) && b !== '~' && b !== 'w' && b !== 'T') ctx.fillRect(tx * TS + 3, (ty + 1) * TS, 13, 4);
+    if (r && !TALL.has(r) && r !== '~' && r !== 'w' && r !== 'T' && c !== 'K') ctx.fillRect((tx + 1) * TS, ty * TS + 4, 3, 12);
+  }
   if (G.roomId === 'pueblo') { plaque('TABERNA', 4 * TS + 8, 2 * TS + 3, '#5a3418'); plaque('ARENA', 10 * TS + 8, 2 * TS + 3, '#1a2a58'); }
   if (G.def.plaques) for (const [s, cx, y, col] of G.def.plaques) plaque(s, cx, y, col);
   if (G.def.interior && G.roomId !== 'arena' && G.roomId !== 'liga') plaque(G.def.name, 120, 3, '#2a180c');
   if (G.roomId === 'arena' || G.roomId === 'liga') {
     plaque(G.def.name, 120, 3, '#1a1a38');
-    DECKS.forEach((d, i) => { const bx = 20 + i * 38; R(bx, 16, 12, 18, '#1a1020'); R(bx + 1, 16, 10, 16, d.col); R(bx + 1, 32, 5, 2, d.col); R(bx + 6, 32, 5, 1, d.col); });
+    DECKS.forEach((d, i) => { const bx = 20 + i * 38; R(bx, 16, 12, 18, '#1a1020'); R(bx + 1, 16, 10, 16, d.col); R(bx + 1, 16, 2, 16, 'rgba(255,255,255,.25)'); R(bx + 1, 32, 5, 2, d.col); R(bx + 6, 32, 5, 1, d.col); R(bx + 4, 20, 4, 4, '#fce8b0'); });
   }
   ctx = save; G.cacheDirty = false;
 }
 function plaque(s, cx, y, col){
   ctx.font = '8px "Press Start 2P", monospace';
   const w = s.length * 8 + 6;
-  R(cx - w / 2 - 1, y - 1, w + 2, 12, '#1a1020'); R(cx - w / 2, y, w, 10, col);
+  R(cx - w / 2 - 1, y - 1, w + 2, 12, '#1a1020'); R(cx - w / 2, y, w, 10, col); R(cx - w / 2, y, w, 1, 'rgba(255,255,255,.25)');
   txt(s, cx, y + 1, '#fce8b0', 'center', null);
+}
+// luz ambiente (se dibuja cada cuadro sobre el mundo, antes de la interfaz)
+function drawLighting(){
+  const th = G.def.theme, dark = th === 'mine' || th === 'crypt';
+  if (dark || th === 'tower') {
+    const px = PL.x + 5, py = PL.y - 2;
+    const g = ctx.createRadialGradient(px, py, dark ? 26 : 60, px, py, dark ? 140 : 220);
+    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, dark ? 'rgba(4,2,12,.72)' : 'rgba(40,30,80,.25)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    if (dark) { ctx.fillStyle = 'rgba(255,170,80,.05)'; ctx.fillRect(0, 0, W, H); }
+    return;
+  }
+  if (th === 'swamp') { ctx.fillStyle = 'rgba(20,50,20,.16)'; ctx.fillRect(0, 0, W, H); }
+  else if (th === 'inside') { ctx.fillStyle = 'rgba(255,170,90,.07)'; ctx.fillRect(0, 0, W, H); }
+  else {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, th === 'dirt' ? 'rgba(255,200,120,.12)' : 'rgba(255,248,210,.12)'); g.addColorStop(1, 'rgba(255,248,210,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
+  const v = ctx.createRadialGradient(W / 2, H / 2, 90, W / 2, H / 2, 160);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,20,.22)');
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
 }
 
 /* ============ PEOPLE ============ */
@@ -1127,7 +1386,7 @@ function loadRoom(id, px, py){
   G.cacheDirty = true; G.zoneT = d.interior ? 0 : 110; G.fade = 14;
   const boss = G.enemies.find(e => MON[e.type].boss);
   if (boss) { SFX.boss(); G.bossBar = boss; } else G.bossBar = null;
-  playMusic(d.music);
+  playMusic(boss ? 'boss' : d.music);
   S.room = id; S.x = px; S.y = py; saveGame();
 }
 function spawnEnemy(type, x, y){
@@ -1210,7 +1469,7 @@ function dropLoot(e){
   addXP(m.xp);
   const drop = (k, id, v) => G.items.push({ k, id, v, x:cx - 5 + rnd(10) - 5, y:cy - 5 + rnd(10) - 5, z:0, vz:-2.2, t:0 });
   if (m.boss) {
-    S.bosses[e.type] = true; G.bossBar = null;
+    S.bosses[e.type] = true; G.bossBar = null; playMusic(G.def.music);
     if (G.def.bossFloor) { G.map[4][7] = 'O'; G.cacheDirty = true; }
     if (GUARDIANS.includes(e.type)) toast('GUARDIANES DERROTADOS: ' + guardiansDone() + '/5', '#fcd84a');
     drop('card', m.cards[0]); drop('sword', m.sword);
@@ -1764,7 +2023,7 @@ function startTour(deck, cfg){
   const names = [...OPP_NAMES].sort(() => Math.random() - 0.5).slice(0, cfg.rounds);
   G.tour = { deck, cfg, room:G.roomId, round:0, wins:0, phase:'vs', t:0, buzz:S.buzz, opps:names.map(n => ({ n, deck:pick(DECKS).id, look:randomLook(n) })), ev:[], ei:0, lives:[20, 20], cur:null, pops:[] };
   S.buzz = 0; S.beers = 0;
-  G.state = 'tour'; playMusic('field'); SFX.ok();
+  G.state = 'tour'; playMusic('fanfare'); SFX.ok();
   prepRound();
 }
 function prepRound(){
@@ -2144,6 +2403,7 @@ function drawWorld(){
     else if (q.k === 'heal') { R(x, y, 1, 3, '#fce060'); R(x - 1, y + 1, 3, 1, '#fce060'); }
     else if (q.k === 'bubble') { R(x, y, 2, 2, '#fff8d0'); }
   }
+  drawLighting();
   for (const f of G.floats) tiny(f.s, Math.round(f.x), Math.round(f.y), f.col, 'center');
   drawHUD();
 }
@@ -2524,6 +2784,7 @@ function step(){
     if ((G.cardGet || G.dialog || G.menu) && NET.role === 'host' && NET.conns.length) { updateEnemies(); updateParts(); }
     for (const t of G.toasts) if (G.dialog || G.menu) t.t = Math.min(t.t, 140);
   }
+  if ((G.state === 'title' || G.state === 'slots' || G.state === 'select') && AC && musicName !== 'title') playMusic('title');
   netTick();
   tickMusic();
 }
