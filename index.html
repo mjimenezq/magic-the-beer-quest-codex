@@ -66,6 +66,9 @@
       <button class="m" data-k="menu" aria-label="Menú">MENÚ</button>
     </div>
   </div>
+  <div class="net">
+    <button id="btnTitle" type="button">⌂ Menú principal</button>
+  </div>
   <div class="net" id="net">
     <span>ONLINE:</span>
     <button id="netHost" type="button">Crear sala</button>
@@ -1804,11 +1807,7 @@ function updateMenu(){
   if (pressed('a')) {
     if (m.tab === 0) { m.deck = m.sel; m.cs = 0; SFX.ok(); }
     else if (m.tab === 1) { S.eq = sortedSwords()[m.sel]; SFX.ok(); saveGame(); }
-    else if (m.tab === 2) {
-      S.x = PL.x; S.y = PL.y; saveGame(); netLeave(true);
-      G.menu = null; G.dialog = null; G.cardGet = null; G.cardQueue = []; G.dead = 0;
-      G.state = 'title'; G.titleSel = 1; G.map = null; playMusic(null); SFX.back();
-    }
+    else if (m.tab === 2) goToTitle();
   }
 }
 const THEME_COL = { town:'#d8b060', forest:'#3e8a36', dirt:'#a88050', swamp:'#4a6a40', meadow:'#88c860', sand:'#e8d098' };
@@ -1857,6 +1856,13 @@ function drawMissions(){
     tiny(t, 20, y + 1, ok ? '#9db8a8' : '#fff');
   });
   tiny('GUARDIANES ' + guardiansDone() + '/5   CARTAS ' + totalCards() + '/' + ALL_CARDS.length + '   MAZOS ' + DECKS.filter(d => deckDone(d.id)).length + '/6', 120, 148, '#fcd84a', 'center');
+}
+function goToTitle(){
+  if (S && G.state === 'world' && !G.dead) { S.x = PL.x; S.y = PL.y; }
+  if (S) saveGame();
+  if (NET.role) netLeave(true);
+  G.menu = null; G.dialog = null; G.cardGet = null; G.cardQueue = []; G.dead = 0; G.tour = null; G.arc = null;
+  G.state = 'title'; G.titleSel = S ? 1 : 0; G.map = null; playMusic(null); SFX.back();
 }
 const sortedSwords = () => SWORD_ORDER.filter(s => S.swords.includes(s));
 function drawMenu(){
@@ -2365,6 +2371,7 @@ function netTick(){
   }
 }
 const othersHere = () => Object.values(NET.others).filter(o => o.room === G.roomId);
+netEl('btnTitle').addEventListener('click', () => { audioInit(); if (G.state !== 'title') goToTitle(); cvs.focus(); });
 netEl('netHost').addEventListener('click', () => { audioInit(); netHost(); });
 netEl('netJoin').addEventListener('click', () => { audioInit(); netJoin(); });
 netEl('netLeave').addEventListener('click', () => { if (NET.role) toast('SALISTE DE LA SALA'); netLeave(); });
