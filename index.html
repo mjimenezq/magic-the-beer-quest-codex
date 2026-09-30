@@ -100,6 +100,7 @@
   </div>
   <div class="net">
     <button id="btnTitle" type="button">⌂ Menú principal</button>
+    <button id="btnTravel" type="button">✈ Viajar (T)</button>
   </div>
   <section class="online" id="net" aria-label="Jugar en linea">
     <div class="on-head"><span class="dot" id="netDot"></span><strong>JUGAR CON AMIGOS</strong><span class="on-sub">hasta 3, cada uno desde su casa</span></div>
@@ -158,6 +159,7 @@ const keyMap = {ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'l
 addEventListener('keydown', e => {
   audioInit();
   if (e.code === 'KeyM' && !e.repeat) toggleMute();
+  if (e.code === 'KeyT' && !e.repeat) { openTravel(); e.preventDefault(); }
   const k = keyMap[e.code]; if (k) { kb[k] = 1; e.preventDefault(); }
 });
 addEventListener('keyup', e => { const k = keyMap[e.code]; if (k) { kb[k] = 0; e.preventDefault(); } });
@@ -1081,7 +1083,7 @@ function newSave(ci){
   const ch = CHARS[ci];
   return { v:1, ch:ci, lvl:1, xp:0, st:{...ch.st}, hp:6, maxHp:6, coins:1500, econ:2, leagues:{}, cards:{}, swords:['palo'], eq:'palo',
     chests:{}, bosses:{}, trophies:0, buzz:0, beers:0, room:'pueblo', x:7*TS+3, y:6*TS+6, complete:{}, visited:{}, ligaWins:0, arcadeBest:0, lore:false, quests:{}, kills:{}, killsTotal:0, beerTotal:0,
-    gear:{ shield:null, head:null, body:null, legs:null, feet:null }, armor:[], spells:[], spellSel:0, mp:4, house:{}, found:{}, foundZones:{} };
+    gear:{ shield:null, head:null, body:null, legs:null, feet:null }, armor:[], spells:[], spellSel:0, mp:4, house:{}, found:{}, foundZones:{}, stones:{} };
 }
 const SLOTS = 3, slotKey = n => 'pmq_save_' + n;
 function saveGame(){
@@ -1122,7 +1124,7 @@ function loadSave(n){
     s.gear = s.gear || { shield:null, head:null, body:null, legs:null, feet:null }; s.armor = s.armor || []; s.spells = s.spells || [];
     s.spellSel = s.spellSel || 0; s.mp = s.mp ?? 4; s.house = s.house || {}; s.found = s.found || {}; s.foundZones = s.foundZones || {};
     if (!s.econ) { s.coins = Math.round((s.coins || 0) * COIN_X); s.econ = 2; }
-    s.leagues = s.leagues || {};
+    s.leagues = s.leagues || {}; s.stones = s.stones || {};
     s.visited = s.visited || {}; s.ligaWins = s.ligaWins || 0; s.arcadeBest = s.arcadeBest || 0; s.complete = s.complete || {};
     if (!ROOMS[s.room] && !WILD[s.room] && !String(s.room).startsWith('D:')) { s.room = 'pueblo'; s.x = 7 * TS + 3; s.y = 6 * TS + 6; }
     return s;
@@ -2293,7 +2295,7 @@ function dropLoot(e){
     drop('heart'); saveGame(); return;
   }
   const tier = zoneTier(), coinMul = 1 + houseBonus('coinPct') / 100;
-  const chance = 0.25 + stats().des * 0.012 + houseBonus('cardPct') / 100;
+  const chance = 0.12 + stats().des * 0.006 + houseBonus('cardPct') / 200;
   if (Math.random() < chance) {
     let id;
     if (Math.random() < 0.55) id = pick(m.cards);
@@ -2881,12 +2883,14 @@ const QUESTS = {
   q_warden:{ giver:'posadera', title:'Paz en la pradera', desc:'Derrota 5 Soul Warden.', type:'kill', target:['warden'], n:5, reward:{ st:{int:1}, coins:15 } },
   q_arcade:{ giver:'arcadeOrg', title:'Récord del arcade', desc:'Haz 25 puntos en Goblin Smash.', type:'arcade', n:25, reward:{ st:{des:2} } },
   q_langost:{ giver:'coleccionista', title:'Caza del Langostino', desc:'Derrota al Langostino del islote, al sur de la costa.', type:'boss', target:'dread', n:1, reward:{ st:{agi:2}, coins:40 } },
+  q_piedraHogar:{ giver:'mueblero', title:'La Piedra Hogar', desc:'Junta 3 fragmentos de piedra: Bosque Goblin, Costa Langostino y Cerro Mox.', type:'find', zones:['bosque','costa','cerro'], n:3, itemName:'FRAGMENTO', icon:'stone', reward:{ stone:'home' } },
+  q_piedraTolaria:{ giver:'mago', title:'La Piedra Tolaria', desc:'Recupera 3 runas: Ruinas de Serra, Pantano Profundo y Minas de Mishra piso 1.', type:'find', zones:['ruinas','pantanoProf','D:minas:1'], n:3, itemName:'RUNA', icon:'rune', reward:{ stone:'tolaria' } },
 };
 const GIVER_PLACE = { vecina:'VILLA', cronista:'VILLA', cantinero:'TABERNA DE LA VILLA', klaus:'TABERNA DE LA VILLA', coleccionista:'TABERNA DE LA VILLA',
   organizador:'ARENA DE LA VILLA', pescador:'CURICO', marinero:'CURICO', viejo:'CASA DEL VIEJO (CURICO)', juez:'TOLARIA', fan2:'TOLARIA',
-  tendero:'TIENDA (TOLARIA)', posadera:'POSADA (TOLARIA)', arcadeOrg:'ARCADE (TOLARIA)' };
+  tendero:'TIENDA (TOLARIA)', posadera:'POSADA (TOLARIA)', arcadeOrg:'ARCADE (TOLARIA)', mueblero:'MERCADO DE MOX', mago:'MERCADO DE MOX' };
 const STN = { fue:'FUE', des:'DES', agi:'AGI', int:'INT' };
-const rewardText = r => [Object.entries(r.st || {}).map(([k, v]) => '+' + v + ' ' + STN[k]).join(' '), r.maxHp ? '+' + r.maxHp / 2 + ' CORAZÓN' : '', r.coins ? money(r.coins * QUEST_COIN_X) : '', r.spell ? 'HECHIZO ' + SPELLS[r.spell].n.toUpperCase() : ''].filter(Boolean).join(', ');
+const rewardText = r => [Object.entries(r.st || {}).map(([k, v]) => '+' + v + ' ' + STN[k]).join(' '), r.maxHp ? '+' + r.maxHp / 2 + ' CORAZÓN' : '', r.coins ? money(r.coins * QUEST_COIN_X) : '', r.spell ? 'HECHIZO ' + SPELLS[r.spell].n.toUpperCase() : '', r.stone ? STONES[r.stone].n : ''].filter(Boolean).join(', ');
 const killsOf = ts => ts.reduce((a, t) => a + ((S.kills || {})[t] || 0), 0);
 function questBase(q){ const Q = QUESTS[q]; return Q.type === 'kill' ? killsOf(Q.target) : Q.type === 'killAll' ? (S.killsTotal || 0) : Q.type === 'beer' ? (S.beerTotal || 0) : 0; }
 function questProg(q){
@@ -2925,6 +2929,7 @@ function questHook(id, npc){
       if (Q.reward.maxHp) { S.maxHp += Q.reward.maxHp; }
       S.hp = S.maxHp; S.coins += (Q.reward.coins || 0) * QUEST_COIN_X;
       if (Q.reward.spell) learnSpell(Q.reward.spell);
+      if (Q.reward.stone) { S.stones = S.stones || {}; S.stones[Q.reward.stone] = true; toast(STONES[Q.reward.stone].n + ': USALA CON EL BOTON VIAJAR (TECLA T)', '#c8a0ff'); }
       SFX.lvl(); saveGame();
       say([who + ': ¡Cumpliste el encargo "' + Q.title + '"! Muchas gracias.', 'Recompensa: ' + rewardText(Q.reward) + '. Tus atributos subieron para siempre.']);
       return true;
@@ -3044,6 +3049,32 @@ function sellPacks(who, hello){
         say(['Abriste el sobre: ' + got.map(g => CARDS[g].n).join(', ') + '.'].concat(got.includes(LEGEND) ? ['¡¡UNA CARTA LEGENDARIA!! Casi nadie en Chile tiene un Mox Diamond.'] : []), null, () => got.forEach(addCard));
         saveGame();
       } }, { t:'SOLO MIRABA', fn:null }]);
+}
+const STONES = { home:{ n:'PIEDRA HOGAR' }, tolaria:{ n:'PIEDRA TOLARIA' } };
+const FLY_DECKS = 6;
+// Donde aterriza uno en cada pueblo (casilla libre cerca del centro)
+const TOWN_SPOTS = { pueblo:[6,5], tolaria:[7,4], valpo:[7,4], vina:[7,4], pmontt:[7,4], mercado:[7,4], tempest:[6,4] };
+function travelTo(dest){
+  SFX.lvl(); G.fade = 50;
+  for (let i = 0; i < 14; i++) G.parts.push({ k:'heal', x:PL.x + 5 + Math.cos(i * 0.45) * 9, y:PL.y + Math.sin(i * 0.45) * 6, vx:0, vy:-1, t:0 });
+  if (dest === 'hogar') { SFX.door(); loadRoom('hogar', 7 * TS + 3, 6 * TS + 4); PL.dir = 1; toast('PIEDRA HOGAR: ESTAS EN TU CASA', '#c8a0ff'); return; }
+  const [x, y] = TOWN_SPOTS[dest]; loadRoom(dest, x * TS + 3, y * TS + 4); PL.dir = 0;
+  toast('VIAJASTE A ' + (SHORT[dest] || dest).replace('. ', ' '), '#c8a0ff');
+}
+function openTravel(){
+  if (!S || G.state !== 'world' || G.dialog || G.shop || G.dead) return;
+  G.menu = null;
+  const st = S.stones || {}, fly = DECKS.filter(d => deckDone(d.id)).length >= FLY_DECKS, opts = [];
+  if (st.home) opts.push({ t:'MI CASA', fn:() => travelTo('hogar') });
+  if (st.tolaria || fly) opts.push({ t:'TOLARIA (LIGA Y ARCADE)', fn:() => travelTo('tolaria') });
+  if (fly) for (const [id, name] of [['pueblo','VILLA PREMODERN'],['mercado','MERCADO DE MOX'],['valpo','CURICO'],['vina','VIÑA DEL MAR'],['pmontt','PUERTO MONTT'],['tempest','TEMPEST']]) opts.push({ t:name, fn:() => travelTo(id) });
+  if (!opts.length) {
+    say(['Todavia no puedes viajar.', 'La PIEDRA HOGAR te la da el Carpintero y la PIEDRA TOLARIA la Maga, los dos en el Mercado de Mox: hazles su encargo.', 'Y con ' + FLY_DECKS + ' mazos completos podras volar entre todos los pueblos (llevas ' + DECKS.filter(d => deckDone(d.id)).length + ').']);
+    return;
+  }
+  if (G.enemies.some(e => !e.dead && MON[e.type].boss)) { say(['No puedes concentrarte para viajar en medio de la pelea con un jefe.']); return; }
+  const page = (list, p) => { const per = 6, ch = list.slice(p * per, p * per + per); if (list.length > (p + 1) * per) ch.push({ t:'MAS DESTINOS', fn:() => say(['¿A donde viajas?'], page(list, p + 1)) }); ch.push({ t:'ME QUEDO', fn:null }); return ch; };
+  say([fly ? '¿A donde vuelas? (' + FLY_DECKS + ' mazos completos: puedes ir a todos los pueblos)' : '¿A donde te lleva la piedra?'], page(opts, 0));
 }
 const LEAGUE_BY_NPC = Object.fromEntries(Object.entries(LEAGUES).map(([k, L]) => [L.npc, k]));
 function leagueTalk(key){
@@ -3606,6 +3637,8 @@ function drawItem(it){
     if (ic === 'ring') { disc(x + 5, y + 6, 3, '#e8c040'); disc(x + 5, y + 6, 1, '#1a1020'); R(x + 4, y + 2, 2, 2, '#60c8f8'); }
     else if (ic === 'herb') { R(x + 4, y + 3, 2, 7, '#2a7a2a'); disc(x + 3, y + 4, 2, '#58c040'); disc(x + 7, y + 5, 2, '#58c040'); R(x + 5, y + 2, 1, 1, '#f080b0'); }
     else if (ic === 'page') { R(x + 1, y + 1, 8, 9, '#1a1020'); R(x + 2, y + 2, 6, 7, '#f4ecd8'); R(x + 3, y + 4, 4, 1, '#8a7a5a'); R(x + 3, y + 6, 3, 1, '#8a7a5a'); }
+    else if (ic === 'stone') { R(x + 1, y + 2, 8, 8, '#1a1020'); R(x + 2, y + 3, 6, 6, '#6a6a88'); R(x + 3, y + 4, 2, 2, '#a8a8c8'); R(x + 5, y + 6, 2, 1, '#60c8ff'); }
+    else if (ic === 'rune') { R(x + 1, y + 1, 8, 9, '#1a1020'); R(x + 2, y + 2, 6, 7, '#3a2a78'); R(x + 4, y + 3, 1, 5, '#c8a0ff'); R(x + 3, y + 5, 3, 1, '#c8a0ff'); R(x + 6, y + 4, 1, 1, '#ffffff'); }
     else if (ic === 'deck') { R(x + 1, y + 1, 8, 9, '#1a1020'); R(x + 2, y + 2, 6, 7, '#3a2a78'); R(x + 3, y + 3, 4, 2, '#fce060'); }
     else { R(x + 1, y + 4, 8, 5, '#1a1020'); R(x + 2, y + 5, 6, 3, '#e8a040'); R(x + 1, y + 2, 2, 3, '#1a1020'); R(x + 7, y + 2, 2, 3, '#1a1020'); R(x + 2, y + 3, 1, 2, '#e8a040'); R(x + 7, y + 3, 1, 2, '#e8a040'); R(x + 3, y + 5, 1, 1, '#1a1020'); R(x + 6, y + 5, 1, 1, '#1a1020'); R(x + 9, y + 6, 2, 1, '#e8a040'); }
   }
@@ -4575,6 +4608,7 @@ netEl('netCopy').addEventListener('click', async () => {
   catch(_) { netStatus('Copia este link: ' + inviteUrl(code)); }
 });
 netEl('btnTitle').addEventListener('click', () => { audioInit(); if (G.state !== 'title') goToTitle(); cvs.focus(); });
+netEl('btnTravel').addEventListener('click', () => { audioInit(); openTravel(); cvs.focus(); });
 netEl('netHost').addEventListener('click', () => { audioInit(); netHost(); });
 netEl('netJoin').addEventListener('click', () => { audioInit(); netJoin(); });
 netEl('netLeave').addEventListener('click', () => { if (NET.role) toast('SALISTE DE LA SALA'); netLeave(); });
@@ -4683,7 +4717,9 @@ function loop(now){
   acc += Math.min(100, now - last); last = now;
   try {
     if (location.hash === '#test-arcade' && !G.tested) { G.tested = true; S = newSave(0); S.coins = 50; G.state = 'world'; loadRoom('arcade', 7 * TS + 3, 7 * TS + 4); }
-    if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4); }
+    if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4);
+      if (extra === 'viajar' || extra === 'volar') { S.stones = { home:true, tolaria:true }; if (extra === 'volar') for (const d of DECKS.slice(0, 6)) for (const c of d.cards) S.cards[c] = 1; openTravel(); G.dialog.ch = 999; G.dialog.showChoices = true; }
+      if (extra === 'ircasa') { S.stones = { home:true }; travelTo('hogar'); } }
     while (acc >= 1000 / 60) { step(); acc -= 1000 / 60; }
     render();
   } catch (e) {
