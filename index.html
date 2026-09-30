@@ -121,6 +121,21 @@
     </div>
     <p id="netStatus">Toca "Invitar amigos" y mándales el link por WhatsApp. Ellos solo lo abren y quedan conectados.</p>
   </section>
+  <section class="online" id="savePanel" aria-label="Tu partida">
+    <div class="on-head"><strong>TU PARTIDA</strong><span class="on-sub">se guarda en este navegador; para usarla en otro equipo, pasala</span></div>
+    <div class="on-row" id="saveIdle">
+      <button id="saveSend" type="button" class="btn-wa">Pasar a otro dispositivo</button>
+      <button id="saveCopy" type="button">Copiar link de partida</button>
+      <details class="on-join"><summary>Pegar link o código</summary>
+        <div class="on-row"><input id="saveCode" placeholder="PEGA AQUI" autocomplete="off" style="width:170px;text-transform:none;letter-spacing:0"><button id="saveLoad" type="button">Cargar</button></div>
+      </details>
+    </div>
+    <div id="saveImport" hidden>
+      <p id="saveImportInfo" style="margin:0 0 8px;line-height:1.7"></p>
+      <div class="on-row" id="saveSlots"></div>
+    </div>
+    <p id="saveStatus" style="margin:0;color:var(--gold);line-height:1.7">Para jugar en el computador con la partida del celular: toca "Pasar a otro dispositivo", mandate el link por WhatsApp y abrelo en el computador.</p>
+  </section>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <script>
@@ -3982,6 +3997,68 @@ function netTick(){
   }
 }
 const othersHere = () => Object.values(NET.others).filter(o => o.room === G.roomId);
+
+/* ---- Pasar la partida entre dispositivos (link o codigo, sin cuentas) ---- */
+async function encodeSave(s){
+  let bytes = new TextEncoder().encode(JSON.stringify(s)), prefix = 'j';
+  if (window.CompressionStream) {
+    const cs = new CompressionStream('deflate-raw'), w = cs.writable.getWriter(); w.write(bytes); w.close();
+    bytes = new Uint8Array(await new Response(cs.readable).arrayBuffer()); prefix = 'z';
+  }
+  let bin = ''; for (const b of bytes) bin += String.fromCharCode(b);
+  return prefix + btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+async function decodeSave(code){
+  code = String(code || '').trim();
+  const m = code.match(/partida=([A-Za-z0-9_-]+)/); if (m) code = m[1];
+  const prefix = code[0]; let b64 = code.slice(1).replace(/-/g, '+').replace(/_/g, '/'); while (b64.length % 4) b64 += '=';
+  const bin = atob(b64); let bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  if (prefix === 'z') { const ds = new DecompressionStream('deflate-raw'), w = ds.writable.getWriter(); w.write(bytes); w.close(); bytes = new Uint8Array(await new Response(ds.readable).arrayBuffer()); }
+  const s = JSON.parse(new TextDecoder().decode(bytes));
+  if (!s || s.v !== 1 || typeof s.ch !== 'number' || !CHARS[s.ch]) throw new Error('codigo invalido');
+  return s;
+}
+const saveMsg = t => { netEl('saveStatus').textContent = t; };
+function currentSave(){ if (S) { if (G.state === 'world') { S.x = PL.x; S.y = PL.y; } saveGame(); return S; } return loadSave(); }
+async function saveLink(){ const s = currentSave(); if (!s) { saveMsg('No hay partida en este dispositivo todavia.'); return null; } return INVITE_BASE + '?partida=' + await encodeSave(s); }
+netEl('saveSend').addEventListener('click', async () => {
+  const url = await saveLink(); if (!url) return;
+  const s = currentSave(), text = 'Mi partida de Magic Quest (' + CHARS[s.ch].n + ' nivel ' + s.lvl + '). Abre este link en el otro equipo: ' + url;
+  try { if (navigator.share) { await navigator.share({ title:'Mi partida de Magic Quest', text, url }); saveMsg('Listo. Abre ese link en el otro dispositivo.'); return; } } catch(_) { return; }
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener');
+  saveMsg('Mandate el mensaje a ti mismo (o a tu chat de WhatsApp) y abre el link en el otro equipo.');
+});
+netEl('saveCopy').addEventListener('click', async () => {
+  const url = await saveLink(); if (!url) return;
+  try { await navigator.clipboard.writeText(url); saveMsg('Link de partida copiado. Pegalo en el otro equipo (en el navegador o en "Pegar link o codigo").'); }
+  catch(_) { netEl('saveCode').value = url; saveMsg('Copia el texto del recuadro "Pegar link o codigo".'); }
+});
+function showImport(s){
+  netEl('saveImport').hidden = false;
+  const cards = ALL_CARDS.filter(id => (s.cards[id] || 0) > 0).length;
+  netEl('saveImportInfo').textContent = 'Partida recibida: ' + CHARS[s.ch].n + ', nivel ' + s.lvl + ', $' + s.coins + ', ' + cards + ' cartas. ¿En que espacio la guardo?';
+  const box = netEl('saveSlots'); box.innerHTML = '';
+  for (let n = 1; n <= SLOTS; n++) {
+    const ex = loadSave(n), b = document.createElement('button');
+    b.type = 'button'; b.textContent = 'ESPACIO ' + n + ': ' + (ex ? CHARS[ex.ch].n + ' NV ' + ex.lvl : 'VACIO');
+    b.addEventListener('click', () => {
+      if (ex && b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = '¿REEMPLAZAR A ' + CHARS[ex.ch].n + '? TOCA DE NUEVO'; b.style.background = '#8a1a1a'; return; }
+      if (ex) { try { localStorage.setItem('pmq_trash', JSON.stringify(ex)); } catch(_) {} }
+      const copy = Object.assign({}, s, { slot:n });
+      try { localStorage.setItem(slotKey(n), JSON.stringify(copy)); localStorage.setItem('pmq_last', String(n)); } catch(_) { saveMsg('No se pudo guardar en este navegador.'); return; }
+      netEl('saveImport').hidden = true;
+      saveMsg('Partida importada en el espacio ' + n + '. Ya puedes jugar: MENU PRINCIPAL > CONTINUAR.');
+      if (G.state !== 'title') goToTitle(); G.titleSel = 0; SFX.win();
+      try { history.replaceState(null, '', location.pathname); } catch(_) {}
+    });
+    box.appendChild(b);
+  }
+  netEl('savePanel').scrollIntoView({ behavior:'smooth', block:'center' });
+}
+netEl('saveLoad').addEventListener('click', async () => { try { showImport(await decodeSave(netEl('saveCode').value)); } catch(_) { saveMsg('Ese link o codigo no es valido. Copialo completo.'); } });
+netEl('saveCode').addEventListener('keydown', e => e.stopPropagation());
+netEl('saveCode').addEventListener('keyup', e => e.stopPropagation());
+(async () => { try { const q = new URLSearchParams(location.search).get('partida'); if (q) { showImport(await decodeSave(q)); saveMsg('Elige en que espacio guardar la partida que te mandaste.'); } } catch(_) { saveMsg('El link de partida esta incompleto o dañado.'); } })();
 
 /* ---- Invitaciones: link directo por WhatsApp ---- */
 const INVITE_BASE = 'https://mjimenezq.github.io/premodern-quest/';
