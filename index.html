@@ -902,11 +902,11 @@ const ROOMS = {
 };
 ROOMS.pueblo.npcs.push({ id:'cronista', x:2, y:6 });
 ROOMS.tempest = { name:'CIUDAD DE TEMPEST', theme:'town', music:'town', rain:true,
-  map:['TTTTTT...TTTTTT','T.RRRRR.RRRRR.T','T.RRRRR.RRRRR.T','T.WWDWW.WWDWW.T','T......S......T','T.=====.=====.T','T..b..o...b...T','T,....f.f....,T','T..b.......b..T','TTTTTTTTTTTTTTT'],
+  map:['TTTTTT...TTTTTT','T.RRRRR.RRRRR.T','T.RRRRR.RRRRR.T','T.WWDWW.WWDWW.T','T.....S.......T','T.=====.=====.T','T..b..o...b...T','T,....f.f....,T','T..b.......b..T','TTTTTTTTTTTTTTT'],
   roof:(tx) => tx < 7 ? 'purple' : 'red',
   plaques:[['LIGA TEMPEST',72,19,'#3a1a58'],['SOBRES',168,19,'#5a3418']],
   doors:{'4,3':'salaTempest','10,3':'sobresTempest'},
-  signs:{'7,4':'CIUDAD DE TEMPEST, SIEMPRE EN TORMENTA. AQUI SE JUEGA LA LIGA TEMPEST. NORTE: MERCADO DE MOX.'},
+  signs:{'6,4':'CIUDAD DE TEMPEST, SIEMPRE EN TORMENTA. AQUI SE JUEGA LA LIGA TEMPEST. NORTE: MERCADO DE MOX.'},
   npcs:[{id:'fan2',x:12,y:7},{id:'fan4',x:2,y:7}] };
 ROOMS.salaTempest = { name:'LIGA TEMPEST', theme:'inside', music:'town', interior:true, exitTo:{room:'tempest',tx:4,ty:4},
   map:['kkkkkkkkkkkkkkk','kPAAAAAAAAAAAPk','kAAAAAAAAAAAAAk','kAAAAKKKKKAAAAk','kAAAAAAAAAAAAAk','kPAAAAAAAAAAAPk','kAAAAAAAAAAAAAk','kAAAAAAAAAAAAAk','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'],
@@ -918,7 +918,7 @@ ROOMS.vina.npcs.push({ id:'ligaVina', x:8, y:4 });
 ROOMS.valpo.npcs.push({ id:'ligaCurico', x:9, y:4 });
 ROOMS.pmontt.npcs.push({ id:'ligaPmontt', x:5, y:4 });
 ROOMS.tolaria.npcs.push({ id:'ligaUrza', x:13, y:6 });
-const SOLID = new Set(['T','b','r','~','w','x','R','W','S','o','f','P','c','C','k','K','B','t','Q','Z','Y','y','L','J','H','j','^']);
+const SOLID = new Set(['T','b','r','~','w','x','R','W','S','f','P','c','C','k','K','B','t','Q','Z','Y','y','L','J','H','j','^']);
 const BOAT_ONLY = new Set(['islote','pmontt']);
 const DOCKS = { costa:[7,7], valpo:[4,6], islote:[3,5], vina:[7,7], pmontt:[7,5] };
 const BOAT_PRICE = 30;
@@ -1075,8 +1075,55 @@ function genDungeon(dk, f){
   return def;
 }
 const DEF_CACHE = {};
+// Abre camino hacia todo lo importante (salidas, puertas, cofres, NPC, escaleras, entrada de mazmorra, bote).
+// Parte desde una salida (o el bote, o la escalera de subida) y, si algo no se alcanza, rompe la menor cantidad de muros.
+const WALKABLE = c => c && !SOLID.has(c) && !HOUSE_SET.has(c);
+function connectMap(def){
+  const m = def.map.map(r => r.split('')), at = (x, y) => (x < 0 || y < 0 || x > 14 || y > 9) ? null : m[y][x];
+  const EXIT = { n:[7,0], s:[7,9], w:[0,4], e:[14,4] }, N4 = [[1,0],[-1,0],[0,1],[0,-1]];
+  const targets = [];
+  for (const sd in (def.exits || {})) targets.push({ p:EXIT[sd], self:true });
+  for (const k in (def.doors || {})) targets.push({ p:k.split(',').map(Number) });
+  for (const k in (def.chests || {})) targets.push({ p:k.split(',').map(Number) });
+  for (const n of (def.npcs || [])) targets.push({ p:[n.x, n.y], self:true });
+  for (let y = 0; y < 10; y++) for (let x = 0; x < 15; x++) if ('MUVLO'.includes(m[y][x])) targets.push({ p:[x, y] });
+  let start = null;
+  for (const t of targets) { const [x, y] = t.p; if (t.self && WALKABLE(at(x, y))) { start = [x, y]; break; } }
+  if (!start) for (const t of targets) { const [x, y] = t.p; const nb = N4.map(([a, b]) => [x + a, y + b]).find(([a, b]) => WALKABLE(at(a, b))); if (nb) { start = nb; break; } }
+  if (!start) return def;
+  const vis = new Set();
+  const flood = from => { const q = [from]; vis.add(from + ''); while (q.length) { const [x, y] = q.shift(); for (const [a, b] of N4) { const nx = x + a, ny = y + b, k = nx + ',' + ny; if (!vis.has(k) && WALKABLE(at(nx, ny))) { vis.add(k); q.push([nx, ny]); } } } };
+  flood(start);
+  let changed = false;
+  for (const t of targets) {
+    const [tx, ty] = t.p, goals = t.self ? [[tx, ty]] : N4.map(([a, b]) => [tx + a, ty + b]).filter(([a, b]) => a >= 0 && b >= 0 && a <= 14 && b <= 9);
+    if (goals.some(([a, b]) => vis.has(a + ',' + b))) continue;
+    // búsqueda de costo mínimo: caminar cuesta 0, romper un muro interior 1, uno del borde 6
+    const cost = new Map(), prev = new Map(), dq = [];
+    for (const k of vis) { cost.set(k, 0); dq.push(k); }
+    let found = null;
+    while (dq.length) {
+      let bi = 0; for (let i = 1; i < dq.length; i++) if (cost.get(dq[i]) < cost.get(dq[bi])) bi = i;
+      const k = dq.splice(bi, 1)[0], [x, y] = k.split(',').map(Number);
+      if (goals.some(([a, b]) => a === x && b === y)) { found = k; break; }
+      for (const [a, b] of N4) {
+        const nx = x + a, ny = y + b; if (nx < 0 || ny < 0 || nx > 14 || ny > 9) continue;
+        if (nx === tx && ny === ty && !t.self) continue;
+        const c = m[ny][nx], nk = nx + ',' + ny;
+        if ('MUVLOcD'.includes(c) || (def.doors && def.doors[nk])) continue;
+        const step = WALKABLE(c) ? 0 : (nx === 0 || ny === 0 || nx === 14 || ny === 9) ? 6 : 1, nc = cost.get(k) + step;
+        if (!cost.has(nk) || nc < cost.get(nk)) { cost.set(nk, nc); prev.set(nk, k); dq.push(nk); }
+      }
+    }
+    if (!found) continue;
+    for (let k = found; k && !vis.has(k); k = prev.get(k)) { const [x, y] = k.split(',').map(Number); if (!WALKABLE(m[y][x])) m[y][x] = '.'; }
+    changed = true; vis.clear(); flood(start);
+  }
+  if (changed) def.map = m.map(r => r.join(''));
+  return def;
+}
 function getDef(id){
-  if (id.startsWith('D:')) { const [, dk, f] = id.split(':'); return genDungeon(dk, +f); }
+  if (id.startsWith('D:')) { const [, dk, f] = id.split(':'); return connectMap(genDungeon(dk, +f)); }
   if (DEF_CACHE[id]) return DEF_CACHE[id];
   let def;
   if (WILD[id]) def = genWild(id);
@@ -1089,6 +1136,7 @@ function getDef(id){
     }
   }
   if (WORLD[id]) def.exits = zoneNeighbors(id);
+  connectMap(def);
   DEF_CACHE[id] = def;
   return def;
 }
@@ -3118,7 +3166,7 @@ function sellPacks(who, hello){
 const STONES = { home:{ n:'PIEDRA HOGAR' }, tolaria:{ n:'PIEDRA TOLARIA' } };
 const FLY_DECKS = 6;
 // Donde aterriza uno en cada pueblo (casilla libre cerca del centro)
-const TOWN_SPOTS = { pueblo:[6,5], tolaria:[7,4], valpo:[7,4], vina:[7,4], pmontt:[7,4], mercado:[7,4], tempest:[6,4] };
+const TOWN_SPOTS = { pueblo:[6,5], tolaria:[7,4], valpo:[7,4], vina:[7,4], pmontt:[7,4], mercado:[7,4], tempest:[7,4] };
 const DEST_NAME = { hogar:'TU CASA', tolaria:'TOLARIA', pueblo:'VILLA PREMODERN', mercado:'MERCADO DE MOX', valpo:'CURICO', vina:'VIÑA DEL MAR', pmontt:'PUERTO MONTT', tempest:'TEMPEST' };
 const WARP_T = { stone:{ out:70, in:45 }, fly:{ out:45, sky:120, in:50 } };
 function travelTo(dest, mode){
@@ -3984,6 +4032,31 @@ function introBars(text){
   R(0, 0, W, 16, '#0f380f'); R(0, 124, W, 36, '#0f380f');
   if (text) { let left = Math.floor(G.introSceneT / 2); wrap(text, 26).slice(0, 2).forEach((l, i) => { txt(l.slice(0, Math.max(0, left)), 120, 128 + i * 11, '#e0f8d0', 'center', null); left -= l.length + 1; }); }
   tiny(TOUCH ? 'A: SALTAR' : 'Z: SALTAR', 234, 150, '#6a9a60', 'right');
+}
+// Prueba (#conectividad): en cada zona, ¿se llega caminando a todas las salidas, puertas, cofres, NPC y escaleras?
+function checkConnectivity(){
+  const out = [], walk = c => c && !SOLID.has(c) && !HOUSE_SET.has(c);
+  const check = (id, def) => {
+    const m = def.map.map(r => r.split('')), vis = new Set(), q = [];
+    const at = (x, y) => (x < 0 || y < 0 || x > 14 || y > 9) ? null : m[y][x];
+    const EXIT = { n:[7,0], s:[7,9], w:[0,4], e:[14,4] };
+    let start = null;
+    for (const sd in (def.exits || {})) { const [x, y] = EXIT[sd]; if (walk(at(x, y))) { start = [x, y]; break; } }
+    if (!start) for (let y = 0; y < 10 && !start; y++) for (let x = 0; x < 15; x++) if ('UL'.includes(m[y][x])) { start = [[1,0],[-1,0],[0,1],[0,-1]].map(([a, b]) => [x + a, y + b]).find(([a, b]) => walk(at(a, b))) || null; if (start) break; }
+    if (!start) { out.push(id + ': sin punto de partida'); return; }
+    q.push(start); vis.add(start + '');
+    while (q.length) { const [x, y] = q.shift(); for (const [a, b] of [[1,0],[-1,0],[0,1],[0,-1]]) { const nx = x + a, ny = y + b, k = nx + ',' + ny; if (!vis.has(k) && walk(at(nx, ny))) { vis.add(k); q.push([nx, ny]); } } }
+    const near = (x, y) => vis.has(x + ',' + y) || [[1,0],[-1,0],[0,1],[0,-1]].some(([a, b]) => vis.has((x + a) + ',' + (y + b)));
+    for (const sd in (def.exits || {})) { const [x, y] = EXIT[sd]; if (!vis.has(x + ',' + y)) out.push(id + ': salida ' + sd + ' (' + def.exits[sd] + ') no se alcanza'); }
+    for (const k in (def.doors || {})) { const [x, y] = k.split(',').map(Number); if (!near(x, y)) out.push(id + ': puerta ' + k + ' (' + def.doors[k] + ') no se alcanza'); }
+    for (const k in (def.chests || {})) { const [x, y] = k.split(',').map(Number); if (!near(x, y)) out.push(id + ': cofre ' + k + ' no se alcanza'); }
+    for (const n of (def.npcs || [])) if (!near(n.x, n.y)) out.push(id + ': NPC ' + n.id + ' en ' + n.x + ',' + n.y + ' no se alcanza');
+    for (let y = 0; y < 10; y++) for (let x = 0; x < 15; x++) if ('MUVL'.includes(m[y][x]) && !near(x, y)) out.push(id + ': ' + m[y][x] + ' en ' + x + ',' + y + ' no se alcanza');
+    for (const [, x, y] of (def.enemies || [])) if (!vis.has(x + ',' + y) && !near(x, y)) out.push(id + ': enemigo encerrado en ' + x + ',' + y);
+  };
+  for (const id in WORLD) check(id, getDef(id));
+  for (const dk in DUNGEONS) for (let f = 1; f <= DUNGEONS[dk].floors + 1; f++) check('D:' + dk + ':' + f, getDef('D:' + dk + ':' + f));
+  const pre = document.createElement('pre'); pre.id = 'conn'; pre.textContent = 'PROBLEMAS: ' + out.length + '\n' + out.join('\n'); document.body.appendChild(pre);
 }
 function drawIntro(){
   const t = G.introT;
@@ -4936,6 +5009,7 @@ function render(){
   if (location.hash === '#zonas') { if (!G.zonesDone) { drawZonesPreview(); G.zonesDone = true; } return; }
   if (location.hash === '#nuevos') { if (!G.zonesDone) { drawZonesPreview(['pampa','fabrica','quietud','bosqueRoca','tempest','D:forja:5'], NEW_BOSSES.slice(0, 3)); G.zonesDone = true; } return; }
   if (location.hash === '#bestiario2') { drawBestiary2(); return; }
+  if (location.hash === '#conectividad') { if (!G.connDone) { G.connDone = true; checkConnectivity(); } R(0, 0, W, H, '#000'); txt('REVISANDO', 120, 70, '#fff', 'center', null); return; }
   if (location.hash.startsWith('#retrato=')) { const c = CHARS[+location.hash.slice(9)] || CHARS[0]; R(0, 0, W, H, '#3a6a3a'); [0, 3, 1, 2].forEach((d, i) => { ctx.save(); ctx.translate(8 + i * 58, 40); ctx.scale(3, 3); drawPerson(0, 0, c, d, 0); ctx.restore(); }); txt(c.n, 120, 6, '#fff', 'center', '#000'); return; }
   if (G.state === 'intro') drawIntro();
   else if (G.state === 'title') drawTitle();
