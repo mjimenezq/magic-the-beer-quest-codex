@@ -38,12 +38,37 @@
   .net button:focus-visible,.net input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   .net input{width:92px;text-transform:uppercase;letter-spacing:.2em;text-align:center}
   .net #netStatus{flex-basis:100%;text-align:center;color:var(--gold);line-height:1.6}
+  .online{width:100%;max-width:560px;box-sizing:border-box;background:var(--panel);border:3px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;font-size:9px}
+  .on-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .on-head strong{color:var(--gold);letter-spacing:.06em}
+  .on-sub{color:var(--muted);font-size:8px}
+  .dot{width:10px;height:10px;border-radius:50%;background:#5a6a66;box-shadow:0 0 0 2px #0a0f10}
+  .dot.on{background:#50e080;box-shadow:0 0 8px #50e080}
+  .dot.wait{background:#fcd84a;animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.35}}
+  .on-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .online button,.online input,.online a,.online summary{font-family:inherit;font-size:9px;color:var(--ink);background:#243a3e;border:2px solid var(--line);border-bottom-width:4px;border-radius:6px;padding:9px 12px;text-decoration:none;cursor:pointer}
+  .online button:focus-visible,.online input:focus-visible,.online a:focus-visible,.online summary:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .online .btn-main{background:#b8321a;border-color:#6a1a0a;color:#fff;font-size:10px;padding:11px 16px}
+  .online .btn-wa{background:#1f9e4a;border-color:#0e5a28;color:#fff}
+  .online .btn-ghost{background:transparent}
+  .online input{width:92px;text-transform:uppercase;letter-spacing:.2em;text-align:center;background:#0e1618}
+  .on-join summary{list-style:none;background:transparent}
+  .on-join summary::-webkit-details-marker{display:none}
+  .on-join[open] summary{margin-bottom:8px}
+  .on-code{font-size:10px;color:var(--muted)}
+  .on-code b{font-size:20px;color:var(--gold);letter-spacing:.25em;margin-left:6px}
+  .on-players{list-style:none;margin:0;padding:0;display:flex;gap:8px;flex-wrap:wrap}
+  .on-players li{background:#0e1618;border:2px solid var(--line);border-radius:14px;padding:5px 10px;color:#90f0b0}
+  #netStatus{margin:0;color:var(--gold);line-height:1.7}
+  .invite-banner{width:100%;max-width:560px;box-sizing:border-box;background:#1f5e3a;border:3px solid #50e080;border-radius:10px;padding:10px 14px;font-size:9px;line-height:1.7;color:#e8fff0}
   @media (pointer:coarse){ .pad{display:flex} .keys{display:none} .screen{width:min(100%, calc((100dvh - 250px) * 1.5))} }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>MAGIC QUEST</h1>
+  <div class="invite-banner" id="inviteBanner" hidden></div>
   <div class="screen"><canvas id="game" width="240" height="160" tabindex="0" aria-label="Juego de rol de acción con cartas"></canvas></div>
   <div class="keys">
     <span><kbd>Flechas</kbd>/<kbd>WASD</kbd> moverse</span>
@@ -76,14 +101,26 @@
   <div class="net">
     <button id="btnTitle" type="button">⌂ Menú principal</button>
   </div>
-  <div class="net" id="net">
-    <span>ONLINE:</span>
-    <button id="netHost" type="button">Crear sala</button>
-    <input id="netCode" maxlength="4" placeholder="CÓDIGO" autocomplete="off" autocapitalize="characters" aria-label="Código de sala">
-    <button id="netJoin" type="button">Unirse</button>
-    <button id="netLeave" type="button">Salir</button>
-    <span id="netStatus">Juega solo o crea una sala para jugar con amigos (hasta 3).</span>
-  </div>
+  <section class="online" id="net" aria-label="Jugar en linea">
+    <div class="on-head"><span class="dot" id="netDot"></span><strong>JUGAR CON AMIGOS</strong><span class="on-sub">hasta 3, cada uno desde su casa</span></div>
+    <div class="on-row" id="netIdle">
+      <button id="netHost" type="button" class="btn-main">Invitar amigos</button>
+      <details class="on-join"><summary>Tengo un código</summary>
+        <div class="on-row"><input id="netCode" maxlength="4" placeholder="CÓDIGO" autocomplete="off" autocapitalize="characters" aria-label="Código de sala"><button id="netJoin" type="button">Unirse</button></div>
+      </details>
+    </div>
+    <div class="on-room" id="netRoom" hidden>
+      <div class="on-code">SALA <b id="netCodeBig">----</b></div>
+      <div class="on-row">
+        <a id="netWa" class="btn-wa" target="_blank" rel="noopener">WhatsApp</a>
+        <button id="netShare" type="button">Compartir</button>
+        <button id="netCopy" type="button">Copiar link</button>
+        <button id="netLeave" type="button" class="btn-ghost">Salir de la sala</button>
+      </div>
+      <ul class="on-players" id="netPlayers"></ul>
+    </div>
+    <p id="netStatus">Toca "Invitar amigos" y mándales el link por WhatsApp. Ellos solo lo abren y quedan conectados.</p>
+  </section>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <script>
@@ -3794,7 +3831,7 @@ function drawEnding(){
 const NET = { role:null, peer:null, conns:[], host:null, pid:null, code:null, others:{}, hostRoom:null, gotEn:0 };
 let NID = 0;
 const netEl = id => document.getElementById(id);
-function netStatus(s){ const el = netEl('netStatus'); if (el) el.textContent = s; }
+function netStatus(s){ const el = netEl('netStatus'); if (el) el.textContent = s; try { netUI(); } catch(_) {} }
 function genCode(){ const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; let s = ''; for (let i = 0; i < 4; i++) s += a[rnd(a.length)]; return s; }
 // STUN para encontrarse y TURN (retransmision) para cuando la conexion directa falla, tipico en datos moviles
 const PEER_OPTS = { debug:1, config:{ iceServers:[
@@ -3831,7 +3868,7 @@ function netHost(){
   const code = genCode(), peer = new Peer('pmq-' + code.toLowerCase(), PEER_OPTS);
   Object.assign(NET, { peer, role:'host', code, pid:'h' });
   netStatus('Creando sala...');
-  peer.on('open', () => netStatus('SALA ' + code + ' · pasale este codigo a tus amigos. Deja el juego abierto en pantalla.'));
+  peer.on('open', () => netStatus('Sala lista. Invita por WhatsApp: tus amigos abren el link y se conectan solos. Deja el juego abierto en pantalla.'));
   peer.on('disconnected', () => { if (NET.peer === peer && !peer.destroyed) { netStatus('Reconectando la sala ' + code + '...'); try { peer.reconnect(); } catch(_) {} } });
   peer.on('connection', c => {
     c.on('open', () => {
@@ -3931,6 +3968,7 @@ function applyHit(e, dmg, kx, ky){
   if (e.hp <= 0) killEnemy(e);
 }
 function netTick(){
+  if (frame % 30 === 0) { tryAutoJoin(); netUI(); }
   if (!NET.role || !S || G.state === 'title' || G.state === 'select') return;
   for (const k in NET.others) { const o = NET.others[k]; o.rx += (o.x - o.rx) * 0.35; o.ry += (o.y - o.ry) * 0.35; }
   if (frame % 4) return;
@@ -3944,6 +3982,43 @@ function netTick(){
   }
 }
 const othersHere = () => Object.values(NET.others).filter(o => o.room === G.roomId);
+
+/* ---- Invitaciones: link directo por WhatsApp ---- */
+const INVITE_BASE = 'https://mjimenezq.github.io/premodern-quest/';
+let pendingRoom = null;
+try { const q = new URLSearchParams(location.search).get('sala'); if (q && /^[A-Za-z]{4}$/.test(q)) pendingRoom = q.toUpperCase(); } catch(_) {}
+const inviteUrl = code => INVITE_BASE + '?sala=' + code;
+const inviteText = code => '¡Juguemos Magic Quest juntos! Entra a mi sala ' + code + ': ' + inviteUrl(code);
+if (pendingRoom) { const b = netEl('inviteBanner'); b.hidden = false; b.textContent = 'Te invitaron a la sala ' + pendingRoom + '. Elige o crea tu personaje y te conectas solo.'; }
+function netUI(){
+  const inRoom = !!NET.role, code = NET.code || '';
+  netEl('netIdle').hidden = inRoom; netEl('netRoom').hidden = !inRoom;
+  netEl('netDot').className = 'dot' + (inRoom ? ((NET.role === 'host' && NET.peer && NET.peer.open) || (NET.host && NET.host.open) ? ' on' : ' wait') : '');
+  if (inRoom) {
+    netEl('netCodeBig').textContent = code;
+    netEl('netWa').href = 'https://wa.me/?text=' + encodeURIComponent(inviteText(code));
+    const names = [S ? CH().n + ' (TU)' : 'TU'].concat(Object.values(NET.others).map(o => o.name + (o.pid === 'h' ? ' (ANFITRION)' : '')));
+    const ul = netEl('netPlayers'), html = names.map(n => '<li>' + n.replace(/[<>&]/g, '') + '</li>').join('');
+    if (ul.innerHTML !== html) ul.innerHTML = html;
+  }
+}
+function tryAutoJoin(){
+  if (!pendingRoom || NET.role || !S || G.state !== 'world' || G.dialog) return;
+  const c = pendingRoom; pendingRoom = null;
+  netEl('inviteBanner').hidden = true;
+  netEl('netCode').value = c; netJoin();
+  try { history.replaceState(null, '', location.pathname); } catch(_) {}
+}
+netEl('netShare').addEventListener('click', async () => {
+  const code = NET.code; if (!code) return;
+  try { if (navigator.share) { await navigator.share({ title:'Magic Quest', text:inviteText(code), url:inviteUrl(code) }); return; } } catch(_) { return; }
+  window.open('https://wa.me/?text=' + encodeURIComponent(inviteText(code)), '_blank', 'noopener');
+});
+netEl('netCopy').addEventListener('click', async () => {
+  const code = NET.code; if (!code) return;
+  try { await navigator.clipboard.writeText(inviteUrl(code)); netStatus('Link copiado. Pegalo en WhatsApp o donde quieras.'); }
+  catch(_) { netStatus('Copia este link: ' + inviteUrl(code)); }
+});
 netEl('btnTitle').addEventListener('click', () => { audioInit(); if (G.state !== 'title') goToTitle(); cvs.focus(); });
 netEl('netHost').addEventListener('click', () => { audioInit(); netHost(); });
 netEl('netJoin').addEventListener('click', () => { audioInit(); netJoin(); });
