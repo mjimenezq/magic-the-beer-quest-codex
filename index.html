@@ -2325,7 +2325,11 @@ const statLine = st => Object.entries(st).map(([k, v]) => '+' + v + ' ' + k.toUp
 function dropLoot(e){
   const m = MON[e.type], cx = e.x + e.w / 2, cy = e.y + e.h / 2;
   addXP(m.xp);
-  const drop = (k, id, v) => G.items.push({ k, id, v, x:cx - 5 + rnd(10) - 5, y:cy - 5 + rnd(10) - 5, z:0, vz:-2.2, t:0 });
+  const drop = (k, id, v) => {
+    let x = cx - 5 + rnd(10) - 5, y = cy - 5 + rnd(10) - 5;
+    if (blocked(x, y, 10, 10)) { x = cx - 5; y = cy - 5; if (blocked(x, y, 10, 10)) { x = PL.x; y = PL.y - 2; } }
+    G.items.push({ k, id, v, x, y, z:0, vz:-2.2, t:0 });
+  };
   if (m.boss) {
     S.bosses[e.type] = true; G.bossBar = null; playMusic(G.def.music);
     if (G.def.bossFloor) { G.map[4][7] = 'O'; G.cacheDirty = true; }
@@ -2841,11 +2845,18 @@ function updateEnemies(){
   }
   G.enemies = G.enemies.filter(e => !e.dead);
 }
+// Imán fuerte: todo objeto a menos de MAGNET_R píxeles vuela hacia el jugador (atraviesa muros)
+const MAGNET_R = 64;
 function updateItems(){
   const p = PL, box = { x:p.x - 1, y:p.y - 6, w:12, h:14 };
   for (const it of G.items) {
     it.t++;
     if (it.vz !== 0 || it.z < 0) { it.z += it.vz; it.vz += 0.25; if (it.z >= 0) { it.z = 0; it.vz = Math.abs(it.vz) > 1 ? -Math.abs(it.vz) * 0.4 : 0; } }
+    if (it.t > 12) {
+      const dx = p.x - it.x, dy = p.y - 3 - it.y, d = Math.hypot(dx, dy) || 1;
+      if (d < MAGNET_R) it.pull = true;
+      if (it.pull) { const sp = Math.min(d, 5.5); it.x += dx / d * sp; it.y += dy / d * sp; if ((it.t & 3) === 0) G.parts.push({ k:'heal', x:it.x + 5, y:it.y + 5, vx:0, vy:-0.3, t:0 }); }
+    }
     if (it.t > 12 && ov(box, { x:it.x, y:it.y, w:10, h:10 })) {
       it.dead = true;
       if (it.k === 'coin') { S.coins += it.v; SFX.coin(); floatText('+' + money(it.v), it.x, it.y, '#fcd84a'); }
@@ -4959,6 +4970,7 @@ function loop(now){
     if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4);
       if (extra === 'viajar' || extra === 'volar') { S.stones = { home:true, tolaria:true }; if (extra === 'volar') for (const d of DECKS.slice(0, 6)) for (const c of d.cards) S.cards[c] = 1; openTravel(); G.dialog.ch = 999; G.dialog.showChoices = true; }
       if (extra === 'ircasa') { S.stones = { home:true }; travelTo('hogar', 'stone'); }
+      if (extra === 'iman') { G.enemies = []; S.hp = 20; G.items.push({ k:'beer', x:PL.x + 55, y:PL.y, z:0, vz:0, t:20 }); for (let i = 0; i < 40; i++) step(); G.freeze = true; }
       if (extra && /^(volando|piedra)\d+$/.test(extra)) { travelTo(extra.startsWith('volando') ? 'vina' : 'hogar', extra.startsWith('volando') ? 'fly' : 'stone'); const n = +extra.replace(/\D/g, ''); for (let i = 0; i < n; i++) step(); G.freeze = true; } }
     while (acc >= 1000 / 60) { if (!G.freeze) step(); acc -= 1000 / 60; }
     render();
@@ -4998,6 +5010,8 @@ function pointerClick(p, right){
   // mundo: criatura cerca del clic -> atacar; personaje -> hablar; si no, caminar
   const pc = { x:PL.x + 5, y:PL.y + 4 };
   const faceTo = (tx, ty) => { const dx = tx - pc.x, dy = ty - pc.y; PL.dir = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 2 : 3) : (dy < 0 ? 1 : 0); };
+  const item = G.items.find(it => !it.dead && Math.abs(it.x + 5 - p.x) < 11 && Math.abs(it.y + 5 - p.y) < 11);
+  if (item && Math.hypot(item.x + 5 - pc.x, item.y + 5 - pc.y) < 110) { item.pull = true; item.t = Math.max(item.t, 13); G.moveTarget = null; SFX.move(); return; }
   const foe = G.enemies.find(e => !e.dead && Math.hypot(e.x + e.w / 2 - p.x, e.y + e.h / 2 - p.y) < e.w / 2 + 8);
   if (foe && Math.hypot(foe.x + foe.w / 2 - pc.x, foe.y + foe.h / 2 - pc.y) < 40) { faceTo(foe.x + foe.w / 2, foe.y + foe.h / 2); G.moveTarget = null; pulseKey = 'a'; return; }
   const npc = G.npcs.find(n => p.x > n.x - 6 && p.x < n.x + n.w + 6 && p.y > n.y - 16 && p.y < n.y + n.h + 4);
