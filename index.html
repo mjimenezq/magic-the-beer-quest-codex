@@ -431,6 +431,15 @@ const CHARS = [
   { id:'katy', n:'KATY', tag:'LA TRAMPOSA', style:'ponytail', st:{fue:4,des:7,agi:6,int:5}, main:'des', cheat:true,
     c:{ hair:'#d8382a', hairL:'#f87858', band:'#e8c040', skin:'#f6c9a0', eye:'#2a8a4a', lashes:true, lip:'#c82848', shirt:'#6a2a8a', shirtD:'#3e1458',
         emblem:'#e8c040', cape:'#a81a2a', capeD:'#6a0a18', belt:'#e8c040', pants:'#4a2a1a', shoe:'#1a0c06', sleeve:'#f6c9a0' } },
+  { id:'pepe', n:'PEPE', tag:'EL VETERANO', style:'bald', st:{fue:6,des:5,agi:4,int:6}, main:'fue',
+    c:{ hair:'#2a1a10', skin:'#d8a070', shirt:'#e8b020', shirtD:'#a87810', emblem:'#1a1a2a',
+        cape:'#3a5a8a', capeD:'#1a3a68', belt:'#2a1a0c', pants:'#3a3a48', shoe:'#1a0c06', sleeve:'#e8b020' } },
+  { id:'ivan', n:'IVÁN', tag:'EL COMBERO', style:'spiky', st:{fue:4,des:6,agi:6,int:5}, main:'des',
+    c:{ hair:'#5a3418', hairD:'#3a2010', skin:'#f1c9a0', eye:'#3a2a18', shirt:'#1a1a2a', shirtD:'#0a0a14', emblem:'#40d0f0',
+        cape:'#1a6a8a', capeD:'#0a4a68', belt:'#2a1a0c', pants:'#2a3a5a', shoe:'#1a0c06', sleeve:'#1a1a2a' } },
+  { id:'tebax', n:'TEBAX', tag:'EL HECHICERO', style:'wizard', st:{fue:3,des:5,agi:5,int:8}, main:'int',
+    c:{ hat:'#1a8a5a', hatD:'#0e5a3a', hair:'#141014', skin:'#e8b088', shirt:'#1a8a5a', shirtD:'#0e5a3a', emblem:'#e8c040',
+        cape:'#5a2a8a', capeD:'#3a1468', belt:'#e8c040', pants:'#2a2a38', shoe:'#1a0c06', sleeve:'#1a8a5a' } },
 ];
 const NPCDEF = {
   cantinero:{ n:'CANTINERO', style:'bald', c:{ hair:'#3a2418', skin:'#e8b088', shirt:'#f4f1e8', shirtD:'#c8c0b0', pants:'#3a3a48', shoe:'#2a1a10' } },
@@ -2962,6 +2971,9 @@ const FRIEND_LINES = {
   4:['¿Trampa? Yo no hago trampa... solo tengo mucha suerte con los dados. Mucha.','Si juegas conmigo, mírame las manos. O no, mejor mírame a los ojos.'],
   3:['Yo no juego rápido, juego bien. Por eso gano los torneos... a veces.','Tip de Klaus: la cerveza sube la INT para el torneo. Es ciencia, cachai.'],
   2:['¿Una partida? Te juego mi Replenish contra lo que traigas. Pierde el que paga la ronda.','En las Minas de Mishra hay un Rey Goblin con corona. Me pegó tan fuerte que volví a pie a Tolaria.'],
+  5:['Yo juego Premodern desde antes que existiera el nombre. Terravore y Armageddon, como en los viejos tiempos.','Si vas a la Pampa de Terravore, anda con cuidado: la tierra tiembla sin aviso.'],
+  6:['Mi Rock no pierde: Spiritmonger, Deed y a esperar. Paciencia, compadre.','Te cambio una carta repetida por un consejo: en el Bosque de la Roca, las ardillas vienen en manada.'],
+  7:['La magia es como el Landstill: nadie la ve venir hasta que ya ganaste.','Dicen que en la Ciudadela del Conclave la Reina ataca desde el aire. Lleva hechizos de lejos.'],
 };
 /* ============ TIENDAS DEL MERCADO ============ */
 function shopItems(kind){
@@ -3960,20 +3972,22 @@ function updateSlots(){
     else { G.newSlot = n; G.state = 'select'; G.sel = 0; }
   }
 }
+const SEL_COLS = 4, SEL_ROWS = [24, 68];
 function drawSelect(){
   R(0, 0, W, H, '#10161a');
   for (let i = 0; i < 15; i++) R(i * 16, 104, 16, 56, i % 2 ? '#1c2a2e' : '#18242a');
   txt('ELIGE PERSONAJE', 120, 8, '#fcd84a', 'center', '#7a3a10');
   CHARS.forEach((c, i) => {
-    const cx = 24 + i * 48, sel = i === G.sel, bob = sel ? Math.round(Math.abs(Math.sin(frame * 0.12)) * -4) : 0;
-    ctx.save(); ctx.translate(cx - 20, 34 + bob); ctx.scale(2.5, 2.5); drawPerson(0, 0, c, sel ? 0 : 0, sel ? (frame >> 4) & 1 : 0); ctx.restore();
-    if (sel) { R(cx - 26, 84, 52, 2, '#fcd84a'); }
-    txt(c.n, cx, 90, sel ? '#fcd84a' : '#fff', 'center', '#000');
+    const cx = 30 + (i % SEL_COLS) * 60, y0 = SEL_ROWS[Math.floor(i / SEL_COLS)], sel = i === G.sel, bob = sel ? Math.round(Math.abs(Math.sin(frame * 0.12)) * -3) : 0;
+    if (sel) R(cx - 28, y0 - 11, 56, 42, '#1c2a2e');
+    ctx.save(); ctx.translate(cx - 11, y0 + bob); ctx.scale(1.4, 1.4); drawPerson(0, 0, c, 0, sel ? (frame >> 4) & 1 : 0); ctx.restore();
+    if (sel) R(cx - 24, y0 + 30, 48, 1, '#fcd84a');
+    tiny(c.n, cx, y0 + 24, sel ? '#fcd84a' : '#fff', 'center');
   });
   const c = CHARS[G.sel];
-  tiny(c.tag, 120, 104, '#10d9b8', 'center');
+  tiny(c.tag, 120, 108, '#10d9b8', 'center');
   [['FUE','fue'],['DES','des'],['AGI','agi'],['INT','int']].forEach(([l, k], i) => {
-    const x = 16 + (i % 2) * 112, y = 116 + Math.floor(i / 2) * 12;
+    const x = 16 + (i % 2) * 112, y = 118 + Math.floor(i / 2) * 12;
     tiny(l, x, y + 1, '#9db8a8');
     for (let j = 0; j < 8; j++) R(x + 18 + j * 9, y, 8, 6, j < c.st[k] ? '#fcd84a' : '#2a3a3a');
   });
@@ -3982,6 +3996,7 @@ function drawSelect(){
 function updateSelect(){
   if (pressed('left')) { G.sel = (G.sel + CHARS.length - 1) % CHARS.length; SFX.move(); }
   if (pressed('right')) { G.sel = (G.sel + 1) % CHARS.length; SFX.move(); }
+  if (pressed('up') || pressed('down')) { G.sel = (G.sel + SEL_COLS) % (SEL_COLS * SEL_ROWS.length); if (G.sel >= CHARS.length) G.sel = G.sel % SEL_COLS; SFX.move(); }
   if (pressed('b')) { G.state = 'slots'; SFX.back(); }
   if (pressed('a') || pressed('menu')) {
     SFX.ok();
@@ -3989,7 +4004,7 @@ function updateSelect(){
     loadRoom('pueblo', S.x, S.y);
     say(['Bienvenido a VILLA PREMODERN, ' + CHARS[G.sel].n + '.',
       'Por aquí las criaturas salen de las cartas... y cuando las derrotas, sueltan cartas.',
-      'Junta un mazo completo (8 cartas) y juega el torneo en la ARENA.',
+      'Junta un mazo completo (12 cartas) y juega el torneo en la ARENA.',
       '¿Sed? En la TABERNA hay cerveza y gente para cambiar cartas.',
       TOUCH ? 'A: atacar. B: hablar. MENÚ: tus mazos, espadas y estado.' : 'Z: atacar. X: hablar. ENTER: tus mazos, espadas y estado.']);
   }
@@ -4277,7 +4292,7 @@ const BEATS = { agro:'combo', ctrl:'agro', combo:'ctrl' };
 const LOSES_TO = { agro:'ctrl', ctrl:'combo', combo:'agro' };
 const DECK_STYLE = { burn:'agro', goblins:'agro', black:'ctrl', life:'ctrl', replenish:'combo', langostino:'combo', terragedon:'agro', landstill:'ctrl', rock:'ctrl', mud:'combo' };
 const DUELIST_DECK = { fan1:'goblins', fan2:'burn', fan3:'black', fan4:'life', klaus:'black', marinero:'langostino', pescador:'replenish', juez:'replenish', coleccionista:'langostino', cantinero:'burn', ligaVina:'terragedon', ligaCurico:'rock', ligaPmontt:'landstill', ligaUrza:'mud', ligaTempest:'landstill' };
-const FRIEND_DECK = ['goblins','burn','replenish','black','langostino'];
+const FRIEND_DECK = ['goblins','burn','replenish','black','langostino','terragedon','rock','landstill'];
 const isDuelist = n => n.id === 'friend' || DUELIST_DECK[n.id] !== undefined;
 function offerDuel(n){
   const name = n.id === 'friend' ? CHARS[n.ch].n : NPCDEF[n.id].n;
@@ -4788,6 +4803,7 @@ function loop(now){
   acc += Math.min(100, now - last); last = now;
   try {
     if (location.hash === '#test-arcade' && !G.tested) { G.tested = true; S = newSave(0); S.coins = 50; G.state = 'world'; loadRoom('arcade', 7 * TS + 3, 7 * TS + 4); }
+    if (location.hash.startsWith('#elegir') && !G.tested) { G.tested = true; G.state = 'select'; G.sel = +location.hash.slice(8) || 0; }
     if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4);
       if (extra === 'viajar' || extra === 'volar') { S.stones = { home:true, tolaria:true }; if (extra === 'volar') for (const d of DECKS.slice(0, 6)) for (const c of d.cards) S.cards[c] = 1; openTravel(); G.dialog.ch = 999; G.dialog.showChoices = true; }
       if (extra === 'ircasa') { S.stones = { home:true }; travelTo('hogar', 'stone'); }
@@ -4814,7 +4830,7 @@ function pointerClick(p, right){
     if (dc) { (dc.rects || []).forEach((r, i) => { if (inRect(p, r)) { dc.sel = i; pulseKey = 'a'; } }); return; }
     const i = Math.floor((p.y - 20) / 42); if (i >= 0 && i < SLOTS) { if (G.slotSel === i) pulseKey = 'a'; else { G.slotSel = i; SFX.move(); } } return;
   }
-  if (st === 'select') { const i = Math.floor((p.x) / 48); if (i >= 0 && i < CHARS.length) { if (G.sel === i) pulseKey = 'a'; else { G.sel = i; SFX.move(); } } return; }
+  if (st === 'select') { const col = Math.floor(p.x / 60), row = p.y < 57 ? 0 : p.y < 104 ? 1 : -1, i = row * SEL_COLS + col; if (row >= 0 && col >= 0 && col < SEL_COLS && i < CHARS.length) { if (G.sel === i) pulseKey = 'a'; else { G.sel = i; SFX.move(); } } return; }
   if (st === 'duel') {
     if (G.dialog) { dialogClick(p); return; }
     const d = G.duel; if (d.phase === 'choose') { (d.rects || []).forEach((r, i) => { if (inRect(p, r)) { if (d.sel === i) pulseKey = 'a'; else { d.sel = i; SFX.move(); } } }); } else pulseKey = 'a';
