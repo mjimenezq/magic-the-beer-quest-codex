@@ -396,7 +396,7 @@ const NPCDEF = {
   mueblero:{ n:'CARPINTERO', style:'beanie', c:{ hat:'#c8a030', hatD:'#8a6a18', hair:'#8a5428', skin:'#e8a878', shirt:'#b87c40', shirtD:'#7a4a24', pants:'#3a4a6a', shoe:'#2a1a0c' } },
   premiador:{ n:'JUEZA DE PREMIOS', style:'bun', c:{ hair:'#e8c040', skin:'#fbdcc4', shirt:'#7a3ab0', shirtD:'#4a1a78', pants:'#2a2a38', shoe:'#1a1a22', cape:'#e8c040', capeD:'#a88818' } },
   arcadeOrg:{ n:'ENCARGADO', style:'spiky', c:{ hair:'#e83a78', hairD:'#a01a50', skin:'#f1c9a0', shirt:'#1a1a2a', shirtD:'#0a0a14', emblem:'#40f0c0', pants:'#2a2a38', shoe:'#2a1a0c' } },
-  viejo:{ n:'VIEJO DEL MUELLE', style:'wizard', c:{ hat:'#1a3a78', hatD:'#0a1a48', hair:'#f0f0f4', skin:'#e8b088', shirt:'#1a3a78', shirtD:'#0a1a48', pants:'#1a3a78', shoe:'#1a1a22' } },
+  viejo:{ n:'VIEJO DEL RIO', style:'wizard', c:{ hat:'#1a3a78', hatD:'#0a1a48', hair:'#f0f0f4', skin:'#e8b088', shirt:'#1a3a78', shirtD:'#0a1a48', pants:'#1a3a78', shoe:'#1a1a22' } },
 };
 
 const CARDS = {
@@ -617,12 +617,12 @@ const ROOMS = {
     doors:{'3,2':'tienda','11,2':'posada','6,7':'liga','9,7':'arcade'},
     signs:{'6,3':'OESTE: PANTANO NEGRO. NORTE: ENTRADA A LAS MINAS DE MISHRA.','8,3':'TOLARIA: CAPITAL DEL PREMODERN CHILENO. AQUÍ SE JUEGA LA LIGA NACIONAL.'},
     npcs:[{id:'juez',x:12,y:3},{id:'fan1',x:2,y:8},{id:'fan2',x:12,y:8}] },
-  valpo:{ name:'PUERTO VALPO', theme:'town', music:'field',
+  valpo:{ name:'CURICÓ', theme:'town', music:'field',
     map:['TTTTTT===TTTTTT','T,.RRRRR....,.T','T..RRRRR..RRRRT','T..WWDWW..WWDWT','T.....S........','T..=========..=','~~~~=ss.....s~~','~~~~=~~~..ss~~~','~~~~=L~~~~~~~~~','~~~~=~~~~~~~~~~'],
     roof:(tx) => tx >= 9 ? 'green' : 'red',
-    plaques:[['EL MUELLE',88,19,'#5a3418'],['CASA',192,35,'#1a4a2a']],
+    plaques:[['LA RUCA',88,19,'#5a3418'],['CASA',192,35,'#1a4a2a']],
     doors:{'5,3':'bar','12,3':'casa'},
-    signs:{'6,4':'PUERTO VALPO. AQUÍ SE ABRIÓ LA CAJA DE URZA. NORTE: PRADERA. ESTE: COSTA.'},
+    signs:{'6,4':'CURICÓ, TIERRA DE TORTAS Y DE PREMODERN. AQUÍ SE ABRIÓ LA CAJA DE URZA. NORTE: PRADERA. ESTE: COSTA.'},
     npcs:[{id:'marinero',x:11,y:6},{id:'pescador',x:8,y:6},{id:'barquero',x:4,y:8}] },
   tienda:{ name:'TIENDA LA GUARIDA DEL MONO', theme:'inside', music:'tavern', interior:true, exitTo:{room:'tolaria',tx:3,ty:3},
     map:['kkkkkkkkkkkkkkk','kBKKKKFKKKKKBBk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFBk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFBk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFBk','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'],
@@ -642,7 +642,7 @@ const ROOMS = {
   arcade:{ name:'ARCADE TOLARIA', theme:'inside', music:'town', interior:true, exitTo:{room:'tolaria',tx:9,ty:8},
     map:['kkkkkkkkkkkkkkk','kZFZFZFZFZFZFZk','kFFFFFFFFFFFFFk','kFFFFFFFFFFFFFk','kZFZFFFFFFFZFZk','kFFFFFFFFFFFFFk','kFFFFFFFFFFFFFk','kFFFFFFFFFFFFFk','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'],
     npcs:[{id:'arcadeOrg',x:7,y:4},{id:'fan1',x:4,y:6}] },
-  bar:{ name:'BAR EL MUELLE', theme:'inside', music:'tavern', interior:true, exitTo:{room:'valpo',tx:5,ty:4},
+  bar:{ name:'BAR LA RUCA', theme:'inside', music:'tavern', interior:true, exitTo:{room:'valpo',tx:5,ty:4},
     map:['kkkkkkkkkkkkkkk','kBKKKKFKKKKKBBk','kFFFFFFFFFFFFFk','kFtFFtFFFFtFFFk','kFFFFFFFFFFFFFk','kFtFFtFFFFtFFBk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFFk','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'],
     npcs:[{id:'cantinero',x:6,y:1},{id:'friend',slot:0,x:3,y:4},{id:'friend',slot:1,x:11,y:4},{id:'friend',slot:2,x:8,y:6}] },
   casa:{ name:'CASA DEL VIEJO', theme:'inside', music:'town', interior:true, exitTo:{room:'valpo',tx:12,ty:4},
@@ -660,7 +660,7 @@ function travelBoat(dest){ SFX.door(); tone(160, 120, 0.6, 'triangle', 0.4); con
 const WORLD = { guarida:[2,0], cerro:[1,1], bosque:[2,1], bosqueProf:[3,1], minas:[4,1],
   ruinas:[0,2], pradera:[1,2], pueblo:[2,2], pantano:[3,2], tolaria:[4,2], valpo:[1,3], costa:[2,3], pantanoProf:[3,3], mercado:[4,3], islote:[2,4] };
 const SHORT = { guarida:'GUARIDA', cerro:'CERRO MOX', bosque:'BOSQUE', bosqueProf:'B. PROFUNDO', minas:'MINAS', ruinas:'RUINAS',
-  pradera:'PRADERA', pueblo:'VILLA', pantano:'PANTANO', tolaria:'TOLARIA', valpo:'VALPO', costa:'COSTA', pantanoProf:'P. PROFUNDO', islote:'ISLOTE', mercado:'MERCADO' };
+  pradera:'PRADERA', pueblo:'VILLA', pantano:'PANTANO', tolaria:'TOLARIA', valpo:'CURICO', costa:'COSTA', pantanoProf:'P. PROFUNDO', islote:'ISLOTE', mercado:'MERCADO' };
 const WILD = {
   cerro:{ name:'CERRO MOX', theme:'dirt', music:'field', walls:['r','r','T','b'], decks:['burn','goblins','langostino'], enemies:['gob','pup','merfolk','ball'], n:5, chest:'hierro' },
   bosqueProf:{ name:'BOSQUE PROFUNDO', theme:'forest', music:'field', walls:['T','T','T','b'], decks:['goblins','black'], enemies:['gob','shade','pup','specter'], n:6, chest:'bolsa' },
@@ -2157,7 +2157,7 @@ const QUESTS = {
   q_langost:{ giver:'coleccionista', title:'Caza del Langostino', desc:'Derrota al Langostino del islote, al sur de la costa.', type:'boss', target:'dread', n:1, reward:{ st:{agi:2}, coins:40 } },
 };
 const GIVER_PLACE = { vecina:'VILLA', cronista:'VILLA', cantinero:'TABERNA DE LA VILLA', klaus:'TABERNA DE LA VILLA', coleccionista:'TABERNA DE LA VILLA',
-  organizador:'ARENA DE LA VILLA', pescador:'VALPO', marinero:'VALPO', viejo:'CASA DEL VIEJO (VALPO)', juez:'TOLARIA', fan2:'TOLARIA',
+  organizador:'ARENA DE LA VILLA', pescador:'CURICO', marinero:'CURICO', viejo:'CASA DEL VIEJO (CURICO)', juez:'TOLARIA', fan2:'TOLARIA',
   tendero:'TIENDA (TOLARIA)', posadera:'POSADA (TOLARIA)', arcadeOrg:'ARCADE (TOLARIA)' };
 const STN = { fue:'FUE', des:'DES', agi:'AGI', int:'INT' };
 const rewardText = r => [Object.entries(r.st || {}).map(([k, v]) => '+' + v + ' ' + STN[k]).join(' '), r.maxHp ? '+' + r.maxHp / 2 + ' CORAZÓN' : '', r.coins ? '$' + r.coins : '', r.spell ? 'HECHIZO ' + SPELLS[r.spell].n.toUpperCase() : ''].filter(Boolean).join(', ');
@@ -2300,7 +2300,7 @@ function houseInteract(c){
 function talkTo(id, npc, skipQuest){
   if (!skipQuest && questHook(id, npc)) return;
   if (id === 'barquero') {
-    if (G.roomId === 'islote') { say(['BARQUERO: ¿De vuelta a tierra firme? La vuelta es gratis.'], [{ t:'A LA COSTA', fn:() => travelBoat('costa') }, { t:'A VALPO', fn:() => travelBoat('valpo') }, { t:'ME QUEDO', fn:null }]); return; }
+    if (G.roomId === 'islote') { say(['BARQUERO: ¿De vuelta a tierra firme? La vuelta es gratis.'], [{ t:'A LA COSTA', fn:() => travelBoat('costa') }, { t:'A CURICÓ', fn:() => travelBoat('valpo') }, { t:'ME QUEDO', fn:null }]); return; }
     say(['BARQUERO: El Islote del Langostino solo se alcanza en bote. El viaje cuesta $' + BOAT_PRICE + '. Dicen que el bicho es enorme...'],
       [{ t:'VIAJAR ($' + BOAT_PRICE + ')', fn:() => { if (S.coins < BOAT_PRICE) { say(['BARQUERO: Sin plata no hay bote, compadre.']); return; } S.coins -= BOAT_PRICE; travelBoat('islote'); } }, { t:'NO', fn:null }]);
     return;
@@ -2319,14 +2319,14 @@ function talkTo(id, npc, skipQuest){
     say(g >= 5 ? ['CRONISTA: ¡Derrotaste a los cinco guardianes! Ahora solo falta la Liga Nacional en Tolaria. Escribiré tu nombre en la historia del Premodern chileno.']
       : ['CRONISTA: Soy el cronista de Villa Premodern. Llevo el registro de todo lo que pasa desde que se abrió la Caja de Urza.',
          'Cinco guardianes custodian el poder de la caja: el Comandante de la Guarida, el Langostino del islote, el Rey de las Minas, el Negator Ancestral de la Cripta y la Ángel Ascendida de la Torre.',
-         'Llevas ' + g + ' de 5. Revisa tus MISIONES y el MAPA en el menú. Si quieres saber cómo empezó todo, habla con el viejo del muelle en Puerto Valpo.']);
+         'Llevas ' + g + ' de 5. Revisa tus MISIONES y el MAPA en el menú. Si quieres saber cómo empezó todo, habla con el viejo del río en Curicó.']);
     return;
   }
   if (id === 'viejo') {
     S.lore = true;
-    say(['VIEJO DEL MUELLE: Siéntate, siéntate. Te voy a contar cómo empezó todo esto.',
-      'Fue en 2003, el año de Scourge. Llegó al puerto una caja sellada, con un sello que decía "Tienda de Urza". Nadie la reclamó.',
-      'Una noche de temporal la abrí aquí mismo, en el muelle. Adentro había sobres de todas las ediciones: desde Cuarta Edición hasta Scourge. Ni una carta más nueva.',
+    say(['VIEJO DEL RÍO: Siéntate, siéntate. Te voy a contar cómo empezó todo esto.',
+      'Fue en 2003, el año de Scourge. Llegó a la feria de Curicó una caja sellada, en un camión que venía del puerto, con un sello que decía "Tienda de Urza". Nadie la reclamó.',
+      'Una noche de temporal la abrí aquí mismo, junto al río. Adentro había sobres de todas las ediciones: desde Cuarta Edición hasta Scourge. Ni una carta más nueva.',
       'Cuando rompí el primer sobre, un Goblin Lackey me saltó a la cara. Y después otro. Y un Jackal Pup. Las cartas... despertaron.',
       'Desde entonces las criaturas andan sueltas por Chile, y cinco guardianes protegen el poder de la caja.',
       'Dicen que quien derrote a los cinco y gane la Liga Nacional en Tolaria podrá cerrar la caja para siempre... o quedarse con todas las cartas. Tú decides, ' + CH().n + '.']);
@@ -2355,8 +2355,8 @@ function talkTo(id, npc, skipQuest){
     ])]);
     return;
   }
-  if (id === 'marinero') { say(['MARINERO: ' + pick(['Los Merfolk Looter de la costa se roban hasta los choritos.','Al sur del islote, dicen, hay un langostino del porte de un bote. Doce de fuerza, doce de resistencia.','En Valpo todos jugamos Premodern. Hasta los pelícanos tienen mazo.'])]); return; }
-  if (id === 'pescador') { say(['PESCADOR: ' + pick(['El otro día pesqué un Counterspell. Lo tiré de vuelta al mar, no me sirve pa na.','Si vas a pelear con el Langostino, llévate harta vida. Y una cerveza del Muelle, pa\' la suerte.'])]); return; }
+  if (id === 'marinero') { say(['MARINERO: ' + pick(['Los Merfolk Looter de la costa se roban hasta los choritos.','Al sur del islote, dicen, hay un langostino del porte de un bote. Doce de fuerza, doce de resistencia.','En Curicó todos jugamos Premodern. Entre torta y torta, una partida.'])]); return; }
+  if (id === 'pescador') { say(['PESCADOR: ' + pick(['El otro día pesqué un Counterspell. Lo tiré de vuelta al río, no me sirve pa na.','Si vas a pelear con el Langostino, llévate harta vida. Y una cerveza de La Ruca, pa\' la suerte.'])]); return; }
   if (id === 'tendero') {
     say(['TENDERO: Bienvenido a La Guarida del Mono. Sobres de colección, Cuarta Edición a Scourge. Cada sobre trae 3 cartas por $20.'],
       [{ t:'COMPRAR SOBRE ($20)', fn:() => {
@@ -2395,7 +2395,7 @@ function talkTo(id, npc, skipQuest){
   }
   if (id === 'vecina') {
     say([pick([
-      'Dicen que el viejo del muelle, en Puerto Valpo, sabe cómo empezó todo esto.',
+      'Dicen que el viejo del río, en Curicó, sabe cómo empezó todo esto.',
       'En Tolaria venden sobres de cartas y hay un arcade. ¡Y ahí se juega la Liga Nacional!',
       'Las Minas de Mishra, la Cripta de Tourach y la Torre de Serra son laberintos de varios pisos. No entres sin cerveza.',
       'Dicen que en el bosque hay un goblin enorme que llama a otros goblins. Ten cuidado.',
@@ -2676,7 +2676,7 @@ function drawMissions(){
   const items = [
     ['Completa tu primer mazo de 8 cartas', DECKS.some(d => deckDone(d.id))],
     ['Gana un torneo en la Arena de Villa Premodern', S.trophies > 0],
-    ['Escucha al viejo del muelle en Puerto Valpo', !!S.lore],
+    ['Escucha al viejo del rio en Curico', !!S.lore],
     ['Derrota al Siege-Gang Commander (Guarida Goblin)', !!S.bosses.siege],
     ['Derrota al Langostino (Islote del Langostino)', !!S.bosses.dread],
     ['Derrota al Rey de las Minas (Minas de Mishra)', !!S.bosses.reyMinas],
@@ -3445,7 +3445,7 @@ function drawDuel(){
 
 /* ============ FINAL ============ */
 const ENDING = ['¡CAMPEÓN NACIONAL DE PREMODERN!', '', 'Con los cinco guardianes derrotados', 'y la Liga Nacional ganada,', 'la Caja de Urza vuelve a tus manos.', '',
-  'Esa noche, en el Bar El Muelle,', 'se brindó por el nuevo campeón.', 'Klaus pagó la primera ronda.', '',
+  'Esa noche, en el Bar La Ruca de Curicó,', 'se brindó por el nuevo campeón.', 'Klaus pagó la primera ronda.', '',
   'La caja quedó abierta.', 'Porque el Premodern chileno', 'nunca se cierra del todo.', '', 'MATÍAS · DAVIS · GUCHO · KLAUS', '', 'GRACIAS POR JUGAR', '', 'MAGIC QUEST'];
 function drawEnding(){
   R(0, 0, W, H, '#0e0a24');
