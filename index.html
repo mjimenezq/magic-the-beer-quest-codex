@@ -883,7 +883,7 @@ const ROOMS = {
     npcs:[{id:'arcadeOrg',x:7,y:4},{id:'fan1',x:4,y:6}] },
   bar:{ name:'BAR LA RUCA', theme:'inside', music:'tavern', interior:true, exitTo:{room:'valpo',tx:5,ty:4},
     map:['kkkkkkkkkkkkkkk','kBKKKKFKKKKKBBk','kFFFFFFFFFFFFFk','kFtFFtFFFFtFFFk','kFFFFFFFFFFFFFk','kFtFFtFFFFtFFBk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFFk','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'],
-    npcs:[{id:'cantinero',x:6,y:1},{id:'friend',slot:0,x:3,y:4},{id:'friend',slot:1,x:11,y:4},{id:'friend',slot:2,x:8,y:6}] },
+    npcs:[{id:'cantinero',x:6,y:1}] },
   casa:{ name:'CASA DEL VIEJO', theme:'inside', music:'town', interior:true, exitTo:{room:'valpo',tx:12,ty:4},
     map:['kkkkkkkkkkkkkkk','kBFFFFFFFFFFFBk','kFFFFFFFFFFFFFk','kFFFtFFFFFtFFFk','kFFFFFFFFFFFFFk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFBk','kFFFFFFFFFFFFFk','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'],
     npcs:[{id:'viejo',x:7,y:3}] },
@@ -929,6 +929,28 @@ ROOMS.sobresTempest = { name:'SOBRES DE RATH', theme:'inside', music:'tavern', i
   map:['kkkkkkkkkkkkkkk','kBKKKKFKKKKKBBk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFBk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFBk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFBk','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'],
   npcs:[{id:'vendedora',x:6,y:1},{id:'fan1',x:10,y:5}] };
 ROOMS.vina.npcs.push({ id:'ligaVina', x:8, y:4 });
+// Los 12 amigos por Chile: tomando cerveza, apoyando o como rivales de liga (el que juegas no aparece)
+const FRIENDS_ON_MAP = [
+  { ch:0, room:'pueblo', x:4, y:6, role:'cheer' },
+  { ch:1, room:'arena', x:10, y:6, role:'rival' },
+  { ch:2, room:'bar', x:3, y:4, role:'beer' },
+  { ch:3, room:'bar', x:11, y:4, role:'beer' },
+  { ch:4, room:'liga', x:11, y:6, role:'rival' },
+  { ch:5, room:'bar', x:8, y:6, role:'beer' },
+  { ch:6, room:'arcade', x:10, y:6, role:'cheer' },
+  { ch:7, room:'taberna', x:7, y:4, role:'beer' },
+  { ch:8, room:'taberna', x:11, y:6, role:'beer' },
+  { ch:9, room:'pmontt', x:12, y:4, role:'cheer' },
+  { ch:10, room:'vina', x:2, y:7, role:'beer' },
+  { ch:11, room:'salaTempest', x:11, y:6, role:'rival' },
+];
+for (const fr of FRIENDS_ON_MAP) ROOMS[fr.room].npcs = (ROOMS[fr.room].npcs || []).concat({ id:'friend', ch:fr.ch, role:fr.role, x:fr.x, y:fr.y });
+const FRIEND_PLACE = { pueblo:'la Villa', arena:'la Arena', bar:'La Ruca', liga:'la Liga Nacional', arcade:'el Arcade', taberna:'la Taberna El Mazo', pmontt:'Puerto Montt', vina:'la playa de Viña', salaTempest:'la Liga Tempest' };
+const ROLE_LINES = {
+  beer:['¡Salud! Siéntate, que la otra ronda la pagas tú.','Una chelita y después salimos a pegarle a unos monos. Palabra.','¿Tú también vienes a "estudiar el metagame"? Aquí se estudia con cerveza.'],
+  cheer:['¡Vamos, tú puedes! Yo te apoyo desde aquí... bien lejos de los monstruos.','Si derrotas a todos los jefes, en la Liga Nacional te voy a gritar más fuerte que en el Estadio Nacional.','Llévate una jarra de cerveza pa\' las mazmorras. Cura más que cualquier poción.'],
+  rival:['Nos vemos en la liga. Esta vez no te tengo piedad.','Estuve practicando toda la semana. Tu mazo no me asusta... bueno, un poquito.','Si ganas la liga te invito una chela. Si gano yo, me invitas dos.'],
+};
 ROOMS.valpo.npcs.push({ id:'ligaCurico', x:9, y:4 });
 ROOMS.pmontt.npcs.push({ id:'ligaPmontt', x:5, y:4 });
 ROOMS.tolaria.npcs.push({ id:'ligaUrza', x:13, y:6 });
@@ -2299,8 +2321,8 @@ function loadRoom(id, px, py){
   G.turrets = []; for (let ty = 0; ty < 10; ty++) for (let tx = 0; tx < 15; tx++) if (G.map[ty][tx] === 'j') G.turrets.push({ tx, ty, cd:60 + ((tx * 37 + ty * 53) % 90) });
   G.swarmT = 0;
   const friendChars = CHARS.map((_, i) => i).filter(i => i !== S.ch);
-  G.npcs = (d.npcs || []).filter(n => !(n.id === 'klaus' && CHARS[S.ch].id === 'klaus')).map(n => ({ id:n.id, x:n.x * TS + 3, y:n.y * TS + 8, w:10, h:8, dir:0,
-    ch: n.id === 'friend' ? friendChars[n.slot] : undefined }));
+  G.npcs = (d.npcs || []).filter(n => !(n.id === 'klaus' && CHARS[S.ch].id === 'klaus') && !(n.id === 'friend' && n.ch === S.ch)).map(n => ({ id:n.id, x:n.x * TS + 3, y:n.y * TS + 8, w:10, h:8, dir:0,
+    ch: n.id === 'friend' ? (n.ch !== undefined ? n.ch : friendChars[n.slot]) : undefined, role:n.role }));
   PL.x = px; PL.y = py; PL.kb = 0; PL.atk = 0;
   unstuckPlayer();
   G.cacheDirty = true; G.zoneT = d.interior ? 0 : 110; G.fade = 14;
@@ -3344,8 +3366,8 @@ function talkTo(id, npc, skipQuest){
   if (id === 'mueblero') { say(['CARPINTERO: ¡Arreglemos tu casa en la Villa! Cada mejora te da un bonus permanente.'], null, () => openShop('hogar', 'MEJORAS PARA TU CASA')); return; }
   if (id === 'premiador') { say(['JUEZA DE PREMIOS: Premios de verdad de la liga: playmats, deck boxes, fundas... se lucen en tu casa y te dan ventajas.'], null, () => openShop('premios', 'PREMIOS DE LA LIGA')); return; }
   if (id === 'friend') {
-    const c = npc && npc.ch !== undefined ? npc.ch : 0;
-    say([CHARS[c].n + ': ' + pick(FRIEND_LINES[c]), CHARS[c].n + ': ' + pick(['Salud por el Premodern. Cuarta Edición a Scourge, como Dios manda.','Si juntamos a los tres, en línea, no hay guardián que aguante.','La otra semana gané con un Goblin Lackey en el turno uno. Nadie me cree.'])]);
+    const c = npc && npc.ch !== undefined ? npc.ch : 0, role = npc && npc.role;
+    say([CHARS[c].n + ': ' + pick(FRIEND_LINES[c]), ...(role ? [CHARS[c].n + ': ' + pick(ROLE_LINES[role])] : []), CHARS[c].n + ': ' + pick(['Salud por el Premodern. Cuarta Edición a Scourge, como Dios manda.','Si juntamos a los tres, en línea, no hay guardián que aguante.','La otra semana gané con un Goblin Lackey en el turno uno. Nadie me cree.'])]);
     return;
   }
   if (id === 'cronista') {
@@ -3940,7 +3962,7 @@ function drawWorld(){
   // sprites sorted by y
   const list = [];
   for (const it of G.items) list.push({ y:it.y + 8, f:() => drawItem(it) });
-  for (const n of G.npcs) list.push({ y:n.y + n.h, f:() => drawPerson(n.x - 3, n.y - 8, n.id === 'friend' ? Object.assign({}, CHARS[n.ch], { mug:true }) : (NPCDEF[n.id] || NPCDEF.vecina), n.dir, 0) });
+  for (const n of G.npcs) list.push({ y:n.y + n.h, f:() => drawPerson(n.x - 3, n.y - 8, n.id === 'friend' ? Object.assign({}, CHARS[n.ch], n.role === 'beer' && !CHARS[n.ch].piscola ? { mug:true } : {}) : (NPCDEF[n.id] || NPCDEF.vecina), n.dir, (n.role === 'cheer' && (frame >> 4) & 1) ? 1 : 0) });
   for (const n of G.npcs) { const mk = questMarker(n.id); if (mk) list.push({ y:1001, f:() => {
     const bx = n.x + 1, by = n.y - 26 + Math.round(Math.sin(frame * 0.12) * 1.5);
     R(bx, by, 8, 10, '#1a1020'); R(bx + 1, by + 1, 6, 8, mk === '?' ? '#60e070' : '#fcd84a');
