@@ -700,7 +700,8 @@ const PRIZES = {
   trofeo:{ n:'Trofeo de cristal', price:75000, desc:'El premio mayor. +1 a todo.', bonus:{ st:{fue:1,des:1,agi:1,int:1} } },
 };
 // Plata con puntos de mil, como en Chile: $10.000
-const COIN_X = 150; // las monedas que sueltan criaturas y encargos se multiplican por esto
+const COIN_X = 50; // monedas que sueltan las criaturas y el arcade (30 sept: bajado de 150, daban demasiado)
+const QUEST_COIN_X = 150; // las recompensas en plata de los encargos
 const money = n => '$' + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 const houseBonus = key => { let v = 0; for (const [id, o] of Object.entries(HOUSE)) if (S.house && S.house[id]) v += o.bonus[key] || 0; for (const [id, o] of Object.entries(PRIZES)) if (S.house && S.house[id]) v += o.bonus[key] || 0; return v; };
 const ZONE_TIER = { pueblo:1, bosque:1, pradera:1, costa:2, pantano:2, cerro:2, valpo:1, tolaria:1, mercado:1, bosqueProf:3, pantanoProf:3, minas:3, ruinas:3, guarida:3, islote:3, vina:1, pmontt:1, volcan:4, glaciar:4, urborg:4, pampa:4, fabrica:4, quietud:4, bosqueRoca:4, tempest:1 };
@@ -718,7 +719,7 @@ function playerLook(){
 function addGear(id){
   const A = ARMOR[id];
   S.armor = S.armor || [];
-  if (S.armor.includes(id)) { const v = 1500 * A.tier; S.coins += v; toast('EQUIPO REPETIDO: +' + money(v), '#fcd84a'); SFX.coin(); return; }
+  if (S.armor.includes(id)) { const v = 500 * A.tier; S.coins += v; toast('EQUIPO REPETIDO: +' + money(v), '#fcd84a'); SFX.coin(); return; }
   S.armor.push(id); SFX.chest();
   const cur = S.gear[A.slot], better = !cur || ARMOR[cur].def < A.def;
   if (better) S.gear[A.slot] = id;
@@ -2256,7 +2257,7 @@ function addCard(id){
   saveGame();
 }
 function addSword(id){
-  if (S.swords.includes(id)) { S.coins += 3000; toast('ESPADA REPETIDA: +$3.000', '#fcd84a'); SFX.coin(); return; }
+  if (S.swords.includes(id)) { S.coins += 1000; toast('ESPADA REPETIDA: +$1.000', '#fcd84a'); SFX.coin(); return; }
   S.swords.push(id); SFX.chest();
   const cur = SWORDS[S.eq].st, nw = SWORDS[id].st, sum = o => Object.values(o).reduce((a, b) => a + b, 0);
   const auto = sum(nw) > sum(cur);
@@ -2275,10 +2276,10 @@ function dropLoot(e){
     if (G.def.bossFloor) { G.map[4][7] = 'O'; G.cacheDirty = true; }
     if (GUARDIANS.includes(e.type)) toast('GUARDIANES DERROTADOS: ' + guardiansDone() + '/5', '#fcd84a');
     drop('card', m.cards[0]); drop('sword', m.sword); if (BOSS_GEAR[e.type]) drop('gear', BOSS_GEAR[e.type]);
-    for (let i = 0; i < 6; i++) drop('coin', null, 1500);
+    for (let i = 0; i < 6; i++) drop('coin', null, 500);
     if (Math.random() < (m.raid ? 0.05 : 0.02)) drop('card', LEGEND);
     if (m.raid) {
-      for (let i = 0; i < 10; i++) drop('coin', null, 3000);
+      for (let i = 0; i < 10; i++) drop('coin', null, 1000);
       const miss = missingCards(); for (let i = 0; i < 3 && miss.length; i++) drop('card', miss.splice(rnd(miss.length), 1)[0]);
       drop('heart'); drop('mana');
       toast('¡JEFE RAID DERROTADO! JEFES: ' + bossesDone() + '/' + ALL_BOSSES.length, '#ff9040');
@@ -2348,7 +2349,7 @@ function tryInteract(){
       const key = G.roomId + ':' + tx + ',' + ty;
       G.map[ty][tx] = 'C'; S.chests[key] = true; G.cacheDirty = true;
       const loot = G.def.chests && G.def.chests[tx + ',' + ty];
-      if (loot === 'bolsa' || !loot) { const n = (2000 + rnd(1500)) * Math.max(1, zoneTier()); S.coins += n; SFX.chest(); say(['¡Una bolsa con ' + money(n) + '!']); saveGame(); }
+      if (loot === 'bolsa' || !loot) { const n = (600 + rnd(500)) * Math.max(1, zoneTier()); S.coins += n; SFX.chest(); say(['¡Una bolsa con ' + money(n) + '!']); saveGame(); }
       else addSword(loot);
       return true;
     }
@@ -2877,7 +2878,7 @@ const GIVER_PLACE = { vecina:'VILLA', cronista:'VILLA', cantinero:'TABERNA DE LA
   organizador:'ARENA DE LA VILLA', pescador:'CURICO', marinero:'CURICO', viejo:'CASA DEL VIEJO (CURICO)', juez:'TOLARIA', fan2:'TOLARIA',
   tendero:'TIENDA (TOLARIA)', posadera:'POSADA (TOLARIA)', arcadeOrg:'ARCADE (TOLARIA)' };
 const STN = { fue:'FUE', des:'DES', agi:'AGI', int:'INT' };
-const rewardText = r => [Object.entries(r.st || {}).map(([k, v]) => '+' + v + ' ' + STN[k]).join(' '), r.maxHp ? '+' + r.maxHp / 2 + ' CORAZÓN' : '', r.coins ? money(r.coins * COIN_X) : '', r.spell ? 'HECHIZO ' + SPELLS[r.spell].n.toUpperCase() : ''].filter(Boolean).join(', ');
+const rewardText = r => [Object.entries(r.st || {}).map(([k, v]) => '+' + v + ' ' + STN[k]).join(' '), r.maxHp ? '+' + r.maxHp / 2 + ' CORAZÓN' : '', r.coins ? money(r.coins * QUEST_COIN_X) : '', r.spell ? 'HECHIZO ' + SPELLS[r.spell].n.toUpperCase() : ''].filter(Boolean).join(', ');
 const killsOf = ts => ts.reduce((a, t) => a + ((S.kills || {})[t] || 0), 0);
 function questBase(q){ const Q = QUESTS[q]; return Q.type === 'kill' ? killsOf(Q.target) : Q.type === 'killAll' ? (S.killsTotal || 0) : Q.type === 'beer' ? (S.beerTotal || 0) : 0; }
 function questProg(q){
@@ -2914,7 +2915,7 @@ function questHook(id, npc){
       st.st = 'done';
       for (const [k, v] of Object.entries(Q.reward.st || {})) S.st[k] += v;
       if (Q.reward.maxHp) { S.maxHp += Q.reward.maxHp; }
-      S.hp = S.maxHp; S.coins += (Q.reward.coins || 0) * COIN_X;
+      S.hp = S.maxHp; S.coins += (Q.reward.coins || 0) * QUEST_COIN_X;
       if (Q.reward.spell) learnSpell(Q.reward.spell);
       SFX.lvl(); saveGame();
       say([who + ': ¡Cumpliste el encargo "' + Q.title + '"! Muchas gracias.', 'Recompensa: ' + rewardText(Q.reward) + '. Tus atributos subieron para siempre.']);
