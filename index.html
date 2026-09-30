@@ -434,9 +434,9 @@ const CHARS = [
   { id:'pepe', n:'PEPE', tag:'EL RAGNAR CHILENO', style:'viking', st:{fue:7,des:5,agi:4,int:4}, main:'fue',
     c:{ hair:'#d8a038', beard:'#a85a18', skin:'#f1c9a0', eye:'#3a7ad8', shirt:'#5a4a3a', shirtD:'#3a2e22',
         cape:'#8a6a48', capeD:'#5a4430', belt:'#2a1a0c', pants:'#3a3a48', shoe:'#3a2414', sleeve:'#5a4a3a' } },
-  { id:'ivan', n:'IVÁN', tag:'EL PROGRAMADOR', style:'spiky', glasses:true, laptop:true, st:{fue:3,des:6,agi:5,int:7}, main:'int', coder:true,
-    c:{ hair:'#3a2418', hairD:'#1a1008', skin:'#f1c9a0', eye:'#3a2a18', shirt:'#4a4a5a', shirtD:'#2a2a38', emblem:'#40ff90',
-        belt:'#2a2a38', pants:'#2a3a5a', shoe:'#e8e8f0', sleeve:'#4a4a5a' } },
+  { id:'ivan', n:'IVÁN', tag:'EL PROGRAMADOR', style:'propeller', glasses:true, laptop:true, st:{fue:3,des:6,agi:5,int:7}, main:'int', coder:true,
+    c:{ hair:'#c8601c', skin:'#f6d0a8', eye:'#2a5ad8', hat:'#e83040', hat2:'#fce040', hat3:'#2a8ae8', glass:'#e83040',
+        shirt:'#8a3ad0', shirtD:'#5a1a98', belt:'#fce040', pants:'#2a6ad8', shoe:'#e83040', sleeve:'#fce040' } },
   { id:'tebax', n:'TEBAX', tag:'EL CERVECERO', style:'bald', mug:true, st:{fue:6,des:4,agi:4,int:6}, main:'fue', beer:true,
     c:{ hair:'#8a4a1c', skin:'#e8a878', shirt:'#c82828', shirtD:'#8a1414', emblem:'#fce060',
         cape:'#2a5a2a', capeD:'#1a3a1a', belt:'#2a1a0c', pants:'#3a3a48', shoe:'#2a1a0c', sleeve:'#c82828' } },
@@ -1718,6 +1718,13 @@ function drawPerson(x, y, P, dir, f){
       p(8, 3, 5, 5, C.hair); p(3, 4, 2, 1, C.hair);
       p(12, 2 + sw, 4, 8, O); p(13, 3 + sw, 2, 6, C.hair); p(13, 4 + sw, 1, 3, C.hairL);
     }
+  } else if (s === 'propeller') {
+    // pelo colorin asomando, gorro de gajos de colores y hélice que gira
+    const spin = (frame >> 2) & 1;
+    p(7, -4, 2, 4, O); p(7, -3, 2, 3, '#e8e8f0');
+    if (spin) { p(2, -5, 12, 2, O); p(3, -5, 4, 1, C.hat3); p(9, -5, 4, 1, C.hat); } else { p(5, -5, 6, 2, O); p(6, -5, 4, 1, C.hat2); }
+    if (dir !== 1) { p(2, -1, 12, 5, O); p(3, 0, 3, 3, C.hat); p(6, 0, 4, 3, C.hat2); p(10, 0, 3, 3, C.hat3); p(2, 3, 12, 1, O); p(3, 3, 10, 1, C.hat2); p(2, 4, 2, 3, C.hair); p(12, 4, 2, 3, C.hair); p(1, 5, 1, 1, C.hair); }
+    else { p(2, -1, 12, 6, O); p(3, 0, 3, 4, C.hat3); p(6, 0, 4, 4, C.hat2); p(10, 0, 3, 4, C.hat); p(3, 4, 10, 3, C.hair); }
   } else if (s === 'viking') {
     p(5, -3, 6, 4, O); p(6, -2, 4, 3, C.hair); p(7, -2, 2, 1, '#e8c040');
     if (dir === 0) { p(3, 1, 1, 4, C.hair); p(12, 1, 1, 4, C.hair); p(3, 6, 10, 3, C.beard); p(5, 9, 6, 2, C.beard); p(7, 11, 2, 2, C.beard); p(7, 13, 2, 1, '#e8c040'); p(7, 6, 2, 1, '#6a2a18'); }
@@ -1730,11 +1737,15 @@ function drawPerson(x, y, P, dir, f){
   }
   if (P.mug && dir !== 1) { p(12, 8, 4, 5, O); p(12, 9, 3, 3, '#fce060'); p(12, 9, 3, 1, '#fff'); p(15, 10, 1, 2, '#fce060'); }
   if (P.glasses && dir !== 1) {
-    if (!side) { p(4, 3, 4, 1, O); p(4, 6, 4, 1, O); p(4, 3, 1, 4, O); p(7, 3, 1, 4, O); p(8, 3, 4, 1, O); p(8, 6, 4, 1, O); p(8, 3, 1, 4, O); p(11, 3, 1, 4, O); }
-    else { p(2, 3, 4, 1, O); p(2, 6, 4, 1, O); p(2, 3, 1, 4, O); p(5, 3, 1, 4, O); p(6, 4, 4, 1, O); }
+    const gc = C.glass || O;
+    if (!side) {
+      if (C.glass) { p(3, 2, 5, 5, O); p(8, 2, 5, 5, O); p(4, 3, 3, 3, '#c8f0ff'); p(9, 3, 3, 3, '#c8f0ff'); p(5, 4, 1, 1, C.eye); p(10, 4, 1, 1, C.eye); p(4, 3, 1, 1, '#ffffff'); p(9, 3, 1, 1, '#ffffff'); p(3, 2, 5, 1, gc); p(8, 2, 5, 1, gc); p(3, 6, 5, 1, gc); p(8, 6, 5, 1, gc); p(7, 4, 2, 1, gc); }
+      else { p(4, 3, 4, 1, O); p(4, 6, 4, 1, O); p(4, 3, 1, 4, O); p(7, 3, 1, 4, O); p(8, 3, 4, 1, O); p(8, 6, 4, 1, O); p(8, 3, 1, 4, O); p(11, 3, 1, 4, O); }
+    }
+    else { p(1, 2, 5, 5, O); p(2, 3, 3, 3, C.glass ? '#c8f0ff' : C.skin); p(3, 4, 1, 1, C.eye || O); p(6, 4, 4, 1, gc); p(1, 2, 5, 1, gc); p(1, 6, 5, 1, gc); }
   }
   if (P.piscola && dir !== 1) { p(12, 6, 4, 7, O); p(13, 7, 2, 5, '#4a1a08'); p(13, 7, 2, 1, '#e0f4ff'); p(15, 6, 1, 2, '#f0e040'); p(13, 5, 1, 2, '#f0f0f0'); }
-  if (P.laptop && dir !== 1) { p(10, 9, 6, 5, O); p(11, 10, 4, 3, '#40c8ff'); p(11, 11, 2, 1, '#e0ffff'); p(12, 12, 3, 1, '#1a4a78'); }
+  if (P.laptop && dir !== 1) { p(10, 9, 7, 5, O); p(11, 10, 5, 3, '#2a2a38'); p(11, 10, 1, 1, '#fce040'); p(13, 11, 1, 1, '#40ff90'); p(15, 10, 1, 1, '#e83040'); p(12, 12, 2, 1, '#2a8ae8'); }
   if (P.helm) {
     const hc = P.helm.col, hd = shadeCol(hc, 0.6);
     if (dir === 1) { p(2, -2, 12, 9, O); p(3, -1, 10, 7, hc); p(3, 4, 10, 1, hd); p(4, -1, 3, 1, '#ffffff'); }
@@ -4905,6 +4916,7 @@ function render(){
   if (location.hash === '#zonas') { if (!G.zonesDone) { drawZonesPreview(); G.zonesDone = true; } return; }
   if (location.hash === '#nuevos') { if (!G.zonesDone) { drawZonesPreview(['pampa','fabrica','quietud','bosqueRoca','tempest','D:forja:5'], NEW_BOSSES.slice(0, 3)); G.zonesDone = true; } return; }
   if (location.hash === '#bestiario2') { drawBestiary2(); return; }
+  if (location.hash.startsWith('#retrato=')) { const c = CHARS[+location.hash.slice(9)] || CHARS[0]; R(0, 0, W, H, '#3a6a3a'); [0, 3, 1, 2].forEach((d, i) => { ctx.save(); ctx.translate(8 + i * 58, 40); ctx.scale(3, 3); drawPerson(0, 0, c, d, 0); ctx.restore(); }); txt(c.n, 120, 6, '#fff', 'center', '#000'); return; }
   if (G.state === 'intro') drawIntro();
   else if (G.state === 'title') drawTitle();
   else if (G.state === 'select') drawSelect();
