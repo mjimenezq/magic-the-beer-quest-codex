@@ -431,15 +431,15 @@ const CHARS = [
   { id:'katy', n:'KATY', tag:'LA TRAMPOSA', style:'ponytail', st:{fue:4,des:7,agi:6,int:5}, main:'des', cheat:true,
     c:{ hair:'#d8382a', hairL:'#f87858', band:'#e8c040', skin:'#f6c9a0', eye:'#2a8a4a', lashes:true, lip:'#c82848', shirt:'#6a2a8a', shirtD:'#3e1458',
         emblem:'#e8c040', cape:'#a81a2a', capeD:'#6a0a18', belt:'#e8c040', pants:'#4a2a1a', shoe:'#1a0c06', sleeve:'#f6c9a0' } },
-  { id:'pepe', n:'PEPE', tag:'EL VETERANO', style:'bald', st:{fue:6,des:5,agi:4,int:6}, main:'fue',
-    c:{ hair:'#2a1a10', skin:'#d8a070', shirt:'#e8b020', shirtD:'#a87810', emblem:'#1a1a2a',
-        cape:'#3a5a8a', capeD:'#1a3a68', belt:'#2a1a0c', pants:'#3a3a48', shoe:'#1a0c06', sleeve:'#e8b020' } },
-  { id:'ivan', n:'IVÁN', tag:'EL COMBERO', style:'spiky', st:{fue:4,des:6,agi:6,int:5}, main:'des',
-    c:{ hair:'#5a3418', hairD:'#3a2010', skin:'#f1c9a0', eye:'#3a2a18', shirt:'#1a1a2a', shirtD:'#0a0a14', emblem:'#40d0f0',
-        cape:'#1a6a8a', capeD:'#0a4a68', belt:'#2a1a0c', pants:'#2a3a5a', shoe:'#1a0c06', sleeve:'#1a1a2a' } },
-  { id:'tebax', n:'TEBAX', tag:'EL HECHICERO', style:'wizard', st:{fue:3,des:5,agi:5,int:8}, main:'int',
-    c:{ hat:'#1a8a5a', hatD:'#0e5a3a', hair:'#141014', skin:'#e8b088', shirt:'#1a8a5a', shirtD:'#0e5a3a', emblem:'#e8c040',
-        cape:'#5a2a8a', capeD:'#3a1468', belt:'#e8c040', pants:'#2a2a38', shoe:'#1a0c06', sleeve:'#1a8a5a' } },
+  { id:'pepe', n:'PEPE', tag:'EL RAGNAR CHILENO', style:'viking', st:{fue:7,des:5,agi:4,int:4}, main:'fue',
+    c:{ hair:'#d8a038', beard:'#a85a18', skin:'#f1c9a0', eye:'#3a7ad8', shirt:'#5a4a3a', shirtD:'#3a2e22',
+        cape:'#8a6a48', capeD:'#5a4430', belt:'#2a1a0c', pants:'#3a3a48', shoe:'#3a2414', sleeve:'#5a4a3a' } },
+  { id:'ivan', n:'IVÁN', tag:'EL PROGRAMADOR', style:'spiky', glasses:true, laptop:true, st:{fue:3,des:6,agi:5,int:7}, main:'int', coder:true,
+    c:{ hair:'#3a2418', hairD:'#1a1008', skin:'#f1c9a0', eye:'#3a2a18', shirt:'#4a4a5a', shirtD:'#2a2a38', emblem:'#40ff90',
+        belt:'#2a2a38', pants:'#2a3a5a', shoe:'#e8e8f0', sleeve:'#4a4a5a' } },
+  { id:'tebax', n:'TEBAX', tag:'EL CERVECERO', style:'bald', mug:true, st:{fue:6,des:4,agi:4,int:6}, main:'fue', beer:true,
+    c:{ hair:'#8a4a1c', skin:'#e8a878', shirt:'#c82828', shirtD:'#8a1414', emblem:'#fce060',
+        cape:'#2a5a2a', capeD:'#1a3a1a', belt:'#2a1a0c', pants:'#3a3a48', shoe:'#2a1a0c', sleeve:'#c82828' } },
 ];
 const NPCDEF = {
   cantinero:{ n:'CANTINERO', style:'bald', c:{ hair:'#3a2418', skin:'#e8b088', shirt:'#f4f1e8', shirtD:'#c8c0b0', pants:'#3a3a48', shoe:'#2a1a10' } },
@@ -1712,12 +1712,22 @@ function drawPerson(x, y, P, dir, f){
       p(8, 3, 5, 5, C.hair); p(3, 4, 2, 1, C.hair);
       p(12, 2 + sw, 4, 8, O); p(13, 3 + sw, 2, 6, C.hair); p(13, 4 + sw, 1, 3, C.hairL);
     }
+  } else if (s === 'viking') {
+    p(5, -3, 6, 4, O); p(6, -2, 4, 3, C.hair); p(7, -2, 2, 1, '#e8c040');
+    if (dir === 0) { p(3, 1, 1, 4, C.hair); p(12, 1, 1, 4, C.hair); p(3, 6, 10, 3, C.beard); p(5, 9, 6, 2, C.beard); p(7, 11, 2, 2, C.beard); p(7, 13, 2, 1, '#e8c040'); p(7, 6, 2, 1, '#6a2a18'); }
+    else if (dir === 1) { p(3, 1, 10, 3, C.hair); p(7, 3, 2, 8, C.hair); p(7, 11, 2, 1, '#e8c040'); }
+    else { p(9, 1, 3, 5, C.hair); p(2, 6, 6, 3, C.beard); p(3, 9, 4, 2, C.beard); p(4, 11, 2, 2, C.beard); }
   } else if (s === 'bun') {
     p(5, -4, 6, 4, O); p(6, -3, 4, 3, C.hair);
     if (dir === 1) { p(2, -1, 12, 9, O); p(3, 0, 10, 8, C.hair); }
     else { p(2, -1, 12, 5, O); p(3, 0, 10, 4, C.hair); p(3, 4, 1, 4, C.hair); if (!side) p(12, 4, 1, 4, C.hair); else p(9, 4, 4, 4, C.hair); }
   }
   if (P.mug && dir !== 1) { p(12, 8, 4, 5, O); p(12, 9, 3, 3, '#fce060'); p(12, 9, 3, 1, '#fff'); p(15, 10, 1, 2, '#fce060'); }
+  if (P.glasses && dir !== 1) {
+    if (!side) { p(4, 3, 4, 1, O); p(4, 6, 4, 1, O); p(4, 3, 1, 4, O); p(7, 3, 1, 4, O); p(8, 3, 4, 1, O); p(8, 6, 4, 1, O); p(8, 3, 1, 4, O); p(11, 3, 1, 4, O); }
+    else { p(2, 3, 4, 1, O); p(2, 6, 4, 1, O); p(2, 3, 1, 4, O); p(5, 3, 1, 4, O); p(6, 4, 4, 1, O); }
+  }
+  if (P.laptop && dir !== 1) { p(10, 9, 6, 5, O); p(11, 10, 4, 3, '#40c8ff'); p(11, 11, 2, 1, '#e0ffff'); p(12, 12, 3, 1, '#1a4a78'); }
   if (P.helm) {
     const hc = P.helm.col, hd = shadeCol(hc, 0.6);
     if (dir === 1) { p(2, -2, 12, 9, O); p(3, -1, 10, 7, hc); p(3, 4, 10, 1, hd); p(4, -1, 3, 1, '#ffffff'); }
@@ -2971,9 +2981,9 @@ const FRIEND_LINES = {
   4:['¿Trampa? Yo no hago trampa... solo tengo mucha suerte con los dados. Mucha.','Si juegas conmigo, mírame las manos. O no, mejor mírame a los ojos.'],
   3:['Yo no juego rápido, juego bien. Por eso gano los torneos... a veces.','Tip de Klaus: la cerveza sube la INT para el torneo. Es ciencia, cachai.'],
   2:['¿Una partida? Te juego mi Replenish contra lo que traigas. Pierde el que paga la ronda.','En las Minas de Mishra hay un Rey Goblin con corona. Me pegó tan fuerte que volví a pie a Tolaria.'],
-  5:['Yo juego Premodern desde antes que existiera el nombre. Terravore y Armageddon, como en los viejos tiempos.','Si vas a la Pampa de Terravore, anda con cuidado: la tierra tiembla sin aviso.'],
-  6:['Mi Rock no pierde: Spiritmonger, Deed y a esperar. Paciencia, compadre.','Te cambio una carta repetida por un consejo: en el Bosque de la Roca, las ardillas vienen en manada.'],
-  7:['La magia es como el Landstill: nadie la ve venir hasta que ya ganaste.','Dicen que en la Ciudadela del Conclave la Reina ataca desde el aire. Lleva hechizos de lejos.'],
+  5:['¡Por Odín y por Curicó! Terravore y Armageddon: así se juega en el norte... del sur.','Un vikingo no se retira de la Pampa de Terravore. Se retira a la taberna, que es distinto.'],
+  6:['Me programé un script que calcula las probabilidades del Rock. Spiritmonger gana el 63% de las veces.','En el arcade saco el doble de premio. Conozco cómo funcionan esas máquinas por dentro.'],
+  7:['¿Otra ronda? Yo invito... bueno, tú invitas. Salud por el Landstill.','A mí me dejan tomar seis en la taberna. Dicen que es por experiencia.'],
 };
 /* ============ TIENDAS DEL MERCADO ============ */
 function shopItems(kind){
@@ -3299,11 +3309,12 @@ function talkTo(id, npc, skipQuest){
       'Para inscribirte en la Arena necesitas un mazo completo de 12 cartas.',
     ])]);
   } else if (id === 'cantinero') {
-    if (S.beers >= 4) { say(['Ya te tomaste cuatro. No te vendo más hasta que juegues un torneo.']); return; }
+    const beerMax = CH().beer ? 6 : 4;
+    if (S.beers >= beerMax) { say([CH().beer ? 'Ya te tomaste seis, Tebax. Ni tú aguantas otra antes del torneo.' : 'Ya te tomaste cuatro. No te vendo más hasta que juegues un torneo.']); return; }
     say(['¡Bienvenido a la Taberna El Mazo! ¿Una cerveza? Son $1.500. Te recupera la vida y te pone más picado para el torneo.'],
       [{ t:'SÍ, UNA ($1.500)', fn:() => {
           if (S.coins < 1500) { say(['No te alcanza. Anda a pegarle a unos monos y vuelve.']); return; }
-          S.coins -= 1500; S.hp = S.maxHp; S.beers++; S.beerTotal = (S.beerTotal || 0) + 1; S.buzz = Math.min(3, S.buzz + 1); SFX.beer();
+          S.coins -= 1500; S.hp = S.maxHp; S.beers++; S.beerTotal = (S.beerTotal || 0) + 1; S.buzz = Math.min(CH().beer ? 5 : 3, S.buzz + 1); if (CH().beer) S.mp = maxMp(); SFX.beer();
           for (let i = 0; i < 8; i++) G.parts.push({ k:'bubble', x:PL.x + 5 + (Math.random() - 0.5) * 10, y:PL.y - 8, vx:0, vy:-0.5 - Math.random() * 0.4, t:0 });
           say(['¡Salud! Vida al máximo. +' + S.buzz + ' INT para tu próximo torneo.']); saveGame();
         } }, { t:'NO, GRACIAS', fn:null }]);
@@ -3798,6 +3809,8 @@ function drawWorld(){
   } });
   for (const e of G.enemies) list.push({ y:1000, f:() => {
     const m = MON[e.type], cx = Math.round(e.x + e.w / 2), top = Math.round(e.y - 2) - (m.size > 16 ? 2 : 0);
+    // el nombre solo se ve de cerca, herido o si es jefe (así no se llena la pantalla de letreros)
+    if (!m.boss && e.hp >= e.max && Math.hypot(cx - PL.x - 5, e.y - PL.y) > 56) return;
     const nm = norm(m.n), w = nm.length * 4 + 3, ly = Math.max(1, top - 10);
     ctx.fillStyle = 'rgba(10,8,20,.6)'; ctx.fillRect(cx - Math.ceil(w / 2), ly - 1, w, 7);
     tiny(nm, cx, ly, m.boss ? '#ffb040' : '#f4f0ff', 'center');
@@ -3834,13 +3847,25 @@ function drawWorld(){
   drawHUD();
 }
 function drawHUD(){
-  for (let i = 0; i < S.maxHp / 2; i++) heart(4 + (i % 10) * 9, 4 + Math.floor(i / 10) * 8, clamp(S.hp - i * 2, 0, 2));
-  const hy = 13 + Math.floor((S.maxHp / 2 - 1) / 10) * 8;
+  // Si el jugador camina por debajo del panel, el panel se vuelve casi transparente (no tapa entradas ni escaleras)
+  const under = (x0, x1, y1) => PL.x + 10 > x0 && PL.x < x1 && PL.y - 8 < y1;
+  const aL = under(0, 72, 38) ? 0.25 : 0.9, aR = under(168, W, 26) ? 0.25 : 0.9;
+  ctx.globalAlpha = aL;
+  const nh = S.maxHp / 2;
+  if (nh <= 10) for (let i = 0; i < nh; i++) heart(4 + i * 9, 4, clamp(S.hp - i * 2, 0, 2));
+  else {
+    // muchos corazones: un corazón + barra + número, en una sola línea
+    heart(4, 4, S.hp > 0 ? 2 : 0);
+    R(14, 5, 44, 6, '#1a1020'); R(15, 6, Math.round(42 * clamp(S.hp / S.maxHp, 0, 1)), 4, '#e83040'); R(15, 6, Math.round(42 * clamp(S.hp / S.maxHp, 0, 1)), 1, '#ff9090');
+    tiny(Math.ceil(S.hp / 2) + '/' + Math.ceil(nh), 61, 5, '#fff');
+  }
+  const hy = 13;
   R(3, hy, 64, 15, 'rgba(0,0,0,.4)');
   tiny('NV ' + S.lvl, 5, hy + 2, '#fcd84a');
   R(26, hy + 3, 38, 3, '#1a1020'); R(26, hy + 3, Math.round(38 * S.xp / xpNeed()), 3, '#fcd84a');
   const mm = maxMp(); R(5, hy + 9, 59, 4, '#1a1020'); R(5, hy + 9, Math.round(59 * Math.min(1, (S.mp || 0) / mm)), 4, '#3a8ae8'); R(5, hy + 9, Math.round(59 * Math.min(1, (S.mp || 0) / mm)), 1, '#a8d8ff');
   if (S.spells && S.spells.length) { const nm = SPELLS[S.spells[(S.spellSel || 0) % S.spells.length]].n; R(3, hy + 16, nm.length * 4 + 14, 8, 'rgba(0,0,0,.4)'); R(5, hy + 17, 5, 5, '#88e0ff'); tiny(nm, 12, hy + 17, '#c8f0ff'); }
+  ctx.globalAlpha = 1;
   if (G.lvlFx > 0) {
     G.lvlFx--; const a = Math.min(1, G.lvlFx / 30);
     ctx.globalAlpha = a; txt('¡NIVEL ' + S.lvl + '!', 120, 60 - Math.round((90 - G.lvlFx) * 0.2), '#fcd84a', 'center', '#7a3a10', 16); ctx.globalAlpha = 1;
@@ -3853,9 +3878,12 @@ function drawHUD(){
       tiny(o.name + ' ' + Math.ceil(o.hp / 2) + '/' + Math.ceil(o.max / 2) + where, 4, py0 + 7 + i * 7, o.room === G.roomId ? '#60e070' : '#9db8a8');
     });
   }
-  const cs = money(S.coins); R(W - cs.length * 4 - 16, 2, cs.length * 4 + 14, 10, 'rgba(0,0,0,.45)');
-  R(W - cs.length * 4 - 13, 4, 5, 6, '#fcd040'); tiny(cs, W - 5, 5, '#fff', 'right');
-  const cc = 'CARTAS ' + totalCards() + '/' + ALL_CARDS.length; R(W - cc.length * 4 - 6, 13, cc.length * 4 + 4, 9, 'rgba(0,0,0,.45)'); tiny(cc, W - 4, 15, '#c8e8d8', 'right');
+  // plata y cartas en una sola línea arriba a la derecha
+  ctx.globalAlpha = aR;
+  const top = money(S.coins) + '  ' + totalCards() + '/' + ALL_CARDS.length, tw = top.length * 4 + 16;
+  R(W - tw - 2, 2, tw, 9, 'rgba(0,0,0,.45)'); R(W - tw + 1, 4, 4, 5, '#fcd040');
+  tiny(top, W - 5, 4, '#fff', 'right'); R(W - 5 - (String(totalCards()).length + String(ALL_CARDS.length).length + 1) * 4 - 6, 4, 4, 5, '#c8e8d8');
+  ctx.globalAlpha = 1;
   if (G.zoneT > 0) {
     const a = Math.min(1, G.zoneT / 20);
     const nm = G.def.name, bw = Math.min(236, nm.length * 8 + 12);
@@ -4084,7 +4112,7 @@ function startArcade(game){
   G.state = 'arcade'; playMusic('boss'); SFX.ok();
 }
 function arcadeExit(A){
-  const g = ARCADE_GAMES.find(x => x.id === A.game), coins = Math.floor(A.score / g.div) * COIN_X;
+  const g = ARCADE_GAMES.find(x => x.id === A.game), coins = Math.floor(A.score / g.div) * COIN_X * (CH().coder ? 2 : 1);
   S.arcadeBests = S.arcadeBests || {};
   const prev = A.game === 'smash' ? (S.arcadeBest || 0) : (S.arcadeBests[A.game] || 0), rec = A.score > prev;
   if (rec) { if (A.game === 'smash') S.arcadeBest = A.score; else S.arcadeBests[A.game] = A.score; }
