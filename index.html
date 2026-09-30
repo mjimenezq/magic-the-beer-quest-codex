@@ -2290,6 +2290,7 @@ function loadRoom(id, px, py){
   G.npcs = (d.npcs || []).filter(n => !(n.id === 'klaus' && CHARS[S.ch].id === 'klaus')).map(n => ({ id:n.id, x:n.x * TS + 3, y:n.y * TS + 8, w:10, h:8, dir:0,
     ch: n.id === 'friend' ? friendChars[n.slot] : undefined }));
   PL.x = px; PL.y = py; PL.kb = 0; PL.atk = 0;
+  unstuckPlayer();
   G.cacheDirty = true; G.zoneT = d.interior ? 0 : 110; G.fade = 14;
   findChimneys(); spawnQuestItems();
   if ((WILD[id] || d.dungeonKey) && Math.random() < 0.4) {
@@ -2673,8 +2674,20 @@ function drawAmbient(){
   }
 }
 
+function unstuckPlayer(){
+  if (!blocked(PL.x, PL.y, PL.w, PL.h)) return false;
+  const cx = Math.floor((PL.x + 5) / TS), cy = Math.floor((PL.y + 4) / TS);
+  for (let r = 1; r < 15; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+    const tx = cx + dx, ty = cy + dy; if (tx < 0 || ty < 0 || tx > 14 || ty > 9) continue;
+    const nx = tx * TS + 3, ny = ty * TS + 4;
+    if (!blocked(nx, ny, PL.w, PL.h)) { PL.x = nx; PL.y = ny; PL.lock = tx + ',' + ty; return true; }
+  }
+  return false;
+}
 function updateWorld(){
   const p = PL;
+  unstuckPlayer();
   if (G.zoneT > 0) G.zoneT--;
   if (p.inv > 0) p.inv--; if (p.atkCd > 0) p.atkCd--;
   if (p.kb > 0) { p.kb--; moveBox(p, p.kx, p.ky, false, true); p.kx *= 0.85; p.ky *= 0.85; }
@@ -5051,6 +5064,7 @@ function loop(now){
     if (location.hash.startsWith('#intro=') && !G.tested) { G.tested = true; const n = +location.hash.slice(7); for (let i = 0; i < n; i++) step(); G.freeze = true; }
     if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4);
       if (extra === 'viajar' || extra === 'volar') { S.stones = { home:true, tolaria:true }; if (extra === 'volar') for (const d of DECKS.slice(0, 6)) for (const c of d.cards) S.cards[c] = 1; openTravel(); G.dialog.ch = 999; G.dialog.showChoices = true; }
+      if (extra === 'atascado') { loadRoom('bosqueRoca', W - PL.w - 2, 7 * TS + 4); }
       if (extra === 'mapa') { S.visited = { pueblo:true, bosque:true, tolaria:true, pantano:true, costa:true, pradera:true }; dispatchEvent(new KeyboardEvent('keydown', { code:'KeyM' })); }
       if (extra === 'ircasa') { S.stones = { home:true }; travelTo('hogar', 'stone'); }
       if (extra === 'iman') { G.enemies = []; S.hp = 20; G.items.push({ k:'beer', x:PL.x + 55, y:PL.y, z:0, vz:0, t:20 }); for (let i = 0; i < 40; i++) step(); G.freeze = true; }
