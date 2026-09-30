@@ -2173,10 +2173,16 @@ function loadRoom(id, px, py){
   G.map = d.map.map(r => r.split(''));
   for (const k in (d.chests || {})) if (S.chests[id + ':' + k]) { const [x, y] = k.split(',').map(Number); G.map[y][x] = 'C'; }
   G.enemies = []; G.items = []; G.parts = []; G.floats = []; G.shots = []; G.amb = []; G.moveTarget = null; G.eshots = []; G.aoes = [];
-  for (const [t, x, y] of (d.enemies || [])) {
-    const e = spawnEnemy(t, x * TS, y * TS);
+  // Las criaturas que mataste no vuelven a aparecer hasta que pasen RESPAWN_MS (2 minutos)
+  G.killedAt = G.killedAt || {};
+  let bossResting = false;
+  (d.enemies || []).forEach(([t, x, y], i) => {
+    const k = id + ':' + i;
+    if (G.killedAt[k] && Date.now() - G.killedAt[k] < RESPAWN_MS) { if (MON[t].boss) bossResting = true; return; }
+    const e = spawnEnemy(t, x * TS, y * TS); e.spawnKey = k;
     if (d.mult && d.mult !== 1) { e.hp = e.max = Math.round(e.hp * d.mult); e.dmgMult = d.mult > 1.6 ? 2 : 1; }
-  }
+  });
+  if (bossResting && d.bossFloor) G.map[4][7] = 'O';
   G.turrets = []; for (let ty = 0; ty < 10; ty++) for (let tx = 0; tx < 15; tx++) if (G.map[ty][tx] === 'j') G.turrets.push({ tx, ty, cd:60 + ((tx * 37 + ty * 53) % 90) });
   G.swarmT = 0;
   const friendChars = CHARS.map((_, i) => i).filter(i => i !== S.ch);
@@ -2303,8 +2309,10 @@ function dropLoot(e){
   }
   if (Math.random() < 0.03) { const opts = ['hierro','goblin','sombra','urza','mar'].filter(s => !S.swords.includes(s)); if (opts.length) drop('sword', pick(opts)); }
 }
+const RESPAWN_MS = 2 * 60 * 1000;
 function killEnemy(e){
   if (e.dead) return;
+  if (e.spawnKey) { G.killedAt = G.killedAt || {}; G.killedAt[e.spawnKey] = Date.now(); }
   e.dead = true; SFX.kill(); questKill(e.type);
   if (NET.role === 'host') sendAll({ t:'kill', room:G.roomId, id:e.nid, type:e.type, x:Math.round(e.x), y:Math.round(e.y) });
   for (let i = 0; i < 8; i++) G.parts.push({ k:'smoke', x:e.x + e.w / 2, y:e.y + e.h / 2, vx:Math.cos(i * 0.785) * 1.2, vy:Math.sin(i * 0.785) * 1.2, t:0 });
