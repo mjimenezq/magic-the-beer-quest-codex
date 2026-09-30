@@ -735,7 +735,7 @@ const COIN_X = 50; // monedas que sueltan las criaturas y el arcade (30 sept: ba
 const QUEST_COIN_X = 150; // las recompensas en plata de los encargos
 const money = n => '$' + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 const houseBonus = key => { let v = 0; for (const [id, o] of Object.entries(HOUSE)) if (S.house && S.house[id]) v += o.bonus[key] || 0; for (const [id, o] of Object.entries(PRIZES)) if (S.house && S.house[id]) v += o.bonus[key] || 0; return v; };
-const ZONE_TIER = { pueblo:1, bosque:1, pradera:1, costa:2, pantano:2, cerro:2, valpo:1, tolaria:1, mercado:1, bosqueProf:3, pantanoProf:3, minas:3, ruinas:3, guarida:3, islote:3, vina:1, pmontt:1, volcan:4, glaciar:4, urborg:4, pampa:4, fabrica:4, quietud:4, bosqueRoca:4, tempest:1 };
+const ZONE_TIER = { pueblo:1, bosque:1, pradera:1, costa:2, pantano:2, cerro:2, valpo:1, tolaria:1, mercado:1, bosqueProf:3, pantanoProf:3, minas:3, ruinas:3, guarida:3, islote:3, vina:1, pmontt:1, volcan:4, glaciar:4, urborg:4, dunas:2, pampa:4, fabrica:4, quietud:4, bosqueRoca:4, tempest:1 };
 const zoneTier = () => G.def && G.def.dungeonKey ? 3 + (G.def.floor >= 3 ? 1 : 0) : (ZONE_TIER[G.roomId] || 1);
 function defense(){ let d = 0; for (const [slot] of GEAR_SLOTS) { const id = S.gear && S.gear[slot]; if (id) d += ARMOR[id].def; } return d; }
 const maxMp = () => 4 + stats().int + (S.house && S.house.biblioteca ? 2 : 0) + houseBonus('mp');
@@ -821,7 +821,7 @@ const ROOMS = {
     roof:(tx, ty) => ty >= 6 ? 'green' : tx < 7 ? 'red' : 'blue',
     plaques:[['CASA',200,99,'#1a4a2a']],
     doors:{'4,3':'taberna','10,3':'arena','12,7':'hogar'},
-    signs:{'6,4':'OESTE: PRADERA DE SERRA. NORTE: BOSQUE GOBLIN.','8,4':'ESTE: PANTANO NEGRO. SUR: COSTA LANGOSTINO.'},
+    signs:{'6,4':'OESTE: PRADERA DE SERRA. NORTE: BOSQUE GOBLIN.','8,4':'ESTE: PANTANO NEGRO. SUR: PICHILEMU.'},
     npcs:[{id:'vecina',x:10,y:7}] },
   bosque:{ name:'BOSQUE GOBLIN', theme:'forest', music:'field', exits:{s:'pueblo',n:'guarida'}, decks:['burn','goblins'],
     map:['TTTTTT...TTTTTT','TT.,..b...TT.TT','T..TT...b..T..T','T.,TT..,...b.cT','T....b...TT...T','TTb....,..TT.,T','T...TT........T','T.,.TT..b..T.bT','T.......,..T..T','TTTTTT...TTTTTT'],
@@ -835,10 +835,10 @@ const ROOMS = {
   pradera:{ name:'PRADERA DE SERRA', theme:'meadow', music:'town', exits:{e:'pueblo'}, decks:['life','replenish'],
     map:['TTTTTTTTTTTTTTT','T,,..,..,..,.,T','T.P...,,...P..T','T,..,....,...,T','T.....o.......=','T,.,......,...=','T...,..,..,..,T','T.P..,....,.P.T','Tc..,..,...,.,T','TTTTTTTTTTTTTTT'],
     enemies:[['warden',4,3],['warden',9,6],['warden',10,2],['angel',6,6]], chests:{'1,8':'urza'} },
-  costa:{ name:'COSTA LANGOSTINO', theme:'sand', music:'field', exits:{n:'pueblo',s:'islote'}, decks:['langostino','replenish'],
-    map:['TTTTTT...TTTTTT','Tss.b.....b.ssT','Tsss...s...sssT','Tss..r...r..ssT','~sss.......sss~','~~ss...c...ss~~','~~~s.......s~~~','~~~~s.....s~~~~','~~~~~s...s~~~~~','~~~~~~~L~~~~~~~'],
+  costa:{ name:'PICHILEMU', theme:'sand', music:'field', exits:{n:'pueblo',s:'islote'}, decks:['langostino','replenish'],
+    map:['TTTTTT...TTTTTT','Tss.b.....b.ssT','Tsss...s...sssT','Tss..r...r..ssT','~sss.......sss~','~~ss...c...ss~~','~~~s.......s~~~','~~~~s.....s~~~~','~~~~~s...sL~~~~','~~~~~~~~~~~~~~~'],
     enemies:[['merfolk',3,2],['merfolk',11,2],['merfolk',5,6],['merfolk',9,6]], chests:{'7,5':'mar'},
-    npcs:[{id:'barquero',x:7,y:8}] },
+    npcs:[{id:'barquero',x:9,y:7}] },
   islote:{ name:'ISLOTE DEL LANGOSTINO', theme:'sand', music:'dark', decks:['langostino'],
     npcs:[{id:'barquero',x:2,y:5}],
     map:['~~~~~~~~~~~~~~~','~~~sssssssss~~~','~~ss.......ss~~','~ss.........ss~','~s...........s~','Ls...........s~','~ss.........ss~','~~ss.......ss~~','~~~sssssssss~~~','~~~~~~~~~~~~~~~'],
@@ -861,7 +861,7 @@ const ROOMS = {
     roof:(tx) => tx >= 9 ? 'green' : 'red',
     plaques:[['LA RUCA',88,19,'#5a3418'],['CASA',192,35,'#1a4a2a']],
     doors:{'5,3':'bar','12,3':'casa'},
-    signs:{'6,4':'CURICÓ, TIERRA DE TORTAS Y DE PREMODERN. AQUÍ SE ABRIÓ LA CAJA DE URZA. NORTE: PRADERA. ESTE: COSTA.'},
+    signs:{'6,4':'CURICÓ, TIERRA DE TORTAS Y DE PREMODERN. AQUÍ SE ABRIÓ LA CAJA DE URZA. NORTE: PRADERA. ESTE: PICHILEMU. SUR: VIÑA.'},
     npcs:[{id:'marinero',x:11,y:6},{id:'pescador',x:8,y:6},{id:'barquero',x:4,y:8}] },
   tienda:{ name:'TIENDA LA GUARIDA DEL MONO', theme:'inside', music:'tavern', interior:true, exitTo:{room:'tolaria',tx:3,ty:3},
     map:['kkkkkkkkkkkkkkk','kBKKKKFKKKKKBBk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFBk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFBk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFBk','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'],
@@ -959,19 +959,20 @@ const BOAT_ONLY = new Set(['islote','pmontt']);
 const DOCKS = { costa:[7,7], valpo:[4,6], islote:[3,5], vina:[7,7], pmontt:[7,5] };
 const BOAT_PRICE = 30;
 const BOAT_ROUTES = { costa:[['islote',8000],['pmontt',12000]], valpo:[['islote',8000]], vina:[['islote',8000],['pmontt',12000]], islote:[['costa',0],['valpo',0],['vina',0]], pmontt:[['vina',0],['costa',0]] };
-const PLACE_NAME = { costa:'LA COSTA', valpo:'CURICO', islote:'EL ISLOTE', vina:'VIÑA', pmontt:'PUERTO MONTT' };
+const PLACE_NAME = { costa:'PICHILEMU', valpo:'CURICO', islote:'EL ISLOTE', vina:'VIÑA', pmontt:'PUERTO MONTT' };
 function travelBoat(dest){ SFX.door(); tone(160, 120, 0.6, 'triangle', 0.4); const [x, y] = DOCKS[dest]; loadRoom(dest, x * TS + 3, y * TS + 6); G.fade = 50; PL.dir = 0; toast('VIAJE EN BOTE', '#88c8f8'); }
 
 /* ============ WORLD MAP, WILD ZONES & DUNGEONS ============ */
 const WORLD = { guarida:[2,0], cerro:[1,1], bosque:[2,1], bosqueProf:[3,1], minas:[4,1],
-  ruinas:[0,2], pradera:[1,2], pueblo:[2,2], pantano:[3,2], tolaria:[4,2], valpo:[1,3], costa:[2,3], pantanoProf:[3,3], mercado:[4,3], vina:[1,4], islote:[2,4], pmontt:[3,4],
+  ruinas:[0,2], pradera:[1,2], pueblo:[2,2], pantano:[3,2], tolaria:[4,2], valpo:[1,3], costa:[2,3], pantanoProf:[3,3], mercado:[4,3], vina:[1,4], dunas:[2,4], islote:[2,5], pmontt:[3,4],
   volcan:[3,0], glaciar:[4,0], urborg:[0,3], pampa:[1,0], fabrica:[0,0], quietud:[0,1], bosqueRoca:[0,4], tempest:[4,4] };
 const SHORT = { guarida:'GUARIDA', cerro:'CERRO MOX', bosque:'BOSQUE', bosqueProf:'B. PROFUNDO', minas:'MINAS', ruinas:'RUINAS',
-  pradera:'PRADERA', pueblo:'VILLA', pantano:'PANTANO', tolaria:'TOLARIA', valpo:'CURICO', costa:'COSTA', pantanoProf:'P. PROFUNDO', islote:'ISLOTE', mercado:'MERCADO', vina:'VIÑA', pmontt:'P. MONTT', volcan:'VOLCAN', glaciar:'GLACIAR', urborg:'URBORG', pampa:'PAMPA', fabrica:'FABRICA', quietud:'QUIETUD', bosqueRoca:'LA ROCA', tempest:'TEMPEST' };
+  pradera:'PRADERA', pueblo:'VILLA', pantano:'PANTANO', tolaria:'TOLARIA', valpo:'CURICO', costa:'PICHILEMU', dunas:'DUNAS', pantanoProf:'P. PROFUNDO', islote:'ISLOTE', mercado:'MERCADO', vina:'VIÑA', pmontt:'P. MONTT', volcan:'VOLCAN', glaciar:'GLACIAR', urborg:'URBORG', pampa:'PAMPA', fabrica:'FABRICA', quietud:'QUIETUD', bosqueRoca:'LA ROCA', tempest:'TEMPEST' };
 const WILD = {
   cerro:{ name:'CERRO MOX', theme:'dirt', music:'field', walls:['r','r','T','b'], decks:['burn','goblins','langostino'], enemies:['gob','pup','merfolk','ball'], n:5, chest:'hierro' },
   bosqueProf:{ name:'BOSQUE PROFUNDO', theme:'forest', music:'field', walls:['T','T','T','b'], decks:['goblins','black'], enemies:['gob','shade','pup','specter'], n:6, chest:'bolsa' },
   minas:{ name:'ENTRADA A LAS MINAS', theme:'dirt', music:'dark', walls:['r','r','T'], decks:['burn','goblins'], enemies:['gob','ball','carno'], n:5, dungeon:'minas' },
+  dunas:{ name:'DUNAS DE CONCON', theme:'sand', music:'field', walls:['r','b','r'], decks:['langostino','burn','replenish'], enemies:['merfolk','pup','ball','merfolk'], n:5, chest:'bolsa' },
   ruinas:{ name:'RUINAS DE SERRA', theme:'meadow', music:'town', walls:['P','r','T','b'], decks:['life','replenish'], enemies:['warden','angel','merfolk'], n:5, dungeon:'torre' },
   pantanoProf:{ name:'PANTANO PROFUNDO', theme:'swamp', music:'dark', walls:['x','w','T','w'], decks:['black'], enemies:['shade','specter','carno','negator'], n:5, dungeon:'cripta' },
   volcan:{ name:'VOLCAN DE SHIV', theme:'volcano', music:'boss', walls:['r','r','x'], decks:['burn','goblins'], enemies:['ball','pup','gob','ball'], n:7, dungeon:'fortaleza', hazard:'l', hazRate:0.14, meteors:true, turrets:2, mult:1.8 },
@@ -3035,7 +3036,7 @@ const BLACK_MON = ['carno','shade','specter','negator'];
 const QUESTS = {
   q_gob:{ giver:'vecina', title:'Plaga goblin', desc:'Derrota 8 goblins.', type:'kill', target:['gob'], n:8, reward:{ st:{fue:1}, coins:20, spell:'bolt' } },
   q_gato:{ giver:'vecina', title:'Michi perdido', desc:'Encuentra al gato de la vecina en el Bosque Profundo.', type:'find', zones:['bosqueProf'], n:1, itemName:'EL MICHI', icon:'cat', reward:{ st:{agi:1}, spell:'heal' } },
-  q_anillo:{ giver:'pescador', title:'El anillo de la abuela', desc:'Encuentra el anillo perdido en la Costa Langostino.', type:'find', zones:['costa'], n:1, itemName:'ANILLO', icon:'ring', reward:{ st:{des:1}, coins:30 } },
+  q_anillo:{ giver:'pescador', title:'El anillo de la abuela', desc:'Encuentra el anillo perdido en la playa de Pichilemu.', type:'find', zones:['costa'], n:1, itemName:'ANILLO', icon:'ring', reward:{ st:{des:1}, coins:30 } },
   q_hierbas:{ giver:'posadera', title:'Hierbas para la cazuela', desc:'Junta 3 hierbas en Pantano Negro, Pantano Profundo y Pradera de Serra.', type:'find', zones:['pantano','pantanoProf','pradera'], n:3, itemName:'HIERBA', icon:'herb', reward:{ maxHp:2 } },
   q_diario:{ giver:'viejo', title:'Paginas del diario', desc:'Recupera 3 paginas: Minas piso 2, Cripta piso 1 y Torre piso 2.', type:'find', zones:['D:minas:2','D:cripta:1','D:torre:2'], n:3, itemName:'PAGINA', icon:'page', reward:{ st:{int:2}, spell:'fire' } },
   q_mazo2:{ giver:'juez', title:'El mazo perdido', desc:'Un jugador perdio su mazo en el Cerro Mox. Encuentralo.', type:'find', zones:['cerro'], n:1, itemName:'MAZO', icon:'deck', reward:{ st:{int:1}, coins:40, spell:'ice' } },
@@ -3052,8 +3053,8 @@ const QUESTS = {
   q_cartas:{ giver:'tendero', title:'Coleccionista', desc:'Junta 25 cartas distintas.', type:'cards', n:25, reward:{ st:{int:1,des:1}, coins:30 } },
   q_warden:{ giver:'posadera', title:'Paz en la pradera', desc:'Derrota 5 Soul Warden.', type:'kill', target:['warden'], n:5, reward:{ st:{int:1}, coins:15 } },
   q_arcade:{ giver:'arcadeOrg', title:'Récord del arcade', desc:'Haz 25 puntos en Goblin Smash.', type:'arcade', n:25, reward:{ st:{des:2} } },
-  q_langost:{ giver:'coleccionista', title:'Caza del Langostino', desc:'Derrota al Langostino del islote, al sur de la costa.', type:'boss', target:'dread', n:1, reward:{ st:{agi:2}, coins:40 } },
-  q_piedraHogar:{ giver:'mueblero', title:'La Piedra Hogar', desc:'Junta 3 fragmentos de piedra: Bosque Goblin, Costa Langostino y Cerro Mox.', type:'find', zones:['bosque','costa','cerro'], n:3, itemName:'FRAGMENTO', icon:'stone', reward:{ stone:'home' } },
+  q_langost:{ giver:'coleccionista', title:'Caza del Langostino', desc:'Derrota al Langostino del islote, en bote desde Pichilemu.', type:'boss', target:'dread', n:1, reward:{ st:{agi:2}, coins:40 } },
+  q_piedraHogar:{ giver:'mueblero', title:'La Piedra Hogar', desc:'Junta 3 fragmentos de piedra: Bosque Goblin, Pichilemu y Cerro Mox.', type:'find', zones:['bosque','costa','cerro'], n:3, itemName:'FRAGMENTO', icon:'stone', reward:{ stone:'home' } },
   q_piedraTolaria:{ giver:'mago', title:'La Piedra Tolaria', desc:'Recupera 3 runas: Ruinas de Serra, Pantano Profundo y Minas de Mishra piso 1.', type:'find', zones:['ruinas','pantanoProf','D:minas:1'], n:3, itemName:'RUNA', icon:'rune', reward:{ stone:'tolaria' } },
 };
 const GIVER_PLACE = { vecina:'VILLA', cronista:'VILLA', cantinero:'TABERNA DE LA VILLA', klaus:'TABERNA DE LA VILLA', coleccionista:'TABERNA DE LA VILLA',
@@ -3423,7 +3424,7 @@ function talkTo(id, npc, skipQuest){
     ])]);
     return;
   }
-  if (id === 'marinero') { say(['MARINERO: ' + pick(['Los Merfolk Looter de la costa se roban hasta los choritos.','Llevo treinta años en el mar y nunca vi un langostino tan grande. Bueno, salvo el que sirvió mi suegra pa\' Año Nuevo.','En el puerto somos simples: pescado frito, una chela y un Counterspell pa\' la que venga.','Al sur del islote, dicen, hay un langostino del porte de un bote. Doce de fuerza, doce de resistencia.','En Curicó todos jugamos Premodern. Entre torta y torta, una partida.'])]); return; }
+  if (id === 'marinero') { say(['MARINERO: ' + pick(['Los Merfolk Looter de Pichilemu se roban hasta las tablas de surf.','Llevo treinta años en el mar y nunca vi un langostino tan grande. Bueno, salvo el que sirvió mi suegra pa\' Año Nuevo.','En el puerto somos simples: pescado frito, una chela y un Counterspell pa\' la que venga.','Al sur del islote, dicen, hay un langostino del porte de un bote. Doce de fuerza, doce de resistencia.','En Curicó todos jugamos Premodern. Entre torta y torta, una partida.'])]); return; }
   if (id === 'pescador') { say(['PESCADOR: ' + pick(['El otro día pesqué un Counterspell. Lo tiré de vuelta al río, no me sirve pa na.','Una vez pesqué un Mox Diamond. Bueno, era una tapa de bebida, pero brillaba igual.','Si el pez no pica, es que está jugando Landstill: esperando que tú hagas algo primero.','Si vas a pelear con el Langostino, llévate harta vida. Y una cerveza de La Ruca, pa\' la suerte.'])]); return; }
   if (id === 'tendero') {
     sellPacks('TENDERO', pick(['Los sobres vienen sellados, garantizado. Lo que salga adentro ya es cosa tuya y de la Virgen del Carmen.','Aquí no se fía. El último que me pidió fiado todavía está buscando un Force of Will.','¿Otro sobre? Tu billetera llora, pero tu carpeta te lo agradece.']) + ' Bienvenido a La Guarida del Mono.');
@@ -3699,9 +3700,9 @@ function updateMenu(){
 const THEME_COL = { town:'#d8b060', forest:'#3e8a36', dirt:'#a88050', swamp:'#4a6a40', meadow:'#88c860', sand:'#e8d098', volcano:'#c84a20', ice:'#c8e8ff', bog:'#5a6a3a' };
 const zoneTheme = id => WILD[id] ? WILD[id].theme : ROOMS[id].theme;
 function drawWorldMap(){
-  const cw = 44, chh = 24, ox = 10, oy = 20, cur = zoneOf(G.roomId), vis = S.visited || {};
+  const cw = 44, chh = 20, ox = 10, oy = 20, rows = 6, cur = zoneOf(G.roomId), vis = S.visited || {};
   const center = id => [ox + WORLD[id][0] * cw + cw / 2, oy + WORLD[id][1] * chh + chh / 2];
-  R(ox - 4, oy - 2, cw * 5 + 8, chh * 5 + 4, '#d8c090'); R(ox - 3, oy - 1, cw * 5 + 6, chh * 5 + 2, '#e8d8a8');
+  R(ox - 4, oy - 2, cw * 5 + 8, chh * rows + 4, '#d8c090'); R(ox - 3, oy - 1, cw * 5 + 6, chh * rows + 2, '#e8d8a8');
   for (const id in WORLD) {
     if (!vis[id]) continue;
     const ex = zoneNeighbors(id);
