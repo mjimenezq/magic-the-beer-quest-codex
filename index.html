@@ -839,7 +839,7 @@ const ROOMS = {
     signs:{'7,8':'MERCADO DE MOX: ARMAS Y ARMADURAS, MAGIA, HOGAR Y PREMIOS DE LA LIGA.'},
     npcs:[{id:'armero',x:3,y:4},{id:'mago',x:11,y:4},{id:'mueblero',x:3,y:8},{id:'premiador',x:11,y:8}] },
   hogar:{ name:'TU CASA', theme:'inside', music:'town', interior:true, exitTo:{room:'pueblo',tx:12,ty:8},
-    map:['kkkkkkkkkkkkkkk','k2FF3FF8FF4FF6k','kFFFFFFFFFFFFFk','k1FFFFF7FFFFF5k','kFFFFFFFFFFFFFk','k9FFF0FFF@FFF%k','kFFFFFFFFFFFFFk','k&FFFFFFFFFFF$k','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'] },
+    map:['kkkkkkkkkkkkkkk','k2FF3FF8FF4FF6k','kFFFFFFFFFFFFFk','k1FFFFF7FFFFF5k','kF^^^^FFF^^^^Fk','k9FFF0FFF@FFF%k','kFFFFFFFFFFFFFk','k&FFFFFFFFFFF$k','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'] },
   arcade:{ name:'ARCADE TOLARIA', theme:'inside', music:'town', interior:true, exitTo:{room:'tolaria',tx:9,ty:8},
     map:['kkkkkkkkkkkkkkk','kZFZFZFZFZFZFZk','kFFFFFFFFFFFFFk','kFFFFFFFFFFFFFk','kZFZFFFFFFFZFZk','kFFFFFFFFFFFFFk','kFFFFFFFFFFFFFk','kFFFFFFFFFFFFFk','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'],
     npcs:[{id:'arcadeOrg',x:7,y:4},{id:'fan1',x:4,y:6}] },
@@ -894,7 +894,7 @@ ROOMS.vina.npcs.push({ id:'ligaVina', x:8, y:4 });
 ROOMS.valpo.npcs.push({ id:'ligaCurico', x:9, y:4 });
 ROOMS.pmontt.npcs.push({ id:'ligaPmontt', x:5, y:4 });
 ROOMS.tolaria.npcs.push({ id:'ligaUrza', x:13, y:6 });
-const SOLID = new Set(['T','b','r','~','w','x','R','W','S','o','f','P','c','C','k','K','B','t','Q','Z','Y','y','L','J','H','j']);
+const SOLID = new Set(['T','b','r','~','w','x','R','W','S','o','f','P','c','C','k','K','B','t','Q','Z','Y','y','L','J','H','j','^']);
 const BOAT_ONLY = new Set(['islote','pmontt']);
 const DOCKS = { costa:[7,7], valpo:[4,6], islote:[3,5], vina:[7,7], pmontt:[7,5] };
 const BOAT_PRICE = 30;
@@ -1386,6 +1386,7 @@ function drawTile(c, tx, ty, theme){
       ctx.fillStyle = 'rgba(0,0,20,.22)'; ctx.fillRect(x, y + 12, 16, 3);
       break; }
     case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': case '0': case '@': case '%': case '&': case '$': drawHouseTile(c, x, y, tx, ty); break;
+    case '^': drawTrophyTile(x, y, tx, ty); break;
     case 'J':
       drawTile('s', tx, ty, theme);
       ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x + 4, y + 13, 12, 3);
@@ -1405,6 +1406,35 @@ function drawTile(c, tx, ty, theme){
     case '~': case 'w': case 'L': break;
     default: ground(x, y, tx, ty, theme);
   }
+}
+// Vitrina de trofeos de la casa: cada pedestal se llena solo al ganar (columna x de la fila 4 de 'hogar')
+const TROPHY_CASE = {
+  2:{ n:'TORNEO DE LA ARENA', cup:'#c87a3a', won:() => (S.trophies || 0) > 0, how:'Gana un torneo en la Arena de la Villa.' },
+  3:{ n:'LIGA DE VIÑA', cup:'#d8dce8', league:'vina' },
+  4:{ n:'LIGA DE CURICO', cup:'#d8dce8', league:'curico' },
+  5:{ n:'LIGA DE PUERTO MONTT', cup:'#d8dce8', league:'pmontt' },
+  9:{ n:'LIGA URZA SAGA', cup:'#d8dce8', league:'urza' },
+  10:{ n:'LIGA TEMPEST', cup:'#d8dce8', league:'tempest' },
+  11:{ n:'LIGA NACIONAL', cup:'#ffd040', won:() => (S.ligaWins || 0) > 0, how:'Gana la Liga Nacional en Tolaria.' },
+  12:{ n:'COPA DE LOS 12 JEFES', cup:'#b060f0', won:() => bossesDone() >= ALL_BOSSES.length, how:'Derrota a los 12 jefes de Chile.' },
+};
+const trophyWon = t => t.league ? !!(S.leagues && S.leagues[t.league]) : t.won();
+function drawTrophyTile(x, y, tx, ty){
+  floorF(x, y, tx, ty);
+  const t = TROPHY_CASE[tx], O = '#1a0c06';
+  R(x + 2, y + 10, 12, 6, O); R(x + 3, y + 11, 10, 4, '#8a8494'); R(x + 3, y + 11, 10, 1, '#b8b0c4');
+  if (!t || !S || !trophyWon(t)) { R(x + 6, y + 6, 4, 4, 'rgba(0,0,0,.18)'); return; }
+  const c = t.cup, d = shadeCol(c, 0.6);
+  R(x + 4, y - 1, 8, 7, O); R(x + 5, y, 6, 5, c); R(x + 5, y, 2, 4, '#ffffff'); R(x + 10, y, 1, 5, d);
+  R(x + 2, y + 1, 3, 3, O); R(x + 11, y + 1, 3, 3, O); R(x + 3, y + 2, 1, 1, c); R(x + 12, y + 2, 1, 1, c);
+  R(x + 7, y + 5, 2, 3, O); R(x + 7, y + 5, 2, 2, d); R(x + 5, y + 8, 6, 2, O); R(x + 6, y + 8, 4, 1, c);
+  if (t.league) { const fl = { vina:'#f878a8', curico:'#48a860', pmontt:'#2a6a8a', urza:'#6a8ab8', tempest:'#c82848' }[t.league]; R(x + 7, y + 12, 2, 2, fl); }
+}
+function trophyInteract(tx){
+  const t = TROPHY_CASE[tx]; if (!t) return;
+  const how = t.league ? 'Gana la ' + LEAGUES[t.league].n + ' (' + LEAGUES[t.league].place + ').' : t.how;
+  if (trophyWon(t)) say(['TROFEO: ' + t.n + '.', t.league ? 'Lo ganaste en ' + LEAGUES[t.league].place + '. Brilla como un Mox.' : tx === 2 ? 'Ganaste ' + S.trophies + ' torneo' + (S.trophies === 1 ? '' : 's') + ' en la Arena.' : '¡Un trofeo de leyenda!']);
+  else say(['Pedestal vacío: aquí va el trofeo de la ' + t.n.replace('TORNEO DE LA ', '').replace('COPA DE LOS', 'COPA DE LOS') + '.', how]);
 }
 const HOUSE_TILE = { '1':'cama', '2':'chimenea', '3':'biblioteca', '4':'armeria', '5':'jardin', '6':'cofre', '8':'trofeo', '9':'galeria', '0':'estatua', '@':'fuente', '%':'boveda', '&':'salon', '$':'mansion' };
 const HOUSE_SET = new Set(Object.keys(HOUSE_TILE).concat(['7']));
@@ -2295,6 +2325,7 @@ function tryInteract(){
     const tx = Math.floor(pt.x / TS), ty = Math.floor(pt.y / TS), c = T(tx, ty);
     if (c === 'Z') { arcadePrompt(tx, ty); return true; }
     if (HOUSE_SET.has(c) && G.roomId === 'hogar') { houseInteract(c); return true; }
+    if (c === '^' && G.roomId === 'hogar') { trophyInteract(tx); return true; }
     if (c === 'S') { const s = G.def.signs && G.def.signs[tx + ',' + ty]; if (s) { say([s]); return true; } }
     if (c === 'c') {
       const key = G.roomId + ':' + tx + ',' + ty;
@@ -3264,6 +3295,7 @@ function finishTour(){
   const reward = { lines };
   if (champ && T_.cfg.league) { S.leagues = S.leagues || {}; const first = !S.leagues[T_.cfg.league]; S.leagues[T_.cfg.league] = true; lines.push(first ? 'Ligas regionales ganadas: ' + leaguesDone() + '/5.' + (leaguesDone() === 5 ? ' ¡Ya cumples una parte de lo que pide la Liga Nacional!' : '') : 'Ya eras campeón de esta liga: te llevas el premio igual.'); }
   if (champ && liga) { S.ligaWins = (S.ligaWins || 0) + 1; if (S.ligaWins === 1) reward.ending = true; }
+  if (champ) lines.push('El trofeo quedó en la vitrina de tu casa, en la Villa.');
   if (champ) {
     S.trophies++;
     if (!S.swords.includes('campeon')) reward.sword = 'campeon';
@@ -4624,7 +4656,7 @@ function loop(now){
   acc += Math.min(100, now - last); last = now;
   try {
     if (location.hash === '#test-arcade' && !G.tested) { G.tested = true; S = newSave(0); S.coins = 50; G.state = 'world'; loadRoom('arcade', 7 * TS + 3, 7 * TS + 4); }
-    if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const id = decodeURIComponent(location.hash.slice(8)); loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4); }
+    if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4); }
     while (acc >= 1000 / 60) { step(); acc -= 1000 / 60; }
     render();
   } catch (e) {
@@ -4667,7 +4699,7 @@ function pointerClick(p, right){
   const npc = G.npcs.find(n => p.x > n.x - 6 && p.x < n.x + n.w + 6 && p.y > n.y - 16 && p.y < n.y + n.h + 4);
   if (npc && Math.hypot(npc.x + 5 - pc.x, npc.y + 4 - pc.y) < 30) { faceTo(npc.x + 5, npc.y + 4); G.moveTarget = null; pulseKey = 'b'; return; }
   const tx = Math.floor(p.x / TS), ty = Math.floor(p.y / TS), c = T(tx, ty);
-  if (c && ('ScZ' + [...HOUSE_SET].join('')).includes(c) && Math.hypot(tx * TS + 8 - pc.x, ty * TS + 8 - pc.y) < 30) { faceTo(tx * TS + 8, ty * TS + 8); G.moveTarget = null; pulseKey = 'b'; return; }
+  if (c && ('ScZ^' + [...HOUSE_SET].join('')).includes(c) && Math.hypot(tx * TS + 8 - pc.x, ty * TS + 8 - pc.y) < 30) { faceTo(tx * TS + 8, ty * TS + 8); G.moveTarget = null; pulseKey = 'b'; return; }
   G.moveTarget = { x:p.x, y:p.y, t:0 };
 }
 function dialogClick(p){
