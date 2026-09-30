@@ -3600,7 +3600,25 @@ let NID = 0;
 const netEl = id => document.getElementById(id);
 function netStatus(s){ const el = netEl('netStatus'); if (el) el.textContent = s; }
 function genCode(){ const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; let s = ''; for (let i = 0; i < 4; i++) s += a[rnd(a.length)]; return s; }
+// STUN para encontrarse y TURN (retransmision) para cuando la conexion directa falla, tipico en datos moviles
+const PEER_OPTS = { debug:1, config:{ iceServers:[
+  { urls:'stun:stun.l.google.com:19302' }, { urls:'stun:stun1.l.google.com:19302' }, { urls:'stun:global.stun.twilio.com:3478' },
+  { urls:'turn:openrelay.metered.ca:80', username:'openrelayproject', credential:'openrelayproject' },
+  { urls:'turn:openrelay.metered.ca:443', username:'openrelayproject', credential:'openrelayproject' },
+  { urls:'turn:openrelay.metered.ca:443?transport=tcp', username:'openrelayproject', credential:'openrelayproject' },
+] } };
+const IN_CLAUDE = /claude\.ai|claudeusercontent|anthropic/.test(location.hostname);
+function netErrorText(e, code){
+  const t = e && e.type;
+  if (t === 'peer-unavailable') return 'No encuentro la sala ' + code + '. Revisa el codigo y que quien la creo tenga el juego ABIERTO en pantalla (si minimiza el navegador, la sala se cae).';
+  if (t === 'network' || t === 'socket-error' || t === 'socket-closed' || t === 'server-error') return 'No hay conexion con el servidor online. Revisa tu internet y vuelve a intentar en un minuto.';
+  if (t === 'webrtc' || t === 'negotiation-failed') return 'No se pudo conectar directo entre los equipos. Prueben los dos conectados a WiFi (idealmente la misma red).';
+  if (t === 'browser-incompatible') return 'Este navegador no soporta el modo online. Prueba con Chrome o Safari actualizados.';
+  if (t === 'disconnected') return 'Se perdio la conexion con el servidor. Crea o unete a la sala de nuevo.';
+  return 'Error online (' + (t || 'desconocido') + '). Vuelve a intentarlo; si sigue, avisame con este texto.';
+}
 function netReady(){
+  if (IN_CLAUDE) { netStatus('El online no funciona dentro del link de Claude. Abre mjimenezq.github.io/premodern-quest para jugar en linea.'); return false; }
   if (!window.Peer) { netStatus('No se pudo cargar el modo online (revisa tu internet).'); return false; }
   if (!S || G.state !== 'world') { netStatus('Primero entra al juego (nueva partida o continuar).'); return false; }
   return true;
@@ -3614,10 +3632,11 @@ function netLeave(silent){
 function netHost(){
   if (!netReady()) return;
   netLeave(true);
-  const code = genCode(), peer = new Peer('pmq-' + code.toLowerCase());
+  const code = genCode(), peer = new Peer('pmq-' + code.toLowerCase(), PEER_OPTS);
   Object.assign(NET, { peer, role:'host', code, pid:'h' });
   netStatus('Creando sala...');
-  peer.on('open', () => netStatus('SALA ' + code + ' · pásale este código a tus amigos.'));
+  peer.on('open', () => netStatus('SALA ' + code + ' · pasale este codigo a tus amigos. Deja el juego abierto en pantalla.'));
+  peer.on('disconnected', () => { if (NET.peer === peer && !peer.destroyed) { netStatus('Reconectando la sala ' + code + '...'); try { peer.reconnect(); } catch(_) {} } });
   peer.on('connection', c => {
     c.on('open', () => {
       if (NET.conns.length >= 2) { c.send({ t:'full' }); setTimeout(() => c.close(), 300); return; }
@@ -3630,24 +3649,26 @@ function netHost(){
       if (o) toast(o.name + ' SE FUE'); netStatus('SALA ' + code + ' · ' + (NET.conns.length + 1) + ' jugadores.');
     });
   });
-  peer.on('error', e => { if (e.type === 'unavailable-id') netHost(); else netStatus('Error online: ' + e.type); });
+  peer.on('error', e => { if (e.type === 'unavailable-id') netHost(); else if (e.type !== 'peer-unavailable') netStatus(netErrorText(e, code)); });
 }
 function netJoin(){
   if (!netReady()) return;
   const code = (netEl('netCode').value || '').trim().toUpperCase();
   if (!/^[A-Z]{4}$/.test(code)) { netStatus('El código son 4 letras.'); return; }
   netLeave(true);
-  const peer = new Peer();
+  const peer = new Peer(PEER_OPTS);
   Object.assign(NET, { peer, role:'client', code });
   netStatus('Conectando a ' + code + '...');
   peer.on('open', () => {
     const c = peer.connect('pmq-' + code.toLowerCase(), { reliable:true });
     NET.host = c;
-    c.on('open', () => { netStatus('Conectado a la sala ' + code + '.'); SFX.ok(); });
+    const timer = setTimeout(() => { if (NET.host === c && !c.open) { netStatus(netErrorText({ type:'negotiation-failed' }, code) + ' (tiempo agotado)'); netLeave(true); } }, 20000);
+    c.on('open', () => { clearTimeout(timer); netStatus('Conectado a la sala ' + code + '.'); SFX.ok(); });
     c.on('data', d => clientRecv(d));
-    c.on('close', () => { if (NET.role === 'client') { toast('SE CORTO LA SALA'); netLeave(true); netStatus('Se cortó la conexión. Juegas solo.'); } });
+    c.on('error', e => netStatus(netErrorText(e, code)));
+    c.on('close', () => { clearTimeout(timer); if (NET.role === 'client') { toast('SE CORTO LA SALA'); netLeave(true); netStatus('Se corto la conexion. Juegas solo.'); } });
   });
-  peer.on('error', e => netStatus(e.type === 'peer-unavailable' ? 'No existe la sala ' + code + '.' : 'Error online: ' + e.type));
+  peer.on('error', e => { netStatus(netErrorText(e, code)); if (e.type === 'peer-unavailable' || e.type === 'network' || e.type === 'server-error') netLeave(true); });
 }
 function myState(){
   return { pid:NET.pid, name:CH().n, ch:S.ch, room:G.roomId, x:Math.round(PL.x), y:Math.round(PL.y), dir:PL.dir, atk:PL.atk, walk:Math.floor(PL.walk) % 2, hp:S.hp, max:S.maxHp };
