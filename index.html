@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Magic Quest</title>
+<title>Magic The Beer Quest</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -67,7 +67,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>MAGIC QUEST</h1>
+  <h1>MAGIC THE BEER QUEST</h1>
   <div class="invite-banner" id="inviteBanner" hidden></div>
   <div class="screen"><canvas id="game" width="240" height="160" tabindex="0" aria-label="Juego de rol de acción con cartas"></canvas></div>
   <div class="keys">
@@ -440,6 +440,12 @@ const CHARS = [
   { id:'tebax', n:'TEBAX', tag:'EL CERVECERO', style:'bald', mug:true, st:{fue:6,des:4,agi:4,int:6}, main:'fue', beer:true,
     c:{ hair:'#8a4a1c', skin:'#e8a878', shirt:'#c82828', shirtD:'#8a1414', emblem:'#fce060',
         cape:'#2a5a2a', capeD:'#1a3a1a', belt:'#2a1a0c', pants:'#3a3a48', shoe:'#2a1a0c', sleeve:'#c82828' } },
+  { id:'ratui', n:'LE RATUI', tag:'EL DE LA PISCOLA', style:'cap', piscola:true, st:{fue:5,des:5,agi:7,int:4}, main:'agi',
+    c:{ hat:'#1a1a2a', hatD:'#0a0a14', hair:'#141014', skin:'#d8a070', shirt:'#2a8ad8', shirtD:'#1a5a98', emblem:'#f0f0f0',
+        belt:'#2a1a0c', pants:'#2a2a38', shoe:'#f0f0f0', sleeve:'#2a8ad8' } },
+  { id:'ruben', n:'RUBÉN', tag:'EL MÉDICO', style:'curly', medic:true, st:{fue:4,des:5,agi:4,int:7}, main:'int',
+    c:{ hair:'#5a3418', skin:'#f1c9a0', eye:'#2a4a8a', shirt:'#f4f4f8', shirtD:'#c8ccd8', emblem:'#e83040',
+        belt:'#8a90a8', pants:'#3a6a8a', shoe:'#2a1a0c', sleeve:'#f4f4f8' } },
 ];
 const NPCDEF = {
   cantinero:{ n:'CANTINERO', style:'bald', c:{ hair:'#3a2418', skin:'#e8b088', shirt:'#f4f1e8', shirtD:'#c8c0b0', pants:'#3a3a48', shoe:'#2a1a10' } },
@@ -1084,7 +1090,7 @@ const zoneOf = id => id.startsWith('D:') ? DUNGEONS[id.split(':')[1]].from : (RO
 
 /* ============ SAVE / STATE ============ */
 let S = null;
-const G = { state:'title', t:0, sel:0, titleSel:0, roomId:'pueblo', def:null, map:null, enemies:[], items:[], parts:[], floats:[], npcs:[],
+const G = { state:'intro', introT:0, t:0, sel:0, titleSel:0, roomId:'pueblo', def:null, map:null, enemies:[], items:[], parts:[], floats:[], npcs:[],
   toasts:[], dialog:null, menu:null, cardGet:null, cardQueue:[], arc:null, shots:[], amb:[], eshots:[], aoes:[], chimneys:[], moveTarget:null, lvlFx:0, shop:null, duel:null, tour:null, dead:0, fade:0, zoneT:0, cacheDirty:true, swing:0, bossBar:null };
 const PL = { x:0, y:0, w:10, h:8, dir:0, walk:0, atk:0, atkCd:0, inv:0, kb:0, kx:0, ky:0 };
 const ATK = 14;
@@ -1146,7 +1152,7 @@ function stats(){
   for (const [slot] of GEAR_SLOTS) { const id = S.gear && S.gear[slot]; if (id) for (const [k, v] of Object.entries(ARMOR[id].st)) st[k] += v; }
   return st;
 }
-const speed = () => 1.0 + stats().agi * 0.05;
+const speed = () => 1.0 + stats().agi * 0.05 + (PL.piscola > 0 ? 0.45 : 0);
 const owned = id => (S.cards[id] || 0) > 0;
 const deckCount = d => DECK[d].cards.filter(owned).length;
 const deckDone = d => deckCount(d) === DECK_SIZE;
@@ -1727,6 +1733,7 @@ function drawPerson(x, y, P, dir, f){
     if (!side) { p(4, 3, 4, 1, O); p(4, 6, 4, 1, O); p(4, 3, 1, 4, O); p(7, 3, 1, 4, O); p(8, 3, 4, 1, O); p(8, 6, 4, 1, O); p(8, 3, 1, 4, O); p(11, 3, 1, 4, O); }
     else { p(2, 3, 4, 1, O); p(2, 6, 4, 1, O); p(2, 3, 1, 4, O); p(5, 3, 1, 4, O); p(6, 4, 4, 1, O); }
   }
+  if (P.piscola && dir !== 1) { p(12, 6, 4, 7, O); p(13, 7, 2, 5, '#4a1a08'); p(13, 7, 2, 1, '#e0f4ff'); p(15, 6, 1, 2, '#f0e040'); p(13, 5, 1, 2, '#f0f0f0'); }
   if (P.laptop && dir !== 1) { p(10, 9, 6, 5, O); p(11, 10, 4, 3, '#40c8ff'); p(11, 11, 2, 1, '#e0ffff'); p(12, 12, 3, 1, '#1a4a78'); }
   if (P.helm) {
     const hc = P.helm.col, hd = shadeCol(hc, 0.6);
@@ -2212,6 +2219,10 @@ function loadRoom(id, px, py){
   PL.x = px; PL.y = py; PL.kb = 0; PL.atk = 0;
   G.cacheDirty = true; G.zoneT = d.interior ? 0 : 110; G.fade = 14;
   findChimneys(); spawnQuestItems();
+  if ((WILD[id] || d.dungeonKey) && Math.random() < 0.4) {
+    const cand = []; for (let y = 1; y <= 8; y++) for (let x = 1; x <= 13; x++) if ('.,sm'.includes(G.map[y][x])) cand.push([x, y]);
+    if (cand.length) { const [bx, by] = cand[rnd(cand.length)]; G.items.push({ k:'beer', x:bx * TS + 3, y:by * TS + 3, z:0, vz:0, t:20 }); }
+  }
   const boss = G.enemies.find(e => MON[e.type].boss);
   if (boss) { SFX.boss(); G.bossBar = boss; if (MON[boss.type].raid) toast('JEFE RAID: SE RECOMIENDAN 2 O 3 JUGADORES', '#ff9040'); } else G.bossBar = null;
   if (d.mult >= 1.8 && !d.dungeonKey && !d.interior) toast('ZONA PELIGROSA: CRIATURAS MUY FUERTES', '#ff8060');
@@ -2311,7 +2322,7 @@ function dropLoot(e){
       drop('heart'); drop('mana');
       toast('¡JEFE RAID DERROTADO! JEFES: ' + bossesDone() + '/' + ALL_BOSSES.length, '#ff9040');
     }
-    drop('heart'); saveGame(); return;
+    drop('heart'); drop('beer'); drop('beer'); saveGame(); return;
   }
   const tier = zoneTier(), coinMul = 1 + houseBonus('coinPct') / 100;
   const chance = 0.12 + stats().des * 0.006 + houseBonus('cardPct') / 200;
@@ -2322,7 +2333,8 @@ function dropLoot(e){
     drop('card', id);
   } else if (Math.random() < 0.7) drop('coin', null, Math.round((Math.random() < 0.2 ? 5 : 1) * tier * coinMul * COIN_X / 10) * 10);
   if (Math.random() < 0.004) drop('card', LEGEND);
-  if (Math.random() < 0.13) drop('heart');
+  if (Math.random() < 0.08) drop('heart');
+  if (Math.random() < 0.09) drop('beer');
   if (Math.random() < 0.18) drop('mana');
   if (Math.random() < 0.05 + S.lvl * 0.003) {
     const pool = Object.keys(ARMOR).filter(a => ARMOR[a].tier <= Math.min(3, tier) && ARMOR[a].tier >= Math.min(3, tier) - 1);
@@ -2821,6 +2833,7 @@ function updateItems(){
       it.dead = true;
       if (it.k === 'coin') { S.coins += it.v; SFX.coin(); floatText('+' + money(it.v), it.x, it.y, '#fcd84a'); }
       else if (it.k === 'heart') { S.hp = Math.min(S.maxHp, S.hp + 2); SFX.heart(); }
+      else if (it.k === 'beer') { const hl = CH().beer ? 8 : 4; S.hp = Math.min(S.maxHp, S.hp + hl); S.beersFound = (S.beersFound || 0) + 1; SFX.beer(); if (CH().piscola) { PL.piscola = 600; toast('¡PISCOLITA! CORRES MAS RAPIDO', '#f0e040'); } floatText('¡SALUD! +' + hl / 2, it.x, it.y, '#fce060'); for (let i = 0; i < 6; i++) G.parts.push({ k:'bubble', x:it.x + 5, y:it.y, vx:0, vy:-0.5 - Math.random() * 0.4, t:0 }); }
       else if (it.k === 'card') addCard(it.id);
       else if (it.k === 'sword') addSword(it.id);
       else if (it.k === 'gear') addGear(it.id);
@@ -2984,6 +2997,8 @@ const FRIEND_LINES = {
   5:['¡Por Odín y por Curicó! Terravore y Armageddon: así se juega en el norte... del sur.','Un vikingo no se retira de la Pampa de Terravore. Se retira a la taberna, que es distinto.'],
   6:['Me programé un script que calcula las probabilidades del Rock. Spiritmonger gana el 63% de las veces.','En el arcade saco el doble de premio. Conozco cómo funcionan esas máquinas por dentro.'],
   7:['¿Otra ronda? Yo invito... bueno, tú invitas. Salud por el Landstill.','A mí me dejan tomar seis en la taberna. Dicen que es por experiencia.'],
+  8:['¿Cerveza? Nah, yo soy de piscola. Pisco, bebida, hielo y a jugar Mud Metalworker.','Con una piscolita corro como Jackal Pup. Con dos, como Ball Lightning. Con tres... mejor no preguntes.'],
+  9:['Tranquilo, soy médico. Si te pega el Langostino, yo te dejo como nuevo... cobro en cartas.','Receta del doctor Rubén: dos Renewed Faith, una chela y reposo. Mañana amaneces bien.'],
 };
 /* ============ TIENDAS DEL MERCADO ============ */
 function shopItems(kind){
@@ -3191,9 +3206,9 @@ function talkTo(id, npc, skipQuest){
       } })).concat([{ t:'ME QUEDO', fn:null }]));
     return;
   }
-  if (id === 'festivalero') { say(['ANIMADOR: ' + pick(['¡Bienvenidos a Viña! En el Festival el Monstruo no perdona... igual que un Hymn to Tourach en el turno dos.','Esta noche en el casino: tragamonedas con simbolos de mana. Si salen tres Mox, te llevas el gordo.','¿Viste el reloj de flores? Aqui todo es mas bonito, hasta perder una partida.'])]); return; }
-  if (id === 'turista') { say(['TURISTA: ' + pick(['Vine a Viña por la playa y termine jugando Premodern en el casino.','Dicen que en Puerto Montt venden un chaleco de Chiloe que abriga mas que un Worship.','El bote a Puerto Montt sale caro, pero el curanto vale cada moneda.'])]); return; }
-  if (id === 'sureno') { say(['SUREÑO: ' + pick(['Aqui en Puerto Montt llueve siempre, pero los palafitos no se mojan por dentro.','En Angelmo venden equipo que no encuentras en el norte. Caro, pero bueno.','Pruebate el curanto: la primera vez te deja con un corazon de mas. Palabra de sureño.'])]); return; }
+  if (id === 'festivalero') { say(['ANIMADOR: ' + pick(['¡Bienvenidos a Viña! En el Festival el Monstruo no perdona... igual que un Hymn to Tourach en el turno dos.','Esta noche en el casino: tragamonedas con simbolos de mana. Si salen tres Mox, te llevas el gordo.','¿Viste el reloj de flores? Aqui todo es mas bonito, hasta perder una partida.','En Viña el Monstruo no perdona. Igual que mi señora cuando llego tarde del torneo.','Aquí en la Quinta Vergara pifiaron a un mago por jugar Stasis. Con justa razón.'])]); return; }
+  if (id === 'turista') { say(['TURISTA: ' + pick(['Vine a Viña por la playa y termine jugando Premodern en el casino.','Dicen que en Puerto Montt venden un chaleco de Chiloe que abriga mas que un Worship.','El bote a Puerto Montt sale caro, pero el curanto vale cada moneda.','Vine por una semana y llevo tres meses. Culpa del casino, del curanto y de una chela que nunca se acaba.'])]); return; }
+  if (id === 'sureno') { say(['SUREÑO: ' + pick(['Aqui en Puerto Montt llueve siempre, pero los palafitos no se mojan por dentro.','En Angelmo venden equipo que no encuentras en el norte. Caro, pero bueno.','Pruebate el curanto: la primera vez te deja con un corazon de mas. Palabra de sureño.','En el sur no llueve, mijo: se ducha el cielo. Todo el año.','Aquí el paraguas dura menos que un Ball Lightning.'])]); return; }
   if (id === 'crupier') { say(['CRUPIER: Bienvenido al Casino de Viña. Las tragamonedas cobran ' + money(SLOT_BET) + ' por tirada. Tres simbolos iguales pagan x5; tres Mox pagan x20. La casa siempre... bueno, casi siempre gana.']); return; }
   if (id === 'hotelero') {
     say(['CONSERJE: Bienvenido al Hotel de Viña. Una noche con vista al mar cuesta $4.000: vida y magia al maximo, partida guardada.'],
@@ -3202,7 +3217,7 @@ function talkTo(id, npc, skipQuest){
   }
   if (id === 'angelmino') { say(['VENDEDOR: Equipo del sur, hecho a mano en Chiloe y Angelmo. No lo encuentras en otra parte.'], null, () => openShop('sur', 'MERCADO DE ANGELMO')); return; }
   if (id === 'curantera') {
-    say(['CURANTERA: ¡Curanto en hoyo, recien salido! Mariscos, carne, papas y milcao. $5.000 el plato.'],
+    say(['CURANTERA: ¡Curanto en hoyo, recien salido! Mariscos, carne, papas y milcao. $5.000 el plato.', 'CURANTERA: ' + pick(['Después de este plato vas a quedar pa\' dormir siesta hasta el martes.','El secreto es el milcao. Y la chela. Pero más la chela.','Mi curanto levanta muertos. Pregúntale al Negator Ancestral.'])],
       [{ t:'COMER CURANTO ($5.000)', fn:() => {
         if (S.coins < 5000) { say(['CURANTERA: Sin plata no hay curanto, mijo.']); return; }
         S.coins -= 5000; S.hp = S.maxHp; S.mp = maxMp(); SFX.heal();
@@ -3246,6 +3261,8 @@ function talkTo(id, npc, skipQuest){
       'Daze se puede jugar gratis devolviendo una isla a tu mano. Si no tienes isla, lo pagas normal.',
       'Force of Will salió en Alianzas. Hymn to Tourach en Fallen Empires. Replenish en Urza\'s Destiny. Stifle en Scourge. Examen aprobado.',
       'Si vas a jugar la Liga, revisa que tu mazo esté completo. Aquí no se aceptan mazos con cartas faltantes.',
+      'No, no puedes hacer mulligan porque "no te gustó la cara del rival". Lo pregunta uno por torneo.',
+      'Regla nueva de la casa: si tu rival se toma tu chela mientras vas al baño, es falta grave. Y la paga él.',
     ])]);
     return;
   }
@@ -3259,17 +3276,21 @@ function talkTo(id, npc, skipQuest){
       'Los jueves hay juntas en la tienda. Llegamos con los mazos, un par de chelas y a jugar hasta tarde.',
       'Si te sale un Exalted Angel, cuídalo. Esa carta gana partidas sola.',
       'En el Arcade de acá al lado tengo el récord del Goblin Smash. Te desafío.',
+      'Mi polola me dijo "o las cartas o yo". La extraño harto, oye.',
+      'Perdí la final por un Daze. Desde ese día no confío ni en mi sombra.',
+      'Aquí se juega Premodern, se toma chela y se miente sobre los mulligan. Tradición, compadre.',
+      '¿Viste a la Katy barajar? Yo tampoco. Nadie la ha visto. Por eso gana.',
     ])]);
     return;
   }
-  if (id === 'marinero') { say(['MARINERO: ' + pick(['Los Merfolk Looter de la costa se roban hasta los choritos.','Al sur del islote, dicen, hay un langostino del porte de un bote. Doce de fuerza, doce de resistencia.','En Curicó todos jugamos Premodern. Entre torta y torta, una partida.'])]); return; }
-  if (id === 'pescador') { say(['PESCADOR: ' + pick(['El otro día pesqué un Counterspell. Lo tiré de vuelta al río, no me sirve pa na.','Si vas a pelear con el Langostino, llévate harta vida. Y una cerveza de La Ruca, pa\' la suerte.'])]); return; }
+  if (id === 'marinero') { say(['MARINERO: ' + pick(['Los Merfolk Looter de la costa se roban hasta los choritos.','Llevo treinta años en el mar y nunca vi un langostino tan grande. Bueno, salvo el que sirvió mi suegra pa\' Año Nuevo.','En el puerto somos simples: pescado frito, una chela y un Counterspell pa\' la que venga.','Al sur del islote, dicen, hay un langostino del porte de un bote. Doce de fuerza, doce de resistencia.','En Curicó todos jugamos Premodern. Entre torta y torta, una partida.'])]); return; }
+  if (id === 'pescador') { say(['PESCADOR: ' + pick(['El otro día pesqué un Counterspell. Lo tiré de vuelta al río, no me sirve pa na.','Una vez pesqué un Mox Diamond. Bueno, era una tapa de bebida, pero brillaba igual.','Si el pez no pica, es que está jugando Landstill: esperando que tú hagas algo primero.','Si vas a pelear con el Langostino, llévate harta vida. Y una cerveza de La Ruca, pa\' la suerte.'])]); return; }
   if (id === 'tendero') {
-    sellPacks('TENDERO', 'Bienvenido a La Guarida del Mono.');
+    sellPacks('TENDERO', pick(['Los sobres vienen sellados, garantizado. Lo que salga adentro ya es cosa tuya y de la Virgen del Carmen.','Aquí no se fía. El último que me pidió fiado todavía está buscando un Force of Will.','¿Otro sobre? Tu billetera llora, pero tu carpeta te lo agradece.']) + ' Bienvenido a La Guarida del Mono.');
     return;
   }
   if (id === 'posadera') {
-    say(['POSADERA: Bienvenido a la Posada La Cazuela. Una noche cuesta $1.500: cama limpia, cazuela caliente, vida al máximo.'],
+    say(['POSADERA: Bienvenido a la Posada La Cazuela. Una noche cuesta $1.500: cama limpia, cazuela caliente, vida al máximo.', 'POSADERA: ' + pick(['La cama está limpiecita. Lo que no garantizo es que el de la pieza del lado no ronque como Siege-Gang.','Se prohíbe barajar después de las once. Los vecinos reclaman por el ruido.','Si vas a llegar curado, entra despacito que la puerta rechina.'])],
       [{ t:'DORMIR ($1.500)', fn:() => {
           if (S.coins < 1500) { say(['POSADERA: No te alcanza... bueno, te dejo el sillón gratis esta vez.'], null, () => { S.hp = S.maxHp; saveGame(); }); return; }
           S.coins -= 1500; S.hp = S.maxHp; G.fade = 40; SFX.heal(); saveGame();
@@ -3311,10 +3332,10 @@ function talkTo(id, npc, skipQuest){
   } else if (id === 'cantinero') {
     const beerMax = CH().beer ? 6 : 4;
     if (S.beers >= beerMax) { say([CH().beer ? 'Ya te tomaste seis, Tebax. Ni tú aguantas otra antes del torneo.' : 'Ya te tomaste cuatro. No te vendo más hasta que juegues un torneo.']); return; }
-    say(['¡Bienvenido a la Taberna El Mazo! ¿Una cerveza? Son $1.500. Te recupera la vida y te pone más picado para el torneo.'],
+    say([pick(['Aquí la cerveza es como el Dark Ritual: te da energía al tiro y después te pasa la cuenta.','El que toma para olvidar, que pague antes. Por si acaso.','No fío. Ni al Klaus, que me debe desde el torneo del 2019.','La chela no resuelve los problemas... pero el agua tampoco, así que para qué arriesgarse.']), '¡Bienvenido a la Taberna El Mazo! ¿Una cerveza? Son $1.500. Te recupera la vida y te pone más picado para el torneo.'],
       [{ t:'SÍ, UNA ($1.500)', fn:() => {
           if (S.coins < 1500) { say(['No te alcanza. Anda a pegarle a unos monos y vuelve.']); return; }
-          S.coins -= 1500; S.hp = S.maxHp; S.beers++; S.beerTotal = (S.beerTotal || 0) + 1; S.buzz = Math.min(CH().beer ? 5 : 3, S.buzz + 1); if (CH().beer) S.mp = maxMp(); SFX.beer();
+          S.coins -= 1500; S.hp = S.maxHp; S.beers++; S.beerTotal = (S.beerTotal || 0) + 1; S.buzz = Math.min(CH().beer ? 5 : 3, S.buzz + 1); if (CH().beer) S.mp = maxMp(); if (CH().piscola) PL.piscola = 600; SFX.beer();
           for (let i = 0; i < 8; i++) G.parts.push({ k:'bubble', x:PL.x + 5 + (Math.random() - 0.5) * 10, y:PL.y - 8, vx:0, vy:-0.5 - Math.random() * 0.4, t:0 });
           say(['¡Salud! Vida al máximo. +' + S.buzz + ' INT para tu próximo torneo.']); saveGame();
         } }, { t:'NO, GRACIAS', fn:null }]);
@@ -3350,12 +3371,14 @@ function talkTo(id, npc, skipQuest){
         'El Langostino es Phyrexian Dreadnought con Stifle. Dicen que el bicho vive en un islote al sur.',
         'Los goblins del bosque sueltan cartas de Goblins y de Burn. Pégales nomás.',
         'Si me traes cartas repetidas, a lo mejor te cambio alguna que te falte.',
+        'Tres chelas es mi número mágico. Con cuatro empiezo a jugar Burn con cartas blancas.',
+        'Yo no pierdo: a veces gano y a veces aprendo... y a veces culpo al que barajó.',
       ])]);
     }
   } else if (id === 'organizador') {
     const done = DECKS.filter(d => deckDone(d.id));
     if (!done.length) { say(['Bienvenido a la Arena Premodern. Para jugar el torneo necesitas un mazo completo (' + DECK_SIZE + ' de ' + DECK_SIZE + '). Revisa tu progreso en el menú.']); return; }
-    say(['¡Torneo Premodern! Son 3 rondas. Inscripción: $3.000. ¿Con qué mazo juegas?'],
+    say([pick(['Aquí se juega limpio. Salvo la Katy, pero a ella ya nadie le dice nada.','Prohibido llorar en la mesa. Pa\' eso está la taberna.','El último que se enojó por perder tiró el mazo al río. Todavía hay Goblins nadando.']), '¡Torneo Premodern! Son 3 rondas. Inscripción: $3.000. ¿Con qué mazo juegas?'],
       deckChoices(done, d => {
         if (S.coins < 3000) { say(['Te faltan monedas para la inscripción ($3.000).']); return; }
         S.coins -= 3000; startTour(d.id);
@@ -3698,6 +3721,13 @@ function drawMenu(){
 }
 
 /* ============ WORLD DRAW ============ */
+// Jarra de cerveza pixelada (s = escala); la espuma se mueve un poco
+function drawMug(x, y, s, t){
+  const P = (a, b, w, h2, c) => R(x + a * s, y + b * s, w * s, h2 * s, c), bob = ((t >> 4) & 1);
+  P(0, 1, 8, 9, '#1a1020'); P(1, 3, 6, 6, '#f0a820'); P(1, 3, 2, 6, '#fcd060'); P(5, 3, 1, 6, '#c87810');
+  P(0, 0, 8, 3, '#1a1020'); P(1, 1 - bob * 0, 6, 2, '#fffaf0'); P(2, 0 - bob, 3, 1, '#fffaf0');
+  P(8, 3, 2, 5, '#1a1020'); P(8, 4, 1, 3, '#d8d0c0'); P(2, 5, 1, 1, '#fff8c0'); P(4, 7, 1, 1, '#fff8c0');
+}
 function heart(x, y, fill){
   const O = '#1a1020';
   R(x + 1, y, 2, 1, O); R(x + 4, y, 2, 1, O); R(x, y + 1, 7, 3, O); R(x + 1, y + 4, 5, 1, O); R(x + 2, y + 5, 3, 1, O); R(x + 3, y + 6, 1, 1, O);
@@ -3711,6 +3741,7 @@ function drawItem(it){
   R(x + 1, Math.round(it.y) + 9, 8, 2, 'rgba(0,0,0,.2)');
   if (it.k === 'coin') { const w = [8, 6, 2, 6][(frame >> 3) & 3]; R(x + 5 - w / 2, y + 1, w, 8, '#8a5a00'); if (w > 2) R(x + 6 - w / 2, y + 2, w - 2, 6, '#fcd040'); }
   else if (it.k === 'heart') heart(x + 1, y + 2, 2);
+  else if (it.k === 'beer') drawMug(x, y - 1, 1, frame);
   else if (it.k === 'card') {
     const gl = (frame >> 3) & 1;
     R(x - 1, y - 2, 12, 14, gl ? '#fff8c0' : '#fcd84a'); R(x, y - 1, 10, 12, '#1a1020'); R(x + 1, y, 8, 10, CCOL[CARDS[it.id].c].fr); R(x + 2, y + 1, 6, 5, CCOL[CARDS[it.id].c].bg);
@@ -3913,14 +3944,79 @@ function drawCardGet(){
 }
 
 /* ============ TITLE / SELECT ============ */
+const INTRO_LEN = 820;
+function updateIntro(){
+  G.introT++;
+  if (G.introT === 30) { audioInit(); seq([523, 659, 784, 1047, 1319], 0.1, 'square', 0.35); }
+  if (G.introT === 175 || G.introT === 415 || G.introT === 615) SFX.card();
+  if (G.introT > 175 && G.introT < 400 && G.introT % 40 === 20) SFX.hit();
+  if (G.introT >= INTRO_LEN || (G.introT > 10 && (pressed('a') || pressed('b') || pressed('menu')))) { G.state = 'title'; G.introT = 0; SFX.ok(); }
+}
+function introBars(text){
+  R(0, 0, W, 16, '#0f380f'); R(0, 124, W, 36, '#0f380f');
+  if (text) { let left = Math.floor(G.introSceneT / 2); wrap(text, 26).slice(0, 2).forEach((l, i) => { txt(l.slice(0, Math.max(0, left)), 120, 128 + i * 11, '#e0f8d0', 'center', null); left -= l.length + 1; }); }
+  tiny(TOUCH ? 'A: SALTAR' : 'Z: SALTAR', 234, 150, '#6a9a60', 'right');
+}
+function drawIntro(){
+  const t = G.introT;
+  if (t < 170) {
+    // logo de Matias Games Production
+    R(0, 0, W, H, '#000');
+    const a = t < 30 ? t / 30 : t > 140 ? (170 - t) / 30 : 1;
+    ctx.globalAlpha = Math.max(0, a);
+    drawMug(104, 26, 4, t);
+    txt('MATIAS', 120, 84, '#fcd84a', 'center', '#7a3a10', 16);
+    txt('GAMES PRODUCTION', 120, 106, '#fff', 'center', null);
+    tiny('PRESENTA', 120, 122, '#9db8a8', 'center');
+    ctx.globalAlpha = 1;
+    return;
+  }
+  if (t < 410) {
+    // Escena 1: Matias contra el Langostino, con cartas volando
+    G.introSceneT = t - 170; const k = t - 170;
+    R(0, 0, W, H, '#9bbc0f'); for (let i = 0; i < 12; i++) R(0, 16 + i * 9, W, 1, '#8bac0f');
+    for (let i = 0; i < 5; i++) { const cx = (k * (2 + i) + i * 60) % (W + 40) - 20, cy = 20 + ((i * 37 + k) % 90); ctx.save(); ctx.translate(cx, cy); ctx.rotate(k * 0.05 + i); drawCardSmall(['bolt','fow','dread','terravore','masticore'][i], -12, -17, true, 0); ctx.restore(); }
+    const hit = k % 40 < 8, lunge = Math.round(Math.sin(k * 0.157) * 10);
+    ctx.save(); ctx.translate(40 + Math.max(0, lunge), 50); ctx.scale(3, 3); drawPerson(0, 0, CHARS[0], 3, (k >> 3) & 1); ctx.restore();
+    ctx.save(); ctx.translate(150 - Math.max(0, -lunge), 50); ctx.scale(2, 2); drawMon('dread', 0, 0, k, true); ctx.restore();
+    if (hit) { ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(0, 16, W, 108); txt('¡PAF!', 120, 64, '#0f380f', 'center', '#e0f8d0', 16); }
+    introBars('EN CHILE, LAS CARTAS COBRARON VIDA...');
+    return;
+  }
+  if (t < 610) {
+    // Escena 2: los ocho amigos marchando con jarras
+    G.introSceneT = t - 410; const k = t - 410;
+    R(0, 0, W, H, '#306230'); R(0, 96, W, 28, '#8bac0f');
+    for (let i = 0; i < CHARS.length; i++) {
+      const x = -30 + k * 1.8 - i * 27; if (x < -40 || x > W + 10) continue;
+      ctx.save(); ctx.translate(x, 64 - ((k + i * 6) >> 3 & 1)); ctx.scale(2, 2); drawPerson(0, 0, CHARS[i], 3, (k >> 3) & 1); ctx.restore();
+      drawMug(Math.round(x + 18), 50 + (((k + i * 9) >> 4) & 1) * 2, 1, k + i * 7);
+    }
+    introBars('DIEZ AMIGOS. UN MAZO. MUCHA CERVEZA.');
+    return;
+  }
+  // Escena 3: Klaus y Tebax brindan, las cartas se abren detras
+  G.introSceneT = t - 610; const k = t - 610;
+  R(0, 0, W, H, '#0f380f'); R(0, 16, W, 108, '#306230');
+  ['bolt','dread','specter','siege','angel','moxd'].forEach((id, i) => { const up = Math.min(1, k / 60); ctx.save(); ctx.translate(40 + i * 32, 120 - up * 62); ctx.rotate((i - 2.5) * 0.12); drawCardSmall(id, -12, -17, true, 0); ctx.restore(); });
+  const meet = Math.min(1, k / 50);
+  ctx.save(); ctx.translate(40 + meet * 36, 58); ctx.scale(2.5, 2.5); drawPerson(0, 0, CHARS[3], 3, 0); ctx.restore();
+  ctx.save(); ctx.translate(180 - meet * 36, 58); ctx.scale(2.5, 2.5); drawPerson(0, 0, CHARS[7], 2, 0); ctx.restore();
+  drawMug(112, 60 - Math.round(meet * 6), 2, k);
+  if (k > 55) { for (let i = 0; i < 8; i++) R(Math.round(120 + Math.cos(i * 0.8) * (k - 55) * 0.6), Math.round(62 + Math.sin(i * 0.8) * (k - 55) * 0.4), 2, 2, '#fce060'); txt('¡SALUD!', 120, 26, '#fce060', 'center', '#0f380f', 16); }
+  introBars('...Y UNA CAJA DE URZA POR CERRAR.');
+  if (t > INTRO_LEN - 20) { ctx.fillStyle = 'rgba(255,255,255,' + (t - INTRO_LEN + 20) / 20 + ')'; ctx.fillRect(0, 0, W, H); }
+}
 function drawTitle(){
   if (!G.map) { G.roomId = 'pueblo'; G.def = ROOMS.pueblo; G.map = ROOMS.pueblo.map.map(r => r.split('')); G.cacheDirty = true; }
   if (G.cacheDirty) buildCache();
   ctx.drawImage(cache, 0, 0);
   ctx.fillStyle = 'rgba(8,16,20,.55)'; ctx.fillRect(0, 0, W, H);
   R(28, 14, 184, 46, '#1a1020'); R(30, 16, 180, 42, '#2e4a44'); R(32, 18, 176, 38, '#1c2a2e');
-  txt('MAGIC', 120, 22, '#fcd84a', 'center', '#7a3a10', 16);
-  txt('QUEST', 120, 40, '#fff', 'center', '#2a5ac8', 16);
+  txt('MAGIC', 120, 20, '#fcd84a', 'center', '#7a3a10', 16);
+  txt('THE BEER QUEST', 120, 41, '#fff', 'center', '#a85a10');
+  drawMug(38, 26, 2, frame); drawMug(186, 26, 2, frame + 20);
+  tiny('MATIAS GAMES PRODUCTION', 120, 63, '#c8a860', 'center');
   // cards fan
   ['bolt','dread','specter','siege','angel'].forEach((id, i) => { ctx.save(); ctx.translate(46 + i * 37, 100); ctx.rotate((i - 2) * 0.08); drawCardSmall(id, -12, -17, true, 0); ctx.restore(); });
   const has = !!loadSave();
@@ -4000,16 +4096,16 @@ function updateSlots(){
     else { G.newSlot = n; G.state = 'select'; G.sel = 0; }
   }
 }
-const SEL_COLS = 4, SEL_ROWS = [24, 68];
+const SEL_COLS = 5, SEL_ROWS = [24, 68];
 function drawSelect(){
   R(0, 0, W, H, '#10161a');
   for (let i = 0; i < 15; i++) R(i * 16, 104, 16, 56, i % 2 ? '#1c2a2e' : '#18242a');
   txt('ELIGE PERSONAJE', 120, 8, '#fcd84a', 'center', '#7a3a10');
   CHARS.forEach((c, i) => {
-    const cx = 30 + (i % SEL_COLS) * 60, y0 = SEL_ROWS[Math.floor(i / SEL_COLS)], sel = i === G.sel, bob = sel ? Math.round(Math.abs(Math.sin(frame * 0.12)) * -3) : 0;
-    if (sel) R(cx - 28, y0 - 11, 56, 42, '#1c2a2e');
+    const cx = 24 + (i % SEL_COLS) * 48, y0 = SEL_ROWS[Math.floor(i / SEL_COLS)], sel = i === G.sel, bob = sel ? Math.round(Math.abs(Math.sin(frame * 0.12)) * -3) : 0;
+    if (sel) R(cx - 23, y0 - 11, 46, 42, '#1c2a2e');
     ctx.save(); ctx.translate(cx - 11, y0 + bob); ctx.scale(1.4, 1.4); drawPerson(0, 0, c, 0, sel ? (frame >> 4) & 1 : 0); ctx.restore();
-    if (sel) R(cx - 24, y0 + 30, 48, 1, '#fcd84a');
+    if (sel) R(cx - 20, y0 + 30, 40, 1, '#fcd84a');
     tiny(c.n, cx, y0 + 24, sel ? '#fcd84a' : '#fff', 'center');
   });
   const c = CHARS[G.sel];
@@ -4320,7 +4416,7 @@ const BEATS = { agro:'combo', ctrl:'agro', combo:'ctrl' };
 const LOSES_TO = { agro:'ctrl', ctrl:'combo', combo:'agro' };
 const DECK_STYLE = { burn:'agro', goblins:'agro', black:'ctrl', life:'ctrl', replenish:'combo', langostino:'combo', terragedon:'agro', landstill:'ctrl', rock:'ctrl', mud:'combo' };
 const DUELIST_DECK = { fan1:'goblins', fan2:'burn', fan3:'black', fan4:'life', klaus:'black', marinero:'langostino', pescador:'replenish', juez:'replenish', coleccionista:'langostino', cantinero:'burn', ligaVina:'terragedon', ligaCurico:'rock', ligaPmontt:'landstill', ligaUrza:'mud', ligaTempest:'landstill' };
-const FRIEND_DECK = ['goblins','burn','replenish','black','langostino','terragedon','rock','landstill'];
+const FRIEND_DECK = ['goblins','burn','replenish','black','langostino','terragedon','rock','landstill','mud','life'];
 const isDuelist = n => n.id === 'friend' || DUELIST_DECK[n.id] !== undefined;
 function offerDuel(n){
   const name = n.id === 'friend' ? CHARS[n.ch].n : NPCDEF[n.id].n;
@@ -4455,7 +4551,7 @@ function drawDuel(){
 /* ============ FINAL ============ */
 const ENDING = ['¡CAMPEÓN NACIONAL DE PREMODERN!', '', 'Con los cinco guardianes derrotados', 'y la Liga Nacional ganada,', 'la Caja de Urza vuelve a tus manos.', '',
   'Esa noche, en el Bar La Ruca de Curicó,', 'se brindó por el nuevo campeón.', 'Klaus pagó la primera ronda.', '',
-  'La caja quedó abierta.', 'Porque el Premodern chileno', 'nunca se cierra del todo.', '', 'MATÍAS · DAVIS · GUCHO · KLAUS', '', 'GRACIAS POR JUGAR', '', 'MAGIC QUEST'];
+  'La caja quedó abierta.', 'Porque el Premodern chileno', 'nunca se cierra del todo.', '', 'MATÍAS · DAVIS · GUCHO · KLAUS · KATY', 'PEPE · IVÁN · TEBAX · LE RATUI · RUBÉN', '', 'UN JUEGO DE MATÍAS GAMES PRODUCTION', '', 'GRACIAS POR JUGAR', '¡SALUD!', '', 'MAGIC THE BEER QUEST'];
 function drawEnding(){
   R(0, 0, W, H, '#0e0a24');
   for (let i = 0; i < 40; i++) R(Math.round(hash(i) * 240), Math.round(hash(i + 40) * 160), 1, 1, (frame + i * 5) % 60 < 4 ? '#6a64a8' : '#fff');
@@ -4645,8 +4741,8 @@ function currentSave(){ if (S) { if (G.state === 'world') { S.x = PL.x; S.y = PL
 async function saveLink(){ const s = currentSave(); if (!s) { saveMsg('No hay partida en este dispositivo todavia.'); return null; } return INVITE_BASE + '?partida=' + await encodeSave(s); }
 netEl('saveSend').addEventListener('click', async () => {
   const url = await saveLink(); if (!url) return;
-  const s = currentSave(), text = 'Mi partida de Magic Quest (' + CHARS[s.ch].n + ' nivel ' + s.lvl + '). Abre este link en el otro equipo: ' + url;
-  try { if (navigator.share) { await navigator.share({ title:'Mi partida de Magic Quest', text, url }); saveMsg('Listo. Abre ese link en el otro dispositivo.'); return; } } catch(_) { return; }
+  const s = currentSave(), text = 'Mi partida de Magic The Beer Quest (' + CHARS[s.ch].n + ' nivel ' + s.lvl + '). Abre este link en el otro equipo: ' + url;
+  try { if (navigator.share) { await navigator.share({ title:'Mi partida de Magic The Beer Quest', text, url }); saveMsg('Listo. Abre ese link en el otro dispositivo.'); return; } } catch(_) { return; }
   window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener');
   saveMsg('Mandate el mensaje a ti mismo (o a tu chat de WhatsApp) y abre el link en el otro equipo.');
 });
@@ -4688,7 +4784,7 @@ const INVITE_BASE = 'https://mjimenezq.github.io/premodern-quest/';
 let pendingRoom = null;
 try { const q = new URLSearchParams(location.search).get('sala'); if (q && /^[A-Za-z]{4}$/.test(q)) pendingRoom = q.toUpperCase(); } catch(_) {}
 const inviteUrl = code => INVITE_BASE + '?sala=' + code;
-const inviteText = code => '¡Juguemos Magic Quest juntos! Entra a mi sala ' + code + ': ' + inviteUrl(code);
+const inviteText = code => '¡Juguemos Magic The Beer Quest juntos! Entra a mi sala ' + code + ': ' + inviteUrl(code);
 if (pendingRoom) { const b = netEl('inviteBanner'); b.hidden = false; b.textContent = 'Te invitaron a la sala ' + pendingRoom + '. Elige o crea tu personaje y te conectas solo.'; }
 function netUI(){
   const inRoom = !!NET.role, code = NET.code || '';
@@ -4711,7 +4807,7 @@ function tryAutoJoin(){
 }
 netEl('netShare').addEventListener('click', async () => {
   const code = NET.code; if (!code) return;
-  try { if (navigator.share) { await navigator.share({ title:'Magic Quest', text:inviteText(code), url:inviteUrl(code) }); return; } } catch(_) { return; }
+  try { if (navigator.share) { await navigator.share({ title:'Magic The Beer Quest', text:inviteText(code), url:inviteUrl(code) }); return; } } catch(_) { return; }
   window.open('https://wa.me/?text=' + encodeURIComponent(inviteText(code)), '_blank', 'noopener');
 });
 netEl('netCopy').addEventListener('click', async () => {
@@ -4730,7 +4826,8 @@ netEl('netCode').addEventListener('keyup', e => e.stopPropagation());
 /* ============ MAIN LOOP ============ */
 function step(){
   readInput(); frame++; G.t++;
-  if (G.state === 'title') updateTitle();
+  if (G.state === 'intro') updateIntro();
+  else if (G.state === 'title') updateTitle();
   else if (G.state === 'select') updateSelect();
   else if (G.state === 'slots') updateSlots();
   else if (G.state === 'tour') updateTour();
@@ -4752,7 +4849,11 @@ function step(){
         say(['Despertaste en el pueblo. Perdiste la mitad de tus monedas.']);
       }
     }
-    else updateWorld();
+    else {
+      if (CH().medic && S.hp > 0 && S.hp < S.maxHp && frame % (G.enemies.some(e => !e.dead) ? 180 : 90) === 0) { S.hp++; floatText('+', PL.x + 5, PL.y - 12, '#60e070'); }
+      if (PL.piscola > 0) PL.piscola--;
+      updateWorld();
+    }
     if ((G.cardGet || G.dialog || G.menu) && NET.role === 'host' && NET.conns.length) { updateEnemies(); updateParts(); }
     for (const t of G.toasts) if (G.dialog || G.menu) t.t = Math.min(t.t, 140);
   }
@@ -4804,7 +4905,8 @@ function render(){
   if (location.hash === '#zonas') { if (!G.zonesDone) { drawZonesPreview(); G.zonesDone = true; } return; }
   if (location.hash === '#nuevos') { if (!G.zonesDone) { drawZonesPreview(['pampa','fabrica','quietud','bosqueRoca','tempest','D:forja:5'], NEW_BOSSES.slice(0, 3)); G.zonesDone = true; } return; }
   if (location.hash === '#bestiario2') { drawBestiary2(); return; }
-  if (G.state === 'title') drawTitle();
+  if (G.state === 'intro') drawIntro();
+  else if (G.state === 'title') drawTitle();
   else if (G.state === 'select') drawSelect();
   else if (G.state === 'slots') drawSlots();
   else if (G.state === 'tour') drawTour();
@@ -4832,6 +4934,7 @@ function loop(now){
   try {
     if (location.hash === '#test-arcade' && !G.tested) { G.tested = true; S = newSave(0); S.coins = 50; G.state = 'world'; loadRoom('arcade', 7 * TS + 3, 7 * TS + 4); }
     if (location.hash.startsWith('#elegir') && !G.tested) { G.tested = true; G.state = 'select'; G.sel = +location.hash.slice(8) || 0; }
+    if (location.hash.startsWith('#intro=') && !G.tested) { G.tested = true; const n = +location.hash.slice(7); for (let i = 0; i < n; i++) step(); G.freeze = true; }
     if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4);
       if (extra === 'viajar' || extra === 'volar') { S.stones = { home:true, tolaria:true }; if (extra === 'volar') for (const d of DECKS.slice(0, 6)) for (const c of d.cards) S.cards[c] = 1; openTravel(); G.dialog.ch = 999; G.dialog.showChoices = true; }
       if (extra === 'ircasa') { S.stones = { home:true }; travelTo('hogar', 'stone'); }
@@ -4852,13 +4955,14 @@ const inRect = (p, [x, y, w, h]) => p.x >= x && p.x < x + w && p.y >= y && p.y <
 function pointerClick(p, right){
   if (right) { if (G.state === 'world' && !G.dialog && !G.menu && !G.shop && !G.cardGet && S) castSpell(p.x, p.y); else pulseKey = 'b'; return; }
   const st = G.state;
+  if (st === 'intro') { pulseKey = 'a'; return; }
   if (st === 'title') { const has = !!loadSave(); const i = Math.floor((p.y - 124) / 13); if (i >= 0 && i < (has ? 2 : 1)) { G.titleSel = i; pulseKey = 'a'; } return; }
   if (st === 'slots') {
     const dc = G.delConfirm;
     if (dc) { (dc.rects || []).forEach((r, i) => { if (inRect(p, r)) { dc.sel = i; pulseKey = 'a'; } }); return; }
     const i = Math.floor((p.y - 20) / 42); if (i >= 0 && i < SLOTS) { if (G.slotSel === i) pulseKey = 'a'; else { G.slotSel = i; SFX.move(); } } return;
   }
-  if (st === 'select') { const col = Math.floor(p.x / 60), row = p.y < 57 ? 0 : p.y < 104 ? 1 : -1, i = row * SEL_COLS + col; if (row >= 0 && col >= 0 && col < SEL_COLS && i < CHARS.length) { if (G.sel === i) pulseKey = 'a'; else { G.sel = i; SFX.move(); } } return; }
+  if (st === 'select') { const col = Math.floor(p.x / 48), row = p.y < 57 ? 0 : p.y < 104 ? 1 : -1, i = row * SEL_COLS + col; if (row >= 0 && col >= 0 && col < SEL_COLS && i < CHARS.length) { if (G.sel === i) pulseKey = 'a'; else { G.sel = i; SFX.move(); } } return; }
   if (st === 'duel') {
     if (G.dialog) { dialogClick(p); return; }
     const d = G.duel; if (d.phase === 'choose') { (d.rects || []).forEach((r, i) => { if (inRect(p, r)) { if (d.sel === i) pulseKey = 'a'; else { d.sel = i; SFX.move(); } } }); } else pulseKey = 'a';
