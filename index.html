@@ -3054,20 +3054,89 @@ const STONES = { home:{ n:'PIEDRA HOGAR' }, tolaria:{ n:'PIEDRA TOLARIA' } };
 const FLY_DECKS = 6;
 // Donde aterriza uno en cada pueblo (casilla libre cerca del centro)
 const TOWN_SPOTS = { pueblo:[6,5], tolaria:[7,4], valpo:[7,4], vina:[7,4], pmontt:[7,4], mercado:[7,4], tempest:[6,4] };
-function travelTo(dest){
-  SFX.lvl(); G.fade = 50;
-  for (let i = 0; i < 14; i++) G.parts.push({ k:'heal', x:PL.x + 5 + Math.cos(i * 0.45) * 9, y:PL.y + Math.sin(i * 0.45) * 6, vx:0, vy:-1, t:0 });
-  if (dest === 'hogar') { SFX.door(); loadRoom('hogar', 7 * TS + 3, 6 * TS + 4); PL.dir = 1; toast('PIEDRA HOGAR: ESTAS EN TU CASA', '#c8a0ff'); return; }
-  const [x, y] = TOWN_SPOTS[dest]; loadRoom(dest, x * TS + 3, y * TS + 4); PL.dir = 0;
-  toast('VIAJASTE A ' + (SHORT[dest] || dest).replace('. ', ' '), '#c8a0ff');
+const DEST_NAME = { hogar:'TU CASA', tolaria:'TOLARIA', pueblo:'VILLA PREMODERN', mercado:'MERCADO DE MOX', valpo:'CURICO', vina:'VIÑA DEL MAR', pmontt:'PUERTO MONTT', tempest:'TEMPEST' };
+const WARP_T = { stone:{ out:70, in:45 }, fly:{ out:45, sky:120, in:50 } };
+function travelTo(dest, mode){
+  G.warp = { dest, mode:mode || 'stone', phase:'out', t:0, name:DEST_NAME[dest] || dest };
+  G.moveTarget = null; PL.atk = 0; PL.kb = 0;
+  if (G.warp.mode === 'stone') { tone(300, 900, 1.1, 'triangle', 0.35); tone(600, 1400, 1.1, 'sine', 0.2, 0.15); }
+  else { tone(200, 700, 0.7, 'sawtooth', 0.12); }
+}
+function doTravel(dest){
+  if (dest === 'hogar') { loadRoom('hogar', 7 * TS + 3, 6 * TS + 4); PL.dir = 1; }
+  else { const [x, y] = TOWN_SPOTS[dest]; loadRoom(dest, x * TS + 3, y * TS + 4); PL.dir = 0; }
+  G.fade = 0; G.zoneT = 0;
+}
+function updateWarp(){
+  const w = G.warp, T_ = WARP_T[w.mode]; w.t++;
+  if (w.phase === 'out' && w.t >= T_.out) {
+    if (w.mode === 'stone') { doTravel(w.dest); w.phase = 'in'; w.t = 0; SFX.lvl(); }
+    else { w.phase = 'sky'; w.t = 0; tone(150, 260, 1.8, 'triangle', 0.18); }
+  } else if (w.phase === 'sky' && w.t >= T_.sky) { doTravel(w.dest); w.phase = 'in'; w.t = 0; }
+  else if (w.phase === 'in' && w.t >= T_.in) {
+    G.warp = null;
+    if (w.mode === 'fly') { SFX.hit(); for (let i = 0; i < 8; i++) G.parts.push({ k:'smoke', x:PL.x + 5, y:PL.y + 4, vx:Math.cos(i * 0.785) * 1.1, vy:Math.sin(i * 0.785) * 0.5, t:0 }); }
+    toast((w.dest === 'hogar' ? 'PIEDRA HOGAR: ' : w.mode === 'fly' ? 'ATERRIZASTE EN ' : 'PIEDRA TOLARIA: ') + w.name, '#c8a0ff');
+  }
+}
+// Cómo se ve el jugador durante el viaje: devuelve [desplazamiento vertical, opacidad]
+function warpPlayer(){
+  const w = G.warp; if (!w) return [0, 1];
+  const T_ = WARP_T[w.mode], k = w.t / (T_[w.phase] || 1);
+  if (w.mode === 'stone') return w.phase === 'out' ? [-Math.round(k * k * 10), 1 - k * 0.9] : [-Math.round((1 - k) * 6), 0.2 + k * 0.8];
+  if (w.phase === 'out') return [-Math.round(k * k * 150), 1];
+  if (w.phase === 'in') return [-Math.round((1 - k) * (1 - k) * 150), 1];
+  return [0, 0];
+}
+function drawWarp(){
+  const w = G.warp; if (!w) return;
+  const T_ = WARP_T[w.mode], k = w.t / (T_[w.phase] || 1), px = PL.x + 5, py = PL.y;
+  if (w.mode === 'stone') {
+    // remolino de runas moradas alrededor del jugador
+    const n = 14, grow = w.phase === 'out' ? k : 1 - k;
+    for (let i = 0; i < n; i++) {
+      const a = frame * 0.18 + i * (Math.PI * 2 / n), r = 6 + grow * 16 + (i % 3) * 3, yy = py - 4 - ((frame * 1.5 + i * 7) % 28) * grow;
+      R(Math.round(px + Math.cos(a) * r), Math.round(yy + Math.sin(a) * r * 0.35), 2, 2, i % 2 ? '#c8a0ff' : '#ffffff');
+    }
+    ctx.strokeStyle = '#a060ff'; ctx.globalAlpha = 0.6 * grow; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(px, py + 5, 8 + grow * 14, 3 + grow * 5, 0, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
+    // columna de luz y destello al irse / llegar
+    ctx.fillStyle = 'rgba(200,160,255,' + (0.35 * grow) + ')'; ctx.fillRect(px - 5, 0, 10, py + 6);
+    const flash = w.phase === 'out' ? Math.max(0, (k - 0.75) * 4) : Math.max(0, 1 - k * 3);
+    if (flash > 0) { ctx.fillStyle = 'rgba(255,245,255,' + Math.min(1, flash) + ')'; ctx.fillRect(0, 0, W, H); }
+    return;
+  }
+  if (w.phase !== 'sky') {
+    // sombra en el suelo que se achica al subir y crece al bajar
+    const s = w.phase === 'out' ? 1 - k : k;
+    ctx.fillStyle = 'rgba(0,0,0,' + (0.35 * s) + ')'; ctx.beginPath(); ctx.ellipse(px, py + 6, 2 + s * 6, 1 + s * 2, 0, 0, Math.PI * 2); ctx.fill();
+    for (let i = 0; i < 3; i++) R(Math.round(px - 7 + i * 7), Math.round(py + 8 - ((frame * 3 + i * 9) % 20)), 1, 4, 'rgba(255,255,255,.7)');
+    if (w.phase === 'out' && k > 0.6) { ctx.fillStyle = 'rgba(120,190,255,' + ((k - 0.6) * 2.5) + ')'; ctx.fillRect(0, 0, W, H); }
+    if (w.phase === 'in' && k < 0.3) { ctx.fillStyle = 'rgba(120,190,255,' + (1 - k / 0.3) + ')'; ctx.fillRect(0, 0, W, H); }
+    return;
+  }
+  // en el cielo: degradado, nubes que pasan y el personaje volando
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#3a70d8'); g.addColorStop(1, '#a8d8ff');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 9; i++) {
+    const sp = 1 + (i % 3), cx = W + 40 - ((w.t * sp * 2.2 + i * 53) % (W + 90)), cy = 14 + (i * 37) % 130;
+    ctx.fillStyle = i % 3 === 2 ? 'rgba(255,255,255,.95)' : 'rgba(255,255,255,.6)';
+    disc(cx, cy, 7 + (i % 3) * 3, ctx.fillStyle); disc(cx + 9, cy + 2, 6 + (i % 2) * 3, ctx.fillStyle); disc(cx - 8, cy + 3, 5, ctx.fillStyle);
+  }
+  const bob = Math.round(Math.sin(w.t * 0.12) * 3);
+  ctx.save(); ctx.translate(W / 2 - 16, H / 2 - 22 + bob); ctx.scale(2, 2); drawPerson(0, 0, playerLook(), 3, (w.t >> 3) & 1); ctx.restore();
+  for (let i = 0; i < 4; i++) R(W / 2 - 30 - i * 9 - ((w.t * 4) % 9), H / 2 - 6 + bob + i * 4, 6, 1, 'rgba(255,255,255,.8)');
+  txt('VOLANDO A ' + w.name, W / 2, 128, '#ffffff', 'center', '#1a3a78');
+  if (w.t < 12) { ctx.fillStyle = 'rgba(120,190,255,' + (1 - w.t / 12) + ')'; ctx.fillRect(0, 0, W, H); }
+  if (w.t > T_.sky - 12) { ctx.fillStyle = 'rgba(120,190,255,' + ((w.t - T_.sky + 12) / 12) + ')'; ctx.fillRect(0, 0, W, H); }
 }
 function openTravel(){
-  if (!S || G.state !== 'world' || G.dialog || G.shop || G.dead) return;
+  if (!S || G.state !== 'world' || G.dialog || G.shop || G.dead || G.warp) return;
   G.menu = null;
   const st = S.stones || {}, fly = DECKS.filter(d => deckDone(d.id)).length >= FLY_DECKS, opts = [];
-  if (st.home) opts.push({ t:'MI CASA', fn:() => travelTo('hogar') });
-  if (st.tolaria || fly) opts.push({ t:'TOLARIA (LIGA Y ARCADE)', fn:() => travelTo('tolaria') });
-  if (fly) for (const [id, name] of [['pueblo','VILLA PREMODERN'],['mercado','MERCADO DE MOX'],['valpo','CURICO'],['vina','VIÑA DEL MAR'],['pmontt','PUERTO MONTT'],['tempest','TEMPEST']]) opts.push({ t:name, fn:() => travelTo(id) });
+  if (st.home) opts.push({ t:'MI CASA', fn:() => travelTo('hogar', 'stone') });
+  if (st.tolaria || fly) opts.push({ t:'TOLARIA (LIGA Y ARCADE)', fn:() => travelTo('tolaria', st.tolaria ? 'stone' : 'fly') });
+  if (fly) for (const [id, name] of [['pueblo','VILLA PREMODERN'],['mercado','MERCADO DE MOX'],['valpo','CURICO'],['vina','VIÑA DEL MAR'],['pmontt','PUERTO MONTT'],['tempest','TEMPEST']]) opts.push({ t:name, fn:() => travelTo(id, 'fly') });
   if (!opts.length) {
     say(['Todavia no puedes viajar.', 'La PIEDRA HOGAR te la da el Carpintero y la PIEDRA TOLARIA la Maga, los dos en el Mercado de Mox: hazles su encargo.', 'Y con ' + FLY_DECKS + ' mazos completos podras volar entre todos los pueblos (llevas ' + DECKS.filter(d => deckDone(d.id)).length + ').']);
     return;
@@ -3732,7 +3801,7 @@ function drawWorld(){
   } });
   list.push({ y:PL.y + PL.h, f:() => {
     if (PL.atk > 0 && PL.dir === 1) drawSword();
-    if (!(PL.inv > 0 && (PL.inv >> 1) & 1)) drawPerson(Math.round(PL.x - 3), Math.round(PL.y - 8), playerLook(), PL.dir, PL.atk > 0 ? 1 : Math.floor(PL.walk) % 2);
+    if (!(PL.inv > 0 && (PL.inv >> 1) & 1)) { const [wy, wa] = warpPlayer(); if (wa > 0) { ctx.globalAlpha = Math.max(0, Math.min(1, wa)); drawPerson(Math.round(PL.x - 3), Math.round(PL.y - 8) + wy, playerLook(), G.warp && G.warp.mode === 'fly' ? 0 : PL.dir, G.warp ? (frame >> 3) & 1 : PL.atk > 0 ? 1 : Math.floor(PL.walk) % 2); ctx.globalAlpha = 1; } }
     if (PL.atk > 0 && PL.dir !== 1) drawSword();
   } });
   list.sort((a, b) => a.y - b.y).forEach(o => o.f());
@@ -4627,7 +4696,8 @@ function step(){
   else if (G.state === 'ending') { if (G.t > 200 && pressed('a')) { G.state = 'world'; playMusic(G.def.music); } }
   else if (G.state === 'world') {
     if (G.fade > 0) G.fade--;
-    if (G.cardGet) { G.cardGet.t++; if (G.cardGet.t > 30 && (pressed('a') || pressed('b'))) { const done = G.cardGet.done; G.cardGet = G.cardQueue.shift() || null; if (G.cardGet) SFX.card(); else SFX.ok(); if (done) toast('¡MAZO ' + done + ' COMPLETO!', '#fcd84a'); } }
+    if (G.warp) updateWarp();
+    else if (G.cardGet) { G.cardGet.t++; if (G.cardGet.t > 30 && (pressed('a') || pressed('b'))) { const done = G.cardGet.done; G.cardGet = G.cardQueue.shift() || null; if (G.cardGet) SFX.card(); else SFX.ok(); if (done) toast('¡MAZO ' + done + ' COMPLETO!', '#fcd84a'); } }
     else if (G.dialog) updateDialog();
     else if (G.shop) updateShop();
     else if (G.menu) updateMenu();
@@ -4703,6 +4773,7 @@ function render(){
     else if (G.shop && !G.dialog) drawShop();
     else {
       drawWorld();
+      if (G.warp) drawWarp();
       if (G.dead) { ctx.fillStyle = `rgba(90,0,0,${Math.min(0.75, G.dead / 60)})`; ctx.fillRect(0, 0, W, H); if (G.dead > 40) txt('TE DESMAYASTE...', 120, 72, '#fff', 'center', '#000'); }
       if (G.cardGet) drawCardGet();
       if (G.dialog) drawDialog();
@@ -4719,8 +4790,9 @@ function loop(now){
     if (location.hash === '#test-arcade' && !G.tested) { G.tested = true; S = newSave(0); S.coins = 50; G.state = 'world'; loadRoom('arcade', 7 * TS + 3, 7 * TS + 4); }
     if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4);
       if (extra === 'viajar' || extra === 'volar') { S.stones = { home:true, tolaria:true }; if (extra === 'volar') for (const d of DECKS.slice(0, 6)) for (const c of d.cards) S.cards[c] = 1; openTravel(); G.dialog.ch = 999; G.dialog.showChoices = true; }
-      if (extra === 'ircasa') { S.stones = { home:true }; travelTo('hogar'); } }
-    while (acc >= 1000 / 60) { step(); acc -= 1000 / 60; }
+      if (extra === 'ircasa') { S.stones = { home:true }; travelTo('hogar', 'stone'); }
+      if (extra && /^(volando|piedra)\d+$/.test(extra)) { travelTo(extra.startsWith('volando') ? 'vina' : 'hogar', extra.startsWith('volando') ? 'fly' : 'stone'); const n = +extra.replace(/\D/g, ''); for (let i = 0; i < n; i++) step(); G.freeze = true; } }
+    while (acc >= 1000 / 60) { if (!G.freeze) step(); acc -= 1000 / 60; }
     render();
   } catch (e) {
     acc = 0;
