@@ -390,6 +390,13 @@ const NPCDEF = {
   ligaOrg:{ n:'ORGANIZADORA', style:'bun', c:{ hair:'#141014', skin:'#e8b088', shirt:'#6a3ab0', shirtD:'#4a2a80', pants:'#2a2a38', shoe:'#1a1a22' } },
   marinero:{ n:'MARINERO', style:'beanie', c:{ hat:'#1a3a78', hatD:'#0a1a48', hair:'#d8d8e0', skin:'#c8946a', shirt:'#f4f1e8', shirtD:'#3a6ad0', pants:'#1a3a78', shoe:'#1a1a22' } },
   pescador:{ n:'PESCADOR', style:'cap', c:{ hat:'#e8a028', hatD:'#a86818', hair:'#5a3a1c', skin:'#b87a4b', shirt:'#e8a028', shirtD:'#a86818', pants:'#3a3a48', shoe:'#1a1a22' } },
+  festivalero:{ n:'ANIMADOR', style:'spiky', c:{ hair:'#141014', hairD:'#3a3040', skin:'#e8b088', shirt:'#1a1a2a', shirtD:'#0a0a14', emblem:'#e8c040', pants:'#1a1a2a', shoe:'#1a0c06', cape:'#c82848', capeD:'#7a0a20' } },
+  turista:{ n:'TURISTA', style:'cap', c:{ hat:'#f8f0e0', hatD:'#c8c0b0', hair:'#f0d070', skin:'#f8c8a8', shirt:'#f878a8', shirtD:'#c84878', pants:'#48b0c8', shoe:'#f2f2f2' } },
+  sureno:{ n:'SUREÑO', style:'beanie', c:{ hat:'#8a2a2a', hatD:'#5a1414', hair:'#3a2418', skin:'#d8a070', shirt:'#c8a878', shirtD:'#8a6a48', pants:'#3a3a48', shoe:'#1a0c06' } },
+  crupier:{ n:'CRUPIER', style:'bald', c:{ hair:'#141014', skin:'#e8b088', shirt:'#f4f1e8', shirtD:'#1a1a2a', emblem:'#c82848', pants:'#1a1a2a', shoe:'#1a0c06' } },
+  hotelero:{ n:'CONSERJE', style:'cap', c:{ hat:'#c82848', hatD:'#7a0a20', hair:'#3a2418', skin:'#f1c9a0', shirt:'#c82848', shirtD:'#7a0a20', emblem:'#e8c040', pants:'#1a1a2a', shoe:'#1a0c06' } },
+  angelmino:{ n:'VENDEDOR DE ANGELMO', style:'beanie', c:{ hat:'#2a6a8a', hatD:'#143a58', hair:'#d8d8e0', skin:'#c8946a', shirt:'#c8a878', shirtD:'#8a6a48', pants:'#3a3a48', shoe:'#1a0c06' } },
+  curantera:{ n:'CURANTERA', style:'bun', c:{ hair:'#5a3a1c', skin:'#d8a070', shirt:'#e8e0d0', shirtD:'#b8b0a0', pants:'#6a2a2a', shoe:'#1a0c06' } },
   barquero:{ n:'BARQUERO', style:'beanie', c:{ hat:'#1a3a78', hatD:'#0a1a48', hair:'#d8d8e0', skin:'#b87a4b', shirt:'#e8e0c8', shirtD:'#a8a088', pants:'#1a3a78', shoe:'#2a1a0c' } },
   armero:{ n:'ARMERO', style:'bald', c:{ hair:'#5a3418', skin:'#c8946a', shirt:'#6a6a78', shirtD:'#3a3a48', sleeve:'#8a5428', pants:'#3a2a1a', shoe:'#2a1a0c', belt:'#2a1a0c' } },
   mago:{ n:'MAGA', style:'wizard', c:{ hat:'#2a4ab0', hatD:'#141e6a', hair:'#e8e0f8', skin:'#f1c9a0', shirt:'#2a4ab0', shirtD:'#141e6a', pants:'#2a4ab0', shoe:'#1a1a2a', cape:'#6a3ab0', capeD:'#3a1a68' } },
@@ -502,6 +509,11 @@ const ARMOR = {
   grebasLangostino:{ n:'Grebas del Langostino', slot:'legs', def:4, st:{fue:2}, tier:4, col:'#e8502a' },
   botasMox:{ n:'Botas de Mox', slot:'feet', def:3, st:{agi:3,des:1}, tier:4, col:'#40e0a0' },
 };
+ARMOR.chalecoChiloe = { n:'Chaleco de lana de Chiloe', slot:'body', def:4, st:{agi:1,int:1}, tier:3, col:'#c8a878' };
+ARMOR.botasLluvia = { n:'Botas de lluvia del sur', slot:'feet', def:2, st:{agi:2,des:1}, tier:3, col:'#e8c040' };
+ARMOR.gorroChilote = { n:'Gorro chilote', slot:'head', def:2, st:{int:2}, tier:3, col:'#8a2a2a' };
+const SUR_SHOP = { chalecoChiloe:260, botasLluvia:190, gorroChilote:180, escudoCampeon:620, yelmoGuardian:560, botasMox:600 };
+const SLOT_BET = 10;
 const BOSS_GEAR = { siege:'yelmoGuardian', dread:'grebasLangostino', reyMinas:'escudoCampeon', negAnc:'botasMox', serraAsc:'armaduraSerra' };
 const SPELLS = {
   bolt:{ n:'Lightning Bolt', mp:2, dmg:2, spd:4.4, col:'#fce040', col2:'#ffffff', price:60, desc:'Rayo rapido que viaja lejos.' },
@@ -527,7 +539,7 @@ const PRIZES = {
   trofeo:{ n:'Trofeo de cristal', price:300, desc:'El premio mayor. +1 a todo.', bonus:{ st:{fue:1,des:1,agi:1,int:1} } },
 };
 const houseBonus = key => { let v = 0; for (const [id, o] of Object.entries(HOUSE)) if (S.house && S.house[id]) v += o.bonus[key] || 0; for (const [id, o] of Object.entries(PRIZES)) if (S.house && S.house[id]) v += o.bonus[key] || 0; return v; };
-const ZONE_TIER = { pueblo:1, bosque:1, pradera:1, costa:2, pantano:2, cerro:2, valpo:1, tolaria:1, mercado:1, bosqueProf:3, pantanoProf:3, minas:3, ruinas:3, guarida:3, islote:3 };
+const ZONE_TIER = { pueblo:1, bosque:1, pradera:1, costa:2, pantano:2, cerro:2, valpo:1, tolaria:1, mercado:1, bosqueProf:3, pantanoProf:3, minas:3, ruinas:3, guarida:3, islote:3, vina:1, pmontt:1 };
 const zoneTier = () => G.def && G.def.dungeonKey ? 3 + (G.def.floor >= 3 ? 1 : 0) : (ZONE_TIER[G.roomId] || 1);
 function defense(){ let d = 0; for (const [slot] of GEAR_SLOTS) { const id = S.gear && S.gear[slot]; if (id) d += ARMOR[id].def; } return d; }
 const maxMp = () => 4 + stats().int + (S.house && S.house.biblioteca ? 2 : 0);
@@ -648,19 +660,47 @@ const ROOMS = {
   casa:{ name:'CASA DEL VIEJO', theme:'inside', music:'town', interior:true, exitTo:{room:'valpo',tx:12,ty:4},
     map:['kkkkkkkkkkkkkkk','kBFFFFFFFFFFFBk','kFFFFFFFFFFFFFk','kFFFtFFFFFtFFFk','kFFFFFFFFFFFFFk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFBk','kFFFFFFFFFFFFFk','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'],
     npcs:[{id:'viejo',x:7,y:3}] },
+  vina:{ name:'VIÑA DEL MAR', theme:'town', music:'town',
+    map:['TTTTTT...TTTTTT','T,RRRRRR...,..T','T.RRRRRR..RRRRT','T.WWWDWW..WWDWT','T,...,...,...,T','T..=========..T','sJsssss=sssssJs','ssssss.=.ssssss','~~~~~~~=L~~~~~~','~~~~~~~~~~~~~~~'],
+    roof:(tx) => tx < 9 ? 'purple' : 'blue',
+    plaques:[['CASINO',80,19,'#5a1a4a'],['HOTEL',192,35,'#1a2a58']],
+    doors:{'5,3':'casino','12,3':'hotel'},
+    signs:{},
+    npcs:[{id:'festivalero',x:3,y:4},{id:'turista',x:11,y:7},{id:'barquero',x:6,y:7}] },
+  pmontt:{ name:'PUERTO MONTT', theme:'town', music:'field', rain:true,
+    map:['TTTTTTTTTTTTTTT','T,.RRRR..RRRR,T','T..RRRR..RRRR.T','T..WDWW..WWDW.T','T.............T','T..S========..T','~HH~~~~=~~~~HH~','~~~~~~~=~~~~~~~','~~~~~~~=L~~~~~~','~~~~~~~~~~~~~~~'],
+    roof:(tx) => tx < 8 ? 'red' : 'green',
+    plaques:[['ANGELMO',80,19,'#5a3418'],['CURANTO',176,19,'#1a4a2a']],
+    doors:{'4,3':'angelmo','11,3':'curanto'},
+    signs:{'3,5':'PUERTO MONTT. AQUI LLUEVE 13 MESES AL AÑO. EN ANGELMO HAY EQUIPO DEL SUR QUE NO SE VENDE EN NINGUNA OTRA PARTE.'},
+    npcs:[{id:'sureno',x:10,y:4},{id:'barquero',x:7,y:7}] },
+  casino:{ name:'CASINO DE VIÑA', theme:'inside', music:'tavern', interior:true, exitTo:{room:'vina',tx:5,ty:4},
+    map:['kkkkkkkkkkkkkkk','kZFZFZFZFZFZFZk','kFFFFFFFFFFFFFk','kFFFtFFFFFtFFFk','kFFFFFFFFFFFFFk','kZFZFFFFFFFZFZk','kFFFFFFFFFFFFFk','kFFFFFFFFFFFFFk','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'],
+    npcs:[{id:'crupier',x:7,y:4}] },
+  hotel:{ name:'HOTEL DE VIÑA', theme:'inside', music:'town', interior:true, exitTo:{room:'vina',tx:12,ty:4},
+    map:['kkkkkkkkkkkkkkk','kBKKKKFKKKKKBBk','kFFFFFFFFFFFFFk','kFtFFFFFFFFFtFk','kFFFFFFFFFFFFFk','kFtFFFFFFFFFtFk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFBk','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'],
+    npcs:[{id:'hotelero',x:6,y:1}] },
+  angelmo:{ name:'MERCADO DE ANGELMO', theme:'inside', music:'tavern', interior:true, exitTo:{room:'pmontt',tx:4,ty:4},
+    map:['kkkkkkkkkkkkkkk','kBKKKKFKKKKKBBk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFBk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFBk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFBk','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'],
+    npcs:[{id:'angelmino',x:6,y:1}] },
+  curanto:{ name:'COCINERIA EL CURANTO', theme:'inside', music:'tavern', interior:true, exitTo:{room:'pmontt',tx:11,ty:4},
+    map:['kkkkkkkkkkkkkkk','kBKKKKFKKKKKBBk','kFFFFFFFFFFFFFk','kFtFFtFFFFtFFFk','kFFFFFFFFFFFFFk','kFtFFtFFFFtFFBk','kFFFFFFFFFFFFFk','kBFFFFFFFFFFFFk','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'],
+    npcs:[{id:'curantera',x:6,y:1}] },
 };
 ROOMS.pueblo.npcs.push({ id:'cronista', x:2, y:6 });
-const SOLID = new Set(['T','b','r','~','w','x','R','W','S','o','f','P','c','C','k','K','B','t','Q','Z','Y','y','L']);
-const BOAT_ONLY = new Set(['islote']);
-const DOCKS = { costa:[7,7], valpo:[4,6], islote:[3,5] };
+const SOLID = new Set(['T','b','r','~','w','x','R','W','S','o','f','P','c','C','k','K','B','t','Q','Z','Y','y','L','J','H']);
+const BOAT_ONLY = new Set(['islote','pmontt']);
+const DOCKS = { costa:[7,7], valpo:[4,6], islote:[3,5], vina:[7,7], pmontt:[7,5] };
 const BOAT_PRICE = 30;
+const BOAT_ROUTES = { costa:[['islote',30],['pmontt',40]], valpo:[['islote',30]], vina:[['islote',30],['pmontt',40]], islote:[['costa',0],['valpo',0],['vina',0]], pmontt:[['vina',0],['costa',0]] };
+const PLACE_NAME = { costa:'LA COSTA', valpo:'CURICO', islote:'EL ISLOTE', vina:'VIÑA', pmontt:'PUERTO MONTT' };
 function travelBoat(dest){ SFX.door(); tone(160, 120, 0.6, 'triangle', 0.4); const [x, y] = DOCKS[dest]; loadRoom(dest, x * TS + 3, y * TS + 6); G.fade = 50; PL.dir = 0; toast('VIAJE EN BOTE', '#88c8f8'); }
 
 /* ============ WORLD MAP, WILD ZONES & DUNGEONS ============ */
 const WORLD = { guarida:[2,0], cerro:[1,1], bosque:[2,1], bosqueProf:[3,1], minas:[4,1],
-  ruinas:[0,2], pradera:[1,2], pueblo:[2,2], pantano:[3,2], tolaria:[4,2], valpo:[1,3], costa:[2,3], pantanoProf:[3,3], mercado:[4,3], islote:[2,4] };
+  ruinas:[0,2], pradera:[1,2], pueblo:[2,2], pantano:[3,2], tolaria:[4,2], valpo:[1,3], costa:[2,3], pantanoProf:[3,3], mercado:[4,3], vina:[1,4], islote:[2,4], pmontt:[3,4] };
 const SHORT = { guarida:'GUARIDA', cerro:'CERRO MOX', bosque:'BOSQUE', bosqueProf:'B. PROFUNDO', minas:'MINAS', ruinas:'RUINAS',
-  pradera:'PRADERA', pueblo:'VILLA', pantano:'PANTANO', tolaria:'TOLARIA', valpo:'CURICO', costa:'COSTA', pantanoProf:'P. PROFUNDO', islote:'ISLOTE', mercado:'MERCADO' };
+  pradera:'PRADERA', pueblo:'VILLA', pantano:'PANTANO', tolaria:'TOLARIA', valpo:'CURICO', costa:'COSTA', pantanoProf:'P. PROFUNDO', islote:'ISLOTE', mercado:'MERCADO', vina:'VIÑA', pmontt:'P. MONTT' };
 const WILD = {
   cerro:{ name:'CERRO MOX', theme:'dirt', music:'field', walls:['r','r','T','b'], decks:['burn','goblins','langostino'], enemies:['gob','pup','merfolk','ball'], n:5, chest:'hierro' },
   bosqueProf:{ name:'BOSQUE PROFUNDO', theme:'forest', music:'field', walls:['T','T','T','b'], decks:['goblins','black'], enemies:['gob','shade','pup','specter'], n:6, chest:'bolsa' },
@@ -765,7 +805,7 @@ function getDef(id){
     def = Object.assign({}, ROOMS[id]);
     if (WORLD[id]) {
       const m = def.map.map(r => r.split('')), ex = zoneNeighbors(id);
-      for (const side in ex) for (const [x, y] of OPEN_TILES[side]) if (SOLID.has(m[y][x]) || m[y][x] === '~') m[y][x] = '.';
+      for (const side in ex) for (const [x, y] of OPEN_TILES[side]) if (SOLID.has(m[y][x]) || m[y][x] === '~') m[y][x] = m[y][x] === '~' ? 's' : '.';
       def.map = m.map(r => r.join(''));
     }
   }
@@ -1004,7 +1044,7 @@ function drawTile(c, tx, ty, theme){
       const below = T(tx, ty + 1);
       if (below && 'FAEKBtPZ'.includes(below)) { R(x, y + 11, 16, 5, '#3a2010'); R(x, y + 11, 16, 1, '#7a5030'); R(x, y + 15, 16, 1, '#1a0c06'); }
       break; }
-    case 'F': if (G.roomId === 'arcade') { R(x, y, 16, 16, '#1a1430'); R(x + ((tx + ty) % 2 ? 3 : 11), y + ((tx * 3 + ty) % 2 ? 4 : 11), 2, 2, (tx + ty) % 3 ? '#3a2a78' : '#0a6a5a'); } else floorF(x, y, tx, ty); break;
+    case 'F': if (G.roomId === 'casino') { R(x, y, 16, 16, (tx + ty) % 2 ? '#6a0a1a' : '#5a0816'); R(x + 7, y + 7, 2, 2, '#c8a030'); R(x, y, 16, 1, '#7a1424'); } else if (G.roomId === 'arcade') { R(x, y, 16, 16, '#1a1430'); R(x + ((tx + ty) % 2 ? 3 : 11), y + ((tx * 3 + ty) % 2 ? 4 : 11), 2, 2, (tx + ty) % 3 ? '#3a2a78' : '#0a6a5a'); } else floorF(x, y, tx, ty); break;
     case 'A': floorA(x, y, tx, ty); break;
     case 'K':
       if (G.roomId === 'arena' || G.roomId === 'liga') floorA(x, y, tx, ty); else floorF(x, y, tx, ty);
@@ -1076,6 +1116,20 @@ function drawTile(c, tx, ty, theme){
       ctx.fillStyle = 'rgba(0,0,20,.22)'; ctx.fillRect(x, y + 12, 16, 3);
       break; }
     case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': drawHouseTile(c, x, y, tx, ty); break;
+    case 'J':
+      drawTile('s', tx, ty, theme);
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x + 4, y + 13, 12, 3);
+      R(x + 7, y + 4, 3, 12, '#6a4020'); for (let k = 5; k < 16; k += 3) R(x + 7, y + k, 3, 1, '#4a2a14');
+      for (const [a, b, w] of [[-6,-1,7],[1,-2,7],[-5,2,5],[2,2,6]]) { R(x + 8 + a, y + 3 + b, w, 2, '#1e6a1e'); R(x + 8 + a, y + 3 + b, w, 1, '#48a83a'); }
+      disc(x + 8, y + 4, 2, '#8a5a30');
+      break;
+    case 'H': {
+      R(x, y, 16, 16, '#2466c4'); R(x, y + 12, 16, 1, '#5aa4f0');
+      R(x + 2, y + 9, 2, 7, '#3a2210'); R(x + 12, y + 9, 2, 7, '#3a2210');
+      const hc = ['#e83a3a','#f0c030','#3a8ad8','#48b060'][tx % 4];
+      R(x + 1, y + 1, 14, 9, '#1a0c06'); R(x + 2, y + 2, 12, 7, hc); R(x + 2, y + 2, 12, 1, 'rgba(255,255,255,.35)');
+      R(x, y - 2, 16, 4, '#1a0c06'); R(x + 1, y - 1, 14, 2, '#8a8494'); R(x + 6, y + 4, 3, 3, '#1a1020'); R(x + 7, y + 5, 1, 1, '#fce060');
+      break; }
     case '~': case 'w': case 'L': break;
     default: ground(x, y, tx, ty, theme);
   }
@@ -1199,8 +1253,9 @@ function drawLighting(){
     if (dark) { ctx.fillStyle = 'rgba(255,170,80,.05)'; ctx.fillRect(0, 0, W, H); }
     return;
   }
-  if (G.roomId === 'arcade') {
-    ctx.fillStyle = 'rgba(20,0,40,.35)'; ctx.fillRect(0, 0, W, H);
+  if (G.def.rain) { ctx.fillStyle = 'rgba(30,40,70,.28)'; ctx.fillRect(0, 0, W, H); }
+  if (G.roomId === 'arcade' || G.roomId === 'casino') {
+    ctx.fillStyle = G.roomId === 'casino' ? 'rgba(40,0,10,.3)' : 'rgba(20,0,40,.35)'; ctx.fillRect(0, 0, W, H);
     const cols = ['255,64,192','64,240,255','252,224,64','96,255,128','176,96,255'];
     for (let ty = 0; ty < 10; ty++) for (let tx = 0; tx < 15; tx++) if (G.map[ty][tx] === 'Z') {
       const pulse = 0.12 + 0.08 * Math.sin(frame * 0.05 + tx);
@@ -1874,6 +1929,7 @@ function findChimneys(){
 }
 function updateAmbient(){
   const th = G.def.theme, A = G.amb;
+  if (G.def.rain) for (let i = 0; i < 3; i++) A.push({ k:'rain', x:rnd(W + 40) - 20, y:-4, t:0, ph:0 });
   if (A.length < 16 && Math.random() < 0.07) {
     if (th === 'town' || th === 'meadow') A.push({ k:'fly', x:rnd(W), y:20 + rnd(H - 30), t:0, c:pick(['#fff8f0','#f8d040','#f878a8','#88c8f8']), ph:Math.random() * 6, vx:(Math.random() - 0.5) * 0.6 });
     else if (th === 'forest') A.push({ k:'leaf', x:rnd(W), y:-4, t:0, c:pick(['#6ab040','#c8a030','#8ac048','#d87030']), ph:Math.random() * 6 });
@@ -1890,6 +1946,7 @@ function updateAmbient(){
     else if (a.k === 'dust') { a.y += 0.05; a.x += Math.sin(a.t * 0.01 + a.ph) * 0.1; if (a.t > 300) a.dead = true; }
     else if (a.k === 'gull') { a.x += 0.9; a.y += Math.sin(a.t * 0.05) * 0.2; if (a.x > W + 10) a.dead = true; }
     else if (a.k === 'smoke') { a.y -= 0.3; a.x += Math.sin(a.t * 0.05 + a.ph) * 0.2 + 0.08; if (a.t > 80) a.dead = true; }
+    else if (a.k === 'rain') { a.y += 4; a.x -= 1; if (a.y > H) a.dead = true; }
   }
   G.amb = A.filter(a => !a.dead);
 }
@@ -1901,6 +1958,7 @@ function drawAmbient(){
     else if (a.k === 'glow') { const on = Math.sin(a.t * 0.08 + a.ph) > 0; if (on) { ctx.fillStyle = 'rgba(220,255,120,.18)'; ctx.fillRect(x - 2, y - 2, 5, 5); R(x, y, 1, 1, a.c); } }
     else if (a.k === 'dust') { ctx.fillStyle = 'rgba(255,230,190,.35)'; ctx.fillRect(x, y, 1, 1); }
     else if (a.k === 'gull') { const f = (a.t >> 3) & 1; R(x - 3, y + f, 3, 1, '#ffffff'); R(x + 1, y + f, 3, 1, '#ffffff'); R(x, y + 1 - f, 1, 1, '#ffffff'); ctx.fillStyle = 'rgba(0,0,0,.15)'; ctx.fillRect(x - 2, y + 30, 5, 1); }
+    else if (a.k === 'rain') { ctx.fillStyle = 'rgba(190,210,255,.55)'; ctx.fillRect(x, y, 1, 4); }
     else if (a.k === 'smoke') { const r = 1 + (a.t >> 4); ctx.globalAlpha = Math.max(0, 0.55 - a.t / 150); disc(x, y, r, '#d8d4e0'); ctx.globalAlpha = 1; }
   }
 }
@@ -2239,6 +2297,7 @@ function shopItems(kind){
     for (const [id, p] of Object.entries(SWORD_PRICE)) L.push({ kind:'sword', id, name:SWORDS[id].n, price:p, info:'ARMA. ' + statLine(SWORDS[id].st), owned:S.swords.includes(id) });
     for (const [id, a] of Object.entries(ARMOR)) if (a.price) L.push({ kind:'armor', id, name:a.n, price:a.price, info:GEAR_SLOTS.find(g => g[0] === a.slot)[1] + '. +' + a.def + ' DEF ' + (Object.keys(a.st).length ? statLine(a.st) : ''), owned:S.armor.includes(id) });
   } else if (kind === 'magia') { for (const id of SPELL_ORDER) { const s = SPELLS[id]; L.push({ kind:'spell', id, name:s.n, price:s.price, info:s.mp + ' MP. ' + s.desc, owned:S.spells.includes(id) }); } }
+  else if (kind === 'sur') { for (const [id, p] of Object.entries(SUR_SHOP)) { const a = ARMOR[id]; L.push({ kind:'armor', id, name:a.n, price:p, info:GEAR_SLOTS.find(g => g[0] === a.slot)[1] + '. +' + a.def + ' DEF ' + (Object.keys(a.st).length ? statLine(a.st) : ''), owned:S.armor.includes(id) }); } }
   else if (kind === 'hogar') { for (const [id, h] of Object.entries(HOUSE)) L.push({ kind:'house', id, name:h.n, price:h.price, info:h.desc, owned:!!S.house[id] }); }
   else { for (const [id, h] of Object.entries(PRIZES)) L.push({ kind:'house', id, name:h.n, price:h.price, info:h.desc, owned:!!S.house[id] }); }
   return L;
@@ -2300,9 +2359,33 @@ function houseInteract(c){
 function talkTo(id, npc, skipQuest){
   if (!skipQuest && questHook(id, npc)) return;
   if (id === 'barquero') {
-    if (G.roomId === 'islote') { say(['BARQUERO: ¿De vuelta a tierra firme? La vuelta es gratis.'], [{ t:'A LA COSTA', fn:() => travelBoat('costa') }, { t:'A CURICÓ', fn:() => travelBoat('valpo') }, { t:'ME QUEDO', fn:null }]); return; }
-    say(['BARQUERO: El Islote del Langostino solo se alcanza en bote. El viaje cuesta $' + BOAT_PRICE + '. Dicen que el bicho es enorme...'],
-      [{ t:'VIAJAR ($' + BOAT_PRICE + ')', fn:() => { if (S.coins < BOAT_PRICE) { say(['BARQUERO: Sin plata no hay bote, compadre.']); return; } S.coins -= BOAT_PRICE; travelBoat('islote'); } }, { t:'NO', fn:null }]);
+    const routes = BOAT_ROUTES[G.roomId] || [];
+    say(['BARQUERO: ¿Adonde vamos? Al Islote del Langostino y a Puerto Montt solo se llega en bote. La vuelta siempre es gratis.'],
+      routes.map(([dest, price]) => ({ t:(PLACE_NAME[dest] + (price ? ' ($' + price + ')' : '')).slice(0, 22), fn:() => {
+        if (S.coins < price) { say(['BARQUERO: Sin plata no hay bote, compadre.']); return; }
+        S.coins -= price; travelBoat(dest);
+      } })).concat([{ t:'ME QUEDO', fn:null }]));
+    return;
+  }
+  if (id === 'festivalero') { say(['ANIMADOR: ' + pick(['¡Bienvenidos a Viña! En el Festival el Monstruo no perdona... igual que un Hymn to Tourach en el turno dos.','Esta noche en el casino: tragamonedas con simbolos de mana. Si salen tres Mox, te llevas el gordo.','¿Viste el reloj de flores? Aqui todo es mas bonito, hasta perder una partida.'])]); return; }
+  if (id === 'turista') { say(['TURISTA: ' + pick(['Vine a Viña por la playa y termine jugando Premodern en el casino.','Dicen que en Puerto Montt venden un chaleco de Chiloe que abriga mas que un Worship.','El bote a Puerto Montt sale caro, pero el curanto vale cada moneda.'])]); return; }
+  if (id === 'sureno') { say(['SUREÑO: ' + pick(['Aqui en Puerto Montt llueve siempre, pero los palafitos no se mojan por dentro.','En Angelmo venden equipo que no encuentras en el norte. Caro, pero bueno.','Pruebate el curanto: la primera vez te deja con un corazon de mas. Palabra de sureño.'])]); return; }
+  if (id === 'crupier') { say(['CRUPIER: Bienvenido al Casino de Viña. Las tragamonedas cobran $' + SLOT_BET + ' por tirada. Tres simbolos iguales pagan x5; tres Mox pagan x20. La casa siempre... bueno, casi siempre gana.']); return; }
+  if (id === 'hotelero') {
+    say(['CONSERJE: Bienvenido al Hotel de Viña. Una noche con vista al mar cuesta $12: vida y magia al maximo, partida guardada.'],
+      [{ t:'DORMIR ($12)', fn:() => { if (S.coins < 12) { say(['CONSERJE: Lo siento, no le alcanza.']); return; } S.coins -= 12; S.hp = S.maxHp; S.mp = maxMp(); G.fade = 40; SFX.heal(); saveGame(); say(['Dormiste escuchando el mar. Vida y magia al maximo.']); } }, { t:'NO', fn:null }]);
+    return;
+  }
+  if (id === 'angelmino') { say(['VENDEDOR: Equipo del sur, hecho a mano en Chiloe y Angelmo. No lo encuentras en otra parte.'], null, () => openShop('sur', 'MERCADO DE ANGELMO')); return; }
+  if (id === 'curantera') {
+    say(['CURANTERA: ¡Curanto en hoyo, recien salido! Mariscos, carne, papas y milcao. $15 el plato.'],
+      [{ t:'COMER CURANTO ($15)', fn:() => {
+        if (S.coins < 15) { say(['CURANTERA: Sin plata no hay curanto, mijo.']); return; }
+        S.coins -= 15; S.hp = S.maxHp; S.mp = maxMp(); SFX.heal();
+        if (!S.curanto) { S.curanto = true; S.maxHp += 2; S.hp = S.maxHp; SFX.lvl(); say(['¡Curanto legendario! Quedaste tan satisfecho que ganas 1 corazon maximo para siempre.']); }
+        else say(['Quedaste como nuevo. Vida y magia al maximo.']);
+        saveGame();
+      } }, { t:'NO', fn:null }]);
     return;
   }
   if (id === 'armero') { say(['ARMERO: Acero de Mishra y cuero de Llanowar. Mira lo que tengo.'], null, () => openShop('armas', 'ARMAS Y ARMADURAS')); return; }
@@ -2853,7 +2936,8 @@ function drawWorld(){
     } else if (c === 'Z') {
       const x = tx * TS + 3, y = ty * TS + 2, k = (frame >> 3) + tx, g = gameAt(tx, ty).id;
       R(x, y, 10, 6, '#0a0a18');
-      if (g === 'bloques') { R(x + 1, y + 4, 8, 2, '#5080f0'); R(x + 1, y + 3, 3, 1, '#f05050'); R(x + 3 + (k % 3), (y + (k % 4)), 2, 2, '#f0e040'); }
+      if (G.roomId === 'casino') { for (let i = 0; i < 3; i++) R(x + i * 3 + 1, y + 2, 2, 3, SLOT_COL[SLOT_SYM[(k + i * 2 + tx) % 6]]); }
+      else if (g === 'bloques') { R(x + 1, y + 4, 8, 2, '#5080f0'); R(x + 1, y + 3, 3, 1, '#f05050'); R(x + 3 + (k % 3), (y + (k % 4)), 2, 2, '#f0e040'); }
       else if (g === 'laberinto') { R(x, y, 10, 1, '#4aa0ff'); R(x, y + 5, 10, 1, '#4aa0ff'); for (let i = 1; i < 10; i += 2) if (i > (k % 10)) R(x + i, y + 3, 1, 1, '#ffd8b0'); R(x + (k % 10), y + 2, 2, 2, '#ffe040'); }
       else { R(x + 3, y + 2 + (k % 2), 4, 3, '#6ab040'); R(x + 4, y + 3 + (k % 2), 1, 1, '#fce040'); R(x + 1, y + 5, 8, 1, '#3a2a18'); }
       if ((k + tx) % 5 === 0) R(x, y, 10, 6, 'rgba(255,255,255,.12)');
@@ -3093,7 +3177,60 @@ const ARCADE_GAMES = [
 ];
 const ARCADE_PRICE = 5;
 const gameAt = (tx, ty) => ARCADE_GAMES[(tx + ty * 2) % 3];
+const SLOT_SYM = ['W','U','B','R','G','M'], SLOT_W = [5, 5, 5, 5, 5, 2];
+const SLOT_COL = { W:'#f8f0d0', U:'#3a7ae8', B:'#3a2a48', R:'#e05030', G:'#40a040', M:'#40e0c0' };
+function slotRoll(){ let r = Math.random() * 27; for (let i = 0; i < 6; i++) { r -= SLOT_W[i]; if (r < 0) return i; } return 0; }
+function startSlots(){ G.arc = { game:'slots', t:0, reels:[0, 1, 2], spin:[0, 0, 0], final:[0, 0, 0], msg:'APRIETA A PARA TIRAR', net:0, spinning:false, flash:0 }; G.state = 'arcade'; playMusic('tavern'); SFX.ok(); }
+function updateTraga(A){
+  if (A.flash > 0) A.flash--;
+  if (A.spinning) {
+    let all = true;
+    for (let i = 0; i < 3; i++) if (A.spin[i] > 0) { A.spin[i]--; A.reels[i] = rnd(6); all = false; if (A.spin[i] === 0) { A.reels[i] = A.final[i]; tone(500 + i * 200, 500 + i * 200, 0.06, 'square', 0.3); } }
+    if (all) {
+      A.spinning = false;
+      const [a, b, c] = A.reels; let pay = 0;
+      if (a === b && b === c) pay = SLOT_SYM[a] === 'M' ? SLOT_BET * 20 : SLOT_BET * 5;
+      else if (a === b || b === c || a === c) pay = SLOT_BET;
+      S.coins += pay; A.net += pay;
+      A.msg = pay >= SLOT_BET * 5 ? '¡PREMIO! +$' + pay : pay ? 'RECUPERAS $' + pay : 'NADA... ¿OTRA?';
+      if (pay >= SLOT_BET * 5) { SFX.win(); A.flash = 50; } else if (pay) SFX.coin(); else SFX.back();
+    }
+    return;
+  }
+  if (pressed('a')) {
+    if (S.coins < SLOT_BET) { A.msg = 'NO TE ALCANZA'; SFX.back(); return; }
+    S.coins -= SLOT_BET; A.net -= SLOT_BET; A.final = [slotRoll(), slotRoll(), slotRoll()]; A.spin = [24, 36, 48]; A.spinning = true; A.msg = ''; SFX.ok();
+  }
+  if (pressed('b') || pressed('menu')) { G.state = 'world'; playMusic(G.def.music); saveGame(); say(['Te levantas de la maquina. Balance: ' + (A.net >= 0 ? '+' : '-') + '$' + Math.abs(A.net) + '.']); }
+}
+function drawSlotSym(s, cx, cy){
+  if (s === 'M') { for (let r = 0; r < 9; r++) { const w = 9 - Math.abs(r - 4) * 2; R(cx - w, cy - 9 + r * 2, w * 2, 2, r < 4 ? '#a0fff0' : '#20b8a0'); } txt('MOX', cx, cy - 3, '#0a3a30', 'center', null); return; }
+  disc(cx, cy, 11, '#1a1020'); disc(cx, cy, 10, SLOT_COL[s]); disc(cx - 3, cy - 3, 3, 'rgba(255,255,255,.35)');
+  txt(s, cx, cy - 3, s === 'W' ? '#6a5a3a' : '#ffffff', 'center', null);
+}
+function drawTraga(A){
+  R(0, 0, W, H, '#1a0610');
+  for (let i = 0; i < 24; i++) { const on = ((frame >> 3) + i) % 3 === 0; R(8 + i * 9.5, 4, 3, 3, on ? '#fce040' : '#6a4a10'); R(8 + i * 9.5, 150, 3, 3, on ? '#fce040' : '#6a4a10'); }
+  R(30, 12, 180, 132, '#e8c040'); R(32, 14, 176, 128, '#8a1020'); R(34, 16, 172, 124, '#5a0818');
+  txt('TRAGAMONEDAS', 120, 20, '#fce040', 'center', '#000');
+  tiny('CASINO DE VIÑA', 120, 31, '#f8c0c8', 'center');
+  for (let i = 0; i < 3; i++) {
+    const x = 56 + i * 44; R(x, 42, 40, 44, '#1a1020'); R(x + 2, 44, 36, 40, '#f8f4ec'); R(x + 2, 44, 36, 4, '#d8d0c8'); R(x + 2, 80, 36, 4, '#d8d0c8');
+    drawSlotSym(SLOT_SYM[A.reels[i]], x + 20, 64);
+  }
+  R(46, 63, 4, 2, '#fce040'); R(190, 63, 4, 2, '#fce040');
+  if (A.msg) txt(A.msg, 120, 92, A.msg[0] === '¡' ? '#fce040' : '#ffffff', 'center', '#000');
+  tiny('MONEDAS $' + S.coins + '   BALANCE ' + (A.net >= 0 ? '+' : '-') + '$' + Math.abs(A.net), 120, 106, '#f8c0c8', 'center');
+  tiny('3 IGUALES X5   3 MOX X20   2 IGUALES DEVUELVE', 120, 116, '#e8c040', 'center');
+  tiny(TOUCH ? 'A: TIRAR ($' + SLOT_BET + ')   B: SALIR' : 'Z: TIRAR ($' + SLOT_BET + ')   X: SALIR', 120, 128, '#c8a0a8', 'center');
+  if (A.flash > 0 && (A.flash >> 2) & 1) { ctx.fillStyle = 'rgba(255,230,120,.25)'; ctx.fillRect(0, 0, W, H); }
+}
 function arcadePrompt(tx, ty){
+  if (G.roomId === 'casino') {
+    say(['TRAGAMONEDAS: $' + SLOT_BET + ' por tirada. Tres simbolos iguales pagan x5, tres Mox pagan x20, dos iguales te devuelven la apuesta.'],
+      [{ t:'JUGAR', fn:startSlots }, { t:'NO', fn:null }]);
+    return;
+  }
   const g = gameAt(tx || 0, ty || 0);
   say([g.n + ': ' + g.help, 'Ficha: $' + ARCADE_PRICE + '. Record: ' + ((S.arcadeBests || {})[g.id] || (g.id === 'smash' ? S.arcadeBest || 0 : 0)) + '.'],
     [{ t:'JUGAR ($' + ARCADE_PRICE + ')', fn:() => { if (S.coins < ARCADE_PRICE) { say(['No te alcanza para la ficha.']); return; } S.coins -= ARCADE_PRICE; startArcade(g.id); } }, { t:'NO', fn:null }]);
@@ -3114,6 +3251,7 @@ function arcadeExit(A){
 }
 function updateArcade(){
   const A = G.arc; A.t++;
+  if (A.game === 'slots') return updateTraga(A);
   if (A.done) { if (A.t - A.doneT > 40 && (pressed('a') || pressed('b'))) arcadeExit(A); return; }
   if (A.game === 'bloques') return updateBloques(A);
   if (A.game === 'laberinto') return updateMaze(A);
@@ -3149,6 +3287,7 @@ function arcadeDone(A){
 }
 function drawArcade(){
   const A = G.arc;
+  if (A.game === 'slots') { drawTraga(A); return; }
   if (A.game === 'bloques') { drawBloques(A); arcadeDone(A); scanlines(); return; }
   if (A.game === 'laberinto') { drawMaze(A); arcadeDone(A); scanlines(); return; }
   R(0, 0, W, H, '#2a1a4a'); R(20, 0, 200, H, '#120a24');
@@ -3643,7 +3782,7 @@ function drawBestiary(){
 }
 function drawZonesPreview(){
   if (!S) S = newSave(0);
-  const ids = ['mercado','hogar','arcade','costa','islote','pueblo'];
+  const ids = ['vina','pmontt','casino','valpo','angelmo','costa'];
   R(0, 0, W, H, '#000');
   ids.forEach((id, i) => {
     G.roomId = id; G.def = getDef(id); G.map = G.def.map.map(r => r.split('')); buildCache();
