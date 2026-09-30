@@ -76,7 +76,8 @@
     <span><kbd>X</kbd> hablar · volver</span>
     <span><kbd>Enter</kbd> menú</span>
     <span><kbd>C</kbd> magia · <kbd>V</kbd> cambiar hechizo</span>
-    <span><kbd>M</kbd> sonido</span>
+    <span><kbd>M</kbd> mapa</span>
+    <span><kbd>P</kbd> sonido</span>
     <span>Mouse: clic caminar/atacar/hablar · clic derecho magia</span>
   </div>
   <div class="pad" id="pad">
@@ -158,7 +159,8 @@ const keyMap = {ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'l
   KeyZ:'a',Space:'a',KeyJ:'a',KeyX:'b',KeyK:'b',Backspace:'b',Enter:'menu',Escape:'menu',KeyI:'menu',KeyC:'c',KeyL:'c',KeyV:'v',KeyU:'v'};
 addEventListener('keydown', e => {
   audioInit();
-  if (e.code === 'KeyM' && !e.repeat) toggleMute();
+  if (e.code === 'KeyP' && !e.repeat) { toggleMute(); toast(muted ? 'SONIDO APAGADO (P)' : 'SONIDO ENCENDIDO (P)', '#c8e8d8'); }
+  if (e.code === 'KeyM' && !e.repeat) { openMapKey(); e.preventDefault(); }
   if (e.code === 'KeyT' && !e.repeat) { openTravel(); e.preventDefault(); }
   const k = keyMap[e.code]; if (k) { kb[k] = 1; e.preventDefault(); }
 });
@@ -334,6 +336,12 @@ function tickMusic(){
       music.tt[k] += dur; music.idx[k] = (music.idx[k] + 1) % tr.notes.length;
     }
   });
+}
+// Tecla M: abre (o cierra) el menú directo en la pestaña MAPA
+function openMapKey(){
+  if (!S || G.state !== 'world' || G.dialog || G.shop || G.warp || G.dead || G.cardGet) return;
+  if (G.menu && G.menu.tab === 3) { G.menu = null; SFX.back(); return; }
+  G.menu = { tab:3, sel:0, deck:null, cs:0 }; SFX.ok();
 }
 function toggleMute(){ muted = !muted; const n = musicName; musicName = null; music = null; if (!muted) playMusic(n); else musicName = n; }
 
@@ -5043,6 +5051,7 @@ function loop(now){
     if (location.hash.startsWith('#intro=') && !G.tested) { G.tested = true; const n = +location.hash.slice(7); for (let i = 0; i < n; i++) step(); G.freeze = true; }
     if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4);
       if (extra === 'viajar' || extra === 'volar') { S.stones = { home:true, tolaria:true }; if (extra === 'volar') for (const d of DECKS.slice(0, 6)) for (const c of d.cards) S.cards[c] = 1; openTravel(); G.dialog.ch = 999; G.dialog.showChoices = true; }
+      if (extra === 'mapa') { S.visited = { pueblo:true, bosque:true, tolaria:true, pantano:true, costa:true, pradera:true }; dispatchEvent(new KeyboardEvent('keydown', { code:'KeyM' })); }
       if (extra === 'ircasa') { S.stones = { home:true }; travelTo('hogar', 'stone'); }
       if (extra === 'iman') { G.enemies = []; S.hp = 20; G.items.push({ k:'beer', x:PL.x + 55, y:PL.y, z:0, vz:0, t:20 }); for (let i = 0; i < 40; i++) step(); G.freeze = true; }
       if (extra && /^(volando|piedra)\d+$/.test(extra)) { travelTo(extra.startsWith('volando') ? 'vina' : 'hogar', extra.startsWith('volando') ? 'fly' : 'stone'); const n = +extra.replace(/\D/g, ''); for (let i = 0; i < n; i++) step(); G.freeze = true; } }
