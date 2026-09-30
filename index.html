@@ -454,9 +454,9 @@ const CHARS = [
   { id:'ruben', n:'RUBÉN', tag:'EL MÉDICO', style:'curly', medic:true, st:{fue:4,des:5,agi:4,int:7}, main:'int',
     c:{ hair:'#5a3418', skin:'#f1c9a0', eye:'#2a4a8a', shirt:'#f4f4f8', shirtD:'#c8ccd8', emblem:'#e83040',
         belt:'#8a90a8', pants:'#3a6a8a', shoe:'#2a1a0c', sleeve:'#f4f4f8' } },
-  { id:'tomo', n:'TOMO', tag:'EL SACOWEA', style:'cap', shades:true, joker:true, st:{fue:5,des:6,agi:6,int:4}, main:'des',
-    c:{ hat:'#2a9a4a', hatD:'#1a6a30', hair:'#2a1a10', skin:'#e8b088', shirt:'#fcd040', shirtD:'#c89818', emblem:'#e83040',
-        belt:'#2a1a0c', pants:'#3a6ad8', shoe:'#f4f4f8', sleeve:'#fcd040' } },
+  { id:'tomo', n:'TOMO', tag:'EL PRODUCTOR MUSICAL', style:'spiky', headphones:true, shades:true, music:true, st:{fue:5,des:6,agi:6,int:4}, main:'des',
+    c:{ hair:'#2a1a3a', hairD:'#6a40c8', skin:'#e8b088', shirt:'#1a1a2a', shirtD:'#0a0a14', emblem:'#40f0e0', phones:'#e83078',
+        belt:'#40f0e0', pants:'#2a2a38', shoe:'#f4f4f8', sleeve:'#1a1a2a' } },
   { id:'matig', n:'MATI GUERRA', short:'MATI G.', tag:'EL TENISTA', style:'tennis', racket:true, tennis:true, st:{fue:5,des:5,agi:7,int:4}, main:'agi',
     c:{ hair:'#6a4020', band:'#f4f4f8', skin:'#f1c9a0', eye:'#3a6a2a', shirt:'#f4f4f8', shirtD:'#c8ccd8', emblem:'#2a9a4a',
         belt:'#f4f4f8', pants:'#f4f4f8', shoe:'#f4f4f8', sleeve:'#f4f4f8' } },
@@ -1838,6 +1838,12 @@ function drawPerson(x, y, P, dir, f){
     }
     else { p(1, 2, 5, 5, O); p(2, 3, 3, 3, C.glass ? '#c8f0ff' : C.skin); p(3, 4, 1, 1, C.eye || O); p(6, 4, 4, 1, gc); p(1, 2, 5, 1, gc); p(1, 6, 5, 1, gc); }
   }
+  if (P.headphones) {
+    const pc = C.phones || '#e83078';
+    p(3, -4, 10, 2, O); p(4, -4, 8, 1, '#40f0e0');
+    if (!side) { p(0, 1, 3, 6, O); p(1, 2, 2, 4, pc); p(13, 1, 3, 6, O); p(13, 2, 2, 4, pc); p(1, -2, 2, 3, O); p(13, -2, 2, 3, O); }
+    else { p(5, 1, 5, 6, O); p(6, 2, 3, 4, pc); p(7, 3, 1, 1, '#40f0e0'); p(7, -2, 2, 3, O); }
+  }
   if (P.shades && dir !== 1) { if (!side) { p(3, 3, 10, 3, O); p(4, 4, 3, 1, '#4a4a6a'); p(9, 4, 3, 1, '#4a4a6a'); } else { p(1, 3, 6, 3, O); p(2, 4, 2, 1, '#4a4a6a'); } }
   if (P.racket && dir !== 1) { p(14, 3, 6, 7, O); p(15, 4, 4, 5, '#d8f0a0'); p(16, 4, 1, 5, '#8ab050'); p(15, 6, 4, 1, '#8ab050'); p(15, 10, 2, 4, O); p(15, 10, 1, 3, '#e83040'); }
   if (P.piscola && dir !== 1) { p(12, 6, 4, 7, O); p(13, 7, 2, 5, '#4a1a08'); p(13, 7, 2, 1, '#e0f4ff'); p(15, 6, 1, 2, '#f0e040'); p(13, 5, 1, 2, '#f0f0f0'); }
@@ -2978,7 +2984,7 @@ function updateItems(){
   G.items = G.items.filter(i => !i.dead);
 }
 function updateParts(){
-  for (const q of G.parts) { q.t++; q.x += q.vx; q.y += q.vy; if (q.k === 'leaf') q.vy += 0.12; if (q.k === 'bubble') q.vx = Math.sin(q.t * 0.2) * 0.3; if (q.t > (q.k === 'heal' || q.k === 'bubble' ? 40 : 22)) q.dead = true; }
+  for (const q of G.parts) { q.t++; q.x += q.vx; q.y += q.vy; if (q.k === 'leaf') q.vy += 0.12; if (q.k === 'bubble') q.vx = Math.sin(q.t * 0.2) * 0.3; if (q.k === 'note') q.vx = Math.sin(q.t * 0.15) * 0.4; if (q.t > (q.k === 'note' ? 55 : q.k === 'heal' || q.k === 'bubble' ? 40 : 22)) q.dead = true; }
   G.parts = G.parts.filter(q => !q.dead);
   for (const f of G.floats) { f.t++; if (f.t < 24) f.y -= 0.6; if (f.t > 45) f.dead = true; }
   G.floats = G.floats.filter(f => !f.dead);
@@ -3131,7 +3137,7 @@ const FRIEND_LINES = {
   7:['¿Otra ronda? Yo invito... bueno, tú invitas. Salud por el Landstill.','A mí me dejan tomar seis en la taberna. Dicen que es por experiencia.'],
   8:['¿Cerveza? Nah, yo soy de piscola. Pisco, bebida, hielo y a jugar Mud Metalworker.','Con una piscolita corro como Jackal Pup. Con dos, como Ball Lightning. Con tres... mejor no preguntes.'],
   9:['Tranquilo, soy médico. Si te pega el Langostino, yo te dejo como nuevo... cobro en cartas.','Receta del doctor Rubén: dos Renewed Faith, una chela y reposo. Mañana amaneces bien.'],
-  10:['¿Sabí por qué el Goblin no juega a las escondidas? Porque siempre lo encuentran... en el turno uno. JAJAJA.','Oye, ¿me prestai una carta? Te la devuelvo el lunes. De qué año, no sé.'],
+  10:['Estoy produciendo el tema oficial de la Liga Nacional. Tiene un drop que hace bailar hasta al Langostino.','Escucha este beat... ¿lo sientes? Es el sonido de un Ball Lightning entrando al turno uno.'],
   11:['Saque, volea y Lightning Bolt a la cara. Así se gana en Premodern y en el tenis.','¿Un partido? Si pierdes, pagas las chelas. Si gano yo... también pagas tú.'],
 };
 /* ============ TIENDAS DEL MERCADO ============ */
@@ -4002,6 +4008,7 @@ function drawWorld(){
     else if (q.k === 'leaf') R(x, y, 3, 2, q.t % 6 < 3 ? '#48b040' : '#88e070');
     else if (q.k === 'heal') { R(x, y, 1, 3, '#fce060'); R(x - 1, y + 1, 3, 1, '#fce060'); }
     else if (q.k === 'bubble') { R(x, y, 2, 2, '#fff8d0'); }
+    else if (q.k === 'note') { ctx.globalAlpha = Math.max(0, 1 - q.t / 55); R(x - 1, y, 4, 3, '#1a1020'); R(x, y, 3, 2, q.c); R(x + 2, y - 5, 1, 6, q.c); R(x + 3, y - 5, 2, 1, q.c); R(x + 4, y - 4, 1, 1, q.c); ctx.globalAlpha = 1; }
     else if (q.k === 'fire') { const r = Math.max(1, 3 - (q.t >> 3)); disc(x, y, r, q.t < 8 ? '#fce040' : q.t < 14 ? '#f88820' : '#8a3a20'); }
   }
   drawShots();
@@ -4861,7 +4868,7 @@ function applyEnemySnap(list){
 }
 function applyHit(e, dmg, kx, ky){
   e.hp -= dmg; e.flash = 10; e.kb = 8; e.kx = kx; e.ky = ky;
-  if (S && CH().joker && Math.random() < 0.2 && !MON[e.type].boss) { e.slow = 120; floatText(pick(['¡JAJA!','¡JIJI!','¡ÑAJA!']), e.x + e.w / 2, e.y - 10, '#fcd040'); }
+  if (S && CH().music && Math.random() < 0.2 && !MON[e.type].boss) { e.slow = 120; floatText(pick(['¡A BAILAR!','¡TUNTUN!','¡DROP!']), e.x + e.w / 2, e.y - 10, '#40f0e0'); }
   if (e.hp <= 0) killEnemy(e);
 }
 function netTick(){
@@ -5016,6 +5023,8 @@ function step(){
     else {
       if (CH().medic && S.hp > 0 && S.hp < S.maxHp && frame % (G.enemies.some(e => !e.dead) ? 180 : 90) === 0) { S.hp++; floatText('+', PL.x + 5, PL.y - 12, '#60e070'); }
       if (PL.piscola > 0) PL.piscola--;
+      if (CH().music && frame % 14 === 0) G.parts.push({ k:'note', x:PL.x + 5 + rnd(10) - 5, y:PL.y - 12, vx:(Math.random() - 0.5) * 0.5, vy:-0.55, t:0, c:pick(['#40f0e0','#e83078','#fce040','#a060ff']) });
+      if (frame % 26 === 0) for (const n of G.npcs) if (n.id === 'friend' && CHARS[n.ch] && CHARS[n.ch].music) G.parts.push({ k:'note', x:n.x + 5 + rnd(10) - 5, y:n.y - 12, vx:(Math.random() - 0.5) * 0.5, vy:-0.55, t:0, c:pick(['#40f0e0','#e83078','#fce040','#a060ff']) });
       updateWorld();
     }
     if ((G.cardGet || G.dialog || G.menu) && NET.role === 'host' && NET.conns.length) { updateEnemies(); updateParts(); }
@@ -5105,6 +5114,7 @@ function loop(now){
       if (extra === 'viajar' || extra === 'volar') { S.stones = { home:true, tolaria:true }; if (extra === 'volar') for (const d of DECKS.slice(0, 6)) for (const c of d.cards) S.cards[c] = 1; openTravel(); G.dialog.ch = 999; G.dialog.showChoices = true; }
       if (extra === 'atascado') { loadRoom('bosqueRoca', W - PL.w - 2, 7 * TS + 4); }
       if (extra === 'mox') addCard(LEGEND);
+      if (extra === 'tomo') { S.ch = 10; G.enemies = []; for (let i = 0; i < 70; i++) step(); G.freeze = true; }
       if (extra === 'mapa') { S.visited = { pueblo:true, bosque:true, tolaria:true, pantano:true, costa:true, pradera:true }; dispatchEvent(new KeyboardEvent('keydown', { code:'KeyM' })); }
       if (extra === 'ircasa') { S.stones = { home:true }; travelTo('hogar', 'stone'); }
       if (extra === 'iman') { G.enemies = []; S.hp = 20; G.items.push({ k:'beer', x:PL.x + 55, y:PL.y, z:0, vz:0, t:20 }); for (let i = 0; i < 40; i++) step(); G.freeze = true; }
