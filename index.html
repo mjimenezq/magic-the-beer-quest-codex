@@ -3975,7 +3975,10 @@ function drawIntro(){
     R(0, 0, W, H, '#000');
     const a = t < 30 ? t / 30 : t > 140 ? (170 - t) / 30 : 1;
     ctx.globalAlpha = Math.max(0, a);
-    drawMug(104, 26, 4, t);
+    // logo del estudio: la cara de Matías dentro de un círculo dorado
+    disc(120, 42, 32, '#fcd84a'); disc(120, 42, 30, '#1c2a2e');
+    ctx.save(); ctx.beginPath(); ctx.arc(120, 42, 30, 0, Math.PI * 2); ctx.clip();
+    ctx.translate(88, 22); ctx.scale(4, 4); drawPerson(0, 0, CHARS[0], 0, 0); ctx.restore();
     txt('MATIAS', 120, 84, '#fcd84a', 'center', '#7a3a10', 16);
     txt('GAMES PRODUCTION', 120, 106, '#fff', 'center', null);
     tiny('PRESENTA', 120, 122, '#9db8a8', 'center');
