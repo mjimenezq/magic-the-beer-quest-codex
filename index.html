@@ -796,6 +796,9 @@ const MON = {
 // jefes con 6 veces su vida base (antes 2) y 1,7 veces más daño en golpes, disparos y áreas (≈ 5 veces más difíciles).
 const DIFF_HP = 6, DIFF_BOSS_HP = 6, DIFF_DMG = 2, DIFF_SHOT = 1.5, DIFF_BOSS_DMG = 1.7;
 const bossHere = () => !!(G.bossBar && !G.bossBar.dead);
+// Dificultad según tu nivel: en nivel 1 los enemigos tienen el 30 % de vida y daño, suben parejo hasta el 100 % en el
+// nivel 11 y desde ahí un 3 % más por nivel, hasta un tope de 160 % (nivel 31).
+function lvlScale(){ const l = S ? S.lvl : 1; return l <= 11 ? 0.3 + 0.07 * (l - 1) : Math.min(1.6, 1 + 0.03 * (l - 11)); }
 
 /* ============ ROOMS ============ */
 const ROOMS = {
@@ -2244,7 +2247,7 @@ function loadRoom(id, px, py){
   S.room = id; S.x = px; S.y = py; saveGame();
 }
 function spawnEnemy(type, x, y){
-  const m = MON[type], s = m.size, hp = Math.round(m.hp * (m.boss ? DIFF_BOSS_HP : DIFF_HP));
+  const m = MON[type], s = m.size, hp = Math.max(1, Math.round(m.hp * (m.boss ? DIFF_BOSS_HP : DIFF_HP) * lvlScale()));
   const e = { type, x:x + 2, y:y + 2, w:s - 4, h:s - 4, hp, max:hp, vx:0, vy:0, dir:rnd(4), t:rnd(60), st:'wander', stT:40 + rnd(60),
     flash:0, kb:0, kx:0, ky:0, lastSwing:-1, cd:60 + rnd(60), flip:false, nid:++NID };
   G.enemies.push(e); return e;
@@ -2369,7 +2372,7 @@ function hurtPlayer(dmg, fx, fy){
   if (PL.inv > 0 || G.dead) return;
   const sh = S.gear && S.gear.shield ? ARMOR[S.gear.shield] : null;
   if (sh && Math.random() < sh.def * 0.05) { PL.inv = 30; SFX.hit(); floatText('BLOQUEO', PL.x + 5, PL.y - 14, '#c8e0ff'); return; }
-  dmg = Math.max(1, dmg - Math.floor(defense() / 4));
+  dmg = Math.max(1, Math.round(dmg * lvlScale()) - Math.floor(defense() / 4));
   S.hp -= dmg; PL.inv = 60; PL.kb = 10;
   const dx = PL.x + 5 - fx, dy = PL.y + 4 - fy, d = Math.hypot(dx, dy) || 1;
   PL.kx = dx / d * 2.4; PL.ky = dy / d * 2.4;
