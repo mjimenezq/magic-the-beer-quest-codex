@@ -4052,7 +4052,8 @@ function drawCardGet(){
   drawCardBig(c.id, 74, 16 + bob);
   const d = DECKS.find(k => k.cards.includes(c.id));
   if (c.done) tiny('¡MAZO ' + c.done + ' COMPLETO! YA PUEDES IR AL TORNEO', 120, 148, '#fcd84a', 'center');
-  else tiny(d.n + ': ' + deckCount(d.id) + '/8', 120, 148, '#fff', 'center');
+  else if (!d) tiny('¡CARTA LEGENDARIA! SIRVE EN TODOS TUS MAZOS', 120, 148, (frame >> 3) & 1 ? '#fcd84a' : '#fff4b0', 'center');
+  else tiny(d.n + ': ' + deckCount(d.id) + '/' + DECK_SIZE, 120, 148, '#fff', 'center');
 }
 
 /* ============ TITLE / SELECT ============ */
@@ -5081,6 +5082,7 @@ function loop(now){
     if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4);
       if (extra === 'viajar' || extra === 'volar') { S.stones = { home:true, tolaria:true }; if (extra === 'volar') for (const d of DECKS.slice(0, 6)) for (const c of d.cards) S.cards[c] = 1; openTravel(); G.dialog.ch = 999; G.dialog.showChoices = true; }
       if (extra === 'atascado') { loadRoom('bosqueRoca', W - PL.w - 2, 7 * TS + 4); }
+      if (extra === 'mox') addCard(LEGEND);
       if (extra === 'mapa') { S.visited = { pueblo:true, bosque:true, tolaria:true, pantano:true, costa:true, pradera:true }; dispatchEvent(new KeyboardEvent('keydown', { code:'KeyM' })); }
       if (extra === 'ircasa') { S.stones = { home:true }; travelTo('hogar', 'stone'); }
       if (extra === 'iman') { G.enemies = []; S.hp = 20; G.items.push({ k:'beer', x:PL.x + 55, y:PL.y, z:0, vz:0, t:20 }); for (let i = 0; i < 40; i++) step(); G.freeze = true; }
