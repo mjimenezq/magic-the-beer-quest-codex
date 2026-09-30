@@ -1083,7 +1083,24 @@ function newSave(ci){
     gear:{ shield:null, head:null, body:null, legs:null, feet:null }, armor:[], spells:[], spellSel:0, mp:4, house:{}, found:{}, foundZones:{} };
 }
 const SLOTS = 3, slotKey = n => 'pmq_save_' + n;
-function saveGame(){ if (!S) return; try { localStorage.setItem(slotKey(S.slot || 1), JSON.stringify(S)); localStorage.setItem('pmq_last', String(S.slot || 1)); } catch(_) {} }
+function saveGame(){
+  if (!S) return;
+  try {
+    const k = slotKey(S.slot || 1), cur = JSON.parse(localStorage.getItem(k) || 'null');
+    // si en este espacio se importo otra partida (desde otro dispositivo), esta sesion vieja ya no guarda
+    if (cur && cur.imp && cur.imp !== S.imp) { staleSession(); return; }
+    S.savedAt = Date.now();
+    localStorage.setItem(k, JSON.stringify(S)); localStorage.setItem('pmq_last', String(S.slot || 1));
+  } catch(_) {}
+}
+function staleSession(){
+  S = null; goToTitle();
+  try { saveMsg('Se importo una partida nueva en este espacio. La partida vieja que estaba abierta se cerro sin guardar. Toca CONTINUAR.'); } catch(_) {}
+}
+window.addEventListener('storage', e => {
+  if (!S || e.key !== slotKey(S.slot || 1)) return;
+  try { const n = JSON.parse(e.newValue || 'null'); if (n && n.imp && n.imp !== S.imp) staleSession(); } catch(_) {}
+});
 function deleteSlot(n){
   try {
     const data = localStorage.getItem(slotKey(n));
@@ -4487,19 +4504,20 @@ netEl('saveCopy').addEventListener('click', async () => {
 function showImport(s){
   netEl('saveImport').hidden = false;
   const cards = ALL_CARDS.filter(id => (s.cards[id] || 0) > 0).length;
-  netEl('saveImportInfo').textContent = 'Partida recibida: ' + CHARS[s.ch].n + ', nivel ' + s.lvl + ', ' + money(s.coins) + ', ' + cards + ' cartas. ¿En que espacio la guardo?';
+  const when = s.savedAt ? ', guardada el ' + new Date(s.savedAt).toLocaleString('es-CL', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+  netEl('saveImportInfo').textContent = 'Partida recibida: ' + CHARS[s.ch].n + ', nivel ' + s.lvl + ', ' + money(s.coins) + ', ' + cards + ' cartas' + when + '. ¿En que espacio la guardo?';
   const box = netEl('saveSlots'); box.innerHTML = '';
   for (let n = 1; n <= SLOTS; n++) {
     const ex = loadSave(n), b = document.createElement('button');
     b.type = 'button'; b.textContent = 'ESPACIO ' + n + ': ' + (ex ? CHARS[ex.ch].n + ' NV ' + ex.lvl : 'VACIO');
     b.addEventListener('click', () => {
-      if (ex && b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = '¿REEMPLAZAR A ' + CHARS[ex.ch].n + '? TOCA DE NUEVO'; b.style.background = '#8a1a1a'; return; }
+      if (ex && b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = (ex.lvl > s.lvl ? '¡OJO! LA DE AQUI TIENE MAS NIVEL (' + ex.lvl + '). ' : '') + '¿REEMPLAZAR A ' + CHARS[ex.ch].n + '? TOCA DE NUEVO'; b.style.background = '#8a1a1a'; return; }
       if (ex) { try { localStorage.setItem('pmq_trash', JSON.stringify(ex)); } catch(_) {} }
-      const copy = Object.assign({}, s, { slot:n });
+      const copy = Object.assign({}, s, { slot:n, imp:Date.now().toString(36) + Math.random().toString(36).slice(2, 7) });
       try { localStorage.setItem(slotKey(n), JSON.stringify(copy)); localStorage.setItem('pmq_last', String(n)); } catch(_) { saveMsg('No se pudo guardar en este navegador.'); return; }
       netEl('saveImport').hidden = true;
       saveMsg('Partida importada en el espacio ' + n + '. Ya puedes jugar: MENU PRINCIPAL > CONTINUAR.');
-      if (G.state !== 'title') goToTitle(); G.titleSel = 0; SFX.win();
+      S = null; goToTitle(); G.titleSel = 0; SFX.win();
       try { history.replaceState(null, '', location.pathname); } catch(_) {}
     });
     box.appendChild(b);
