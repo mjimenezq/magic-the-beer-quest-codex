@@ -198,10 +198,10 @@ Estado: se revisó solo la pantalla de título; la jugabilidad y el online no se
   - Pruebas: `#probar=dunas`, `talca`, `lascondes`, `casaIvan`, `valpo`, `condell`; `&surf`; `#probar=arcade&pool` / `&pong` / `&taca`.
 - **Mundo Pokémon, más pedidos (1 oct)**: magias nuevas inspiradas en los ataques de las cartas Pokémon, objetos más poderosos, y todos los monstruos y jefes de esa mitad deben ser Pokémon.
 ## Separación de Codex (1 oct 2026)
-Esta copia independiente se llama magic-the-beer-quest-codex y parte del commit e78743f. Conserva el historial original. El repositorio mjimenezq/premodern-quest y su publicación corresponden a Claude Code y deben quedar intactos. Las referencias anteriores a esa carpeta o URL describen el proyecto de origen. El nuevo repositorio de GitHub todavía no está creado; no hay remoto configurado.
+Esta copia independiente se llama magic-the-beer-quest-codex y parte del commit e78743f. Conserva el historial original. El repositorio mjimenezq/premodern-quest y su publicación corresponden a Claude Code y deben quedar intactos. Las referencias anteriores a esa carpeta o URL describen el proyecto de origen. Publicado el 1 oct 2026 en el repositorio independiente https://github.com/mjimenezq/magic-the-beer-quest-codex, remoto origin por HTTPS. GitHub Pages sirve la rama main desde la raíz.
 
 
-La versión Codex usa claves locales mtbq_codex_ y salas online mtbq-codex- para separarse del original. Su URL prevista es https://mjimenezq.github.io/magic-the-beer-quest-codex/.
+La versión Codex usa claves locales mtbq_codex_ y salas online mtbq-codex- para separarse del original. Su URL pública es https://mjimenezq.github.io/magic-the-beer-quest-codex/.
 
 ## Personajes y creador de Codex (1 oct 2026)
 - Se conservan los índices 0–11. Nuevos: 12 Rai (bebé, ojos azules, autito; Supercariño: regenera medio corazón cada 5 s, empieza con Lightning Bolt; Construcción +2 DEF), 13 Tía Coco (hermana de Katy, tía de Rai; camisa roja a cuadros, dice Jue; ve el plan base del rival en duelos y +8% en torneos), 14 Javier (Ingeniería con Katy; +3 daño de espada/magia contra merfolk, dread y kjeldor), 15 Rodolfo (amigo inseparable de Javier; maratonista, +20% velocidad), 16 Cahe y 17 PabloT (Ingeniería Comercial con Matías; Finanzas +20% monedas recogidas, Tibia +2 DEF).
