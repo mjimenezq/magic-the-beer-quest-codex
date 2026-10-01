@@ -9,3 +9,4 @@
 - Esta copia independiente usa la carpeta/repo `magic-the-beer-quest-codex`; el título visible sigue siendo Magic The Beer Quest. Nunca publicar cambios en `mjimenezq/premodern-quest`, que pertenece al desarrollo con Claude Code.
 - El proyecto usa GitHub Pages; revisa `git status` antes de preparar una publicación.
 
+- Los índices 12–17 son Rai, Tía Coco, Javier, Rodolfo, Cahe y PabloT. El índice 18 pertenece al creador y debe mantenerse fijo: usa characterOf(save) para resolver su apariencia por partida.
