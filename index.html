@@ -1401,7 +1401,7 @@ function newSave(ci){
     chests:{}, bosses:{}, trophies:0, buzz:0, beers:0, room:'pueblo', x:7*TS+3, y:6*TS+6, complete:{}, visited:{}, ligaWins:0, arcadeBest:0, lore:false, quests:{}, kills:{}, killsTotal:0, beerTotal:0,
     gear:{ shield:null, head:null, body:null, legs:null, feet:null }, armor:[], spells:[], spellSel:0, mp:4, house:{}, found:{}, foundZones:{}, stones:{}, pet:null, dex:{}, keys:{}, relics:{}, spellXp:{}, mounts:[], mount:null, surf:false, talca:{}, sacos:0 };
 }
-const SLOTS = 3, slotKey = n => 'pmq_save_' + n;
+const SLOTS = 3, slotKey = n => 'mtbq_codex_save_' + n;
 function saveGame(){
   if (!S) return;
   try {
@@ -1409,7 +1409,7 @@ function saveGame(){
     // si en este espacio se importo otra partida (desde otro dispositivo), esta sesion vieja ya no guarda
     if (cur && cur.imp && cur.imp !== S.imp) { staleSession(); return; }
     S.savedAt = Date.now();
-    localStorage.setItem(k, JSON.stringify(S)); localStorage.setItem('pmq_last', String(S.slot || 1));
+    localStorage.setItem(k, JSON.stringify(S)); localStorage.setItem('mtbq_codex_last', String(S.slot || 1));
   } catch(_) {}
 }
 function staleSession(){
@@ -1423,16 +1423,16 @@ window.addEventListener('storage', e => {
 function deleteSlot(n){
   try {
     const data = localStorage.getItem(slotKey(n));
-    if (data) localStorage.setItem('pmq_trash', data);
-    localStorage.removeItem(slotKey(n)); if (n === 1) localStorage.removeItem('pmq_save');
+    if (data) localStorage.setItem('mtbq_codex_trash', data);
+    localStorage.removeItem(slotKey(n)); if (n === 1) localStorage.removeItem('mtbq_codex_save');
   } catch(_) {}
 }
-function trashSave(){ try { const s = JSON.parse(localStorage.getItem('pmq_trash') || 'null'); return s && s.v === 1 ? s : null; } catch(_) { return null; } }
-function restoreTrash(n){ try { const d = localStorage.getItem('pmq_trash'); if (d) { localStorage.setItem(slotKey(n), d); localStorage.removeItem('pmq_trash'); } } catch(_) {} }
+function trashSave(){ try { const s = JSON.parse(localStorage.getItem('mtbq_codex_trash') || 'null'); return s && s.v === 1 ? s : null; } catch(_) { return null; } }
+function restoreTrash(n){ try { const d = localStorage.getItem('mtbq_codex_trash'); if (d) { localStorage.setItem(slotKey(n), d); localStorage.removeItem('mtbq_codex_trash'); } } catch(_) {} }
 function loadSave(n){
   try {
-    if (n === undefined) n = +(localStorage.getItem('pmq_last') || 1) || 1;
-    if (n === 1 && !localStorage.getItem(slotKey(1)) && localStorage.getItem('pmq_save')) localStorage.setItem(slotKey(1), localStorage.getItem('pmq_save'));
+    if (n === undefined) n = +(localStorage.getItem('mtbq_codex_last') || 1) || 1;
+    if (n === 1 && !localStorage.getItem(slotKey(1)) && localStorage.getItem('mtbq_codex_save')) localStorage.setItem(slotKey(1), localStorage.getItem('mtbq_codex_save'));
     const s = JSON.parse(localStorage.getItem(slotKey(n)) || 'null');
     if (!s || s.v !== 1) return null;
     s.slot = n;
@@ -5875,7 +5875,7 @@ function netErrorText(e, code){
   return 'Error online (' + (t || 'desconocido') + '). Vuelve a intentarlo; si sigue, avisame con este texto.';
 }
 function netReady(){
-  if (IN_CLAUDE) { netStatus('El online no funciona dentro del link de Claude. Abre mjimenezq.github.io/premodern-quest para jugar en linea.'); return false; }
+  if (IN_CLAUDE) { netStatus('El online no funciona dentro del link de Claude. Abre mjimenezq.github.io/magic-the-beer-quest-codex para jugar en linea.'); return false; }
   if (!window.Peer) { netStatus('No se pudo cargar el modo online (revisa tu internet).'); return false; }
   if (!S || G.state !== 'world') { netStatus('Primero entra al juego (nueva partida o continuar).'); return false; }
   return true;
@@ -5889,7 +5889,7 @@ function netLeave(silent){
 function netHost(){
   if (!netReady()) return;
   netLeave(true);
-  const code = genCode(), peer = new Peer('pmq-' + code.toLowerCase(), PEER_OPTS);
+  const code = genCode(), peer = new Peer('mtbq-codex-' + code.toLowerCase(), PEER_OPTS);
   Object.assign(NET, { peer, role:'host', code, pid:'h' });
   netStatus('Creando sala...');
   peer.on('open', () => netStatus('Sala lista. Invita por WhatsApp: tus amigos abren el link y se conectan solos. Deja el juego abierto en pantalla.'));
@@ -5917,7 +5917,7 @@ function netJoin(){
   Object.assign(NET, { peer, role:'client', code });
   netStatus('Conectando a ' + code + '...');
   peer.on('open', () => {
-    const c = peer.connect('pmq-' + code.toLowerCase(), { reliable:true });
+    const c = peer.connect('mtbq-codex-' + code.toLowerCase(), { reliable:true });
     NET.host = c;
     const timer = setTimeout(() => { if (NET.host === c && !c.open) { netStatus(netErrorText({ type:'negotiation-failed' }, code) + ' (tiempo agotado)'); netLeave(true); } }, 20000);
     c.on('open', () => { clearTimeout(timer); netStatus('Conectado a la sala ' + code + '.'); SFX.ok(); });
@@ -6054,9 +6054,9 @@ function showImport(s){
     b.type = 'button'; b.textContent = 'ESPACIO ' + n + ': ' + (ex ? CHARS[ex.ch].n + ' NV ' + ex.lvl : 'VACIO');
     b.addEventListener('click', () => {
       if (ex && b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = (ex.lvl > s.lvl ? '¡OJO! LA DE AQUI TIENE MAS NIVEL (' + ex.lvl + '). ' : '') + '¿REEMPLAZAR A ' + CHARS[ex.ch].n + '? TOCA DE NUEVO'; b.style.background = '#8a1a1a'; return; }
-      if (ex) { try { localStorage.setItem('pmq_trash', JSON.stringify(ex)); } catch(_) {} }
+      if (ex) { try { localStorage.setItem('mtbq_codex_trash', JSON.stringify(ex)); } catch(_) {} }
       const copy = Object.assign({}, s, { slot:n, imp:Date.now().toString(36) + Math.random().toString(36).slice(2, 7) });
-      try { localStorage.setItem(slotKey(n), JSON.stringify(copy)); localStorage.setItem('pmq_last', String(n)); } catch(_) { saveMsg('No se pudo guardar en este navegador.'); return; }
+      try { localStorage.setItem(slotKey(n), JSON.stringify(copy)); localStorage.setItem('mtbq_codex_last', String(n)); } catch(_) { saveMsg('No se pudo guardar en este navegador.'); return; }
       netEl('saveImport').hidden = true;
       saveMsg('Partida importada en el espacio ' + n + '. Ya puedes jugar: MENU PRINCIPAL > CONTINUAR.');
       S = null; goToTitle(); G.titleSel = 0; SFX.win();
@@ -6072,7 +6072,7 @@ netEl('saveCode').addEventListener('keyup', e => e.stopPropagation());
 (async () => { try { const q = new URLSearchParams(location.search).get('partida'); if (q) { showImport(await decodeSave(q)); saveMsg('Elige en que espacio guardar la partida que te mandaste.'); } } catch(_) { saveMsg('El link de partida esta incompleto o dañado.'); } })();
 
 /* ---- Invitaciones: link directo por WhatsApp ---- */
-const INVITE_BASE = 'https://mjimenezq.github.io/premodern-quest/';
+const INVITE_BASE = 'https://mjimenezq.github.io/magic-the-beer-quest-codex/';
 let pendingRoom = null;
 try { const q = new URLSearchParams(location.search).get('sala'); if (q && /^[A-Za-z]{4}$/.test(q)) pendingRoom = q.toUpperCase(); } catch(_) {}
 const inviteUrl = code => INVITE_BASE + '?sala=' + code;
