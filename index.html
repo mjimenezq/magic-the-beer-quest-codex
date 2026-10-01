@@ -69,7 +69,7 @@
 <div class="wrap">
   <h1>MAGIC THE BEER QUEST</h1>
   <div class="invite-banner" id="inviteBanner" hidden></div>
-  <div class="screen"><canvas id="game" width="240" height="160" tabindex="0" aria-label="Juego de rol de acción con cartas"></canvas></div>
+  <div class="screen"><canvas id="game" width="960" height="640" tabindex="0" aria-label="Juego de rol de acción con cartas"></canvas></div>
   <div class="keys">
     <span><kbd>Flechas</kbd>/<kbd>WASD</kbd> moverse</span>
     <span><kbd>Z</kbd>/<kbd>Espacio</kbd> atacar · aceptar</span>
@@ -146,6 +146,8 @@
 const cvs = document.getElementById('game');
 let ctx = cvs.getContext('2d');
 const MAIN = ctx;
+const HIRES = 4; // el juego se piensa en 240x160 pero se dibuja 4 veces más fino
+ctx.setTransform(HIRES, 0, 0, HIRES, 0, 0);
 ctx.imageSmoothingEnabled = false;
 const W = 240, H = 160, TS = 16;
 let frame = 0;
@@ -348,6 +350,11 @@ function toggleMute(){ muted = !muted; const n = musicName; musicName = null; mu
 
 /* ============ DRAW HELPERS ============ */
 const R = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); };
+let SHADOW_G = null;
+function softShadow(cx, cy, rw, rh, a){
+  if (!SHADOW_G) { SHADOW_G = ctx.createRadialGradient(0, 0, 0, 0, 0, 1); SHADOW_G.addColorStop(0, 'rgba(0,0,0,1)'); SHADOW_G.addColorStop(0.6, 'rgba(0,0,0,.55)'); SHADOW_G.addColorStop(1, 'rgba(0,0,0,0)'); }
+  ctx.save(); ctx.globalAlpha *= a; ctx.translate(cx, cy); ctx.scale(rw, rh); ctx.fillStyle = SHADOW_G; ctx.beginPath(); ctx.arc(0, 0, 1, 0, 6.2832); ctx.fill(); ctx.restore();
+}
 function disc(cx, cy, r, col){
   ctx.fillStyle = col;
   for (let dy = -r; dy <= r; dy++) { const w = Math.floor(Math.sqrt(r * r - dy * dy)); ctx.fillRect(Math.round(cx - w), Math.round(cy + dy), w * 2 + 1, 1); }
@@ -1770,19 +1777,143 @@ function plaque(s, cx, y, col){
   txt(s, cx, y + 1, '#fce8b0', 'center', null);
 }
 // luz ambiente (se dibuja cada cuadro sobre el mundo, antes de la interfaz)
+/* ============ LUCES Y AMBIENTE EN ALTA RESOLUCIÓN ============ */
+const FXC = document.createElement('canvas'); FXC.width = 240 * HIRES; FXC.height = 160 * HIRES; const FX = FXC.getContext('2d');
+// Hora del día según el reloj del jugador (Chile): noche 20-6, atardecer 18-20, amanecer 6-8
+function dayPhase(){ if (G.forcePhase) return G.forcePhase; const hr = new Date().getHours(); return hr >= 20 || hr < 6 ? 'night' : hr >= 18 ? 'dusk' : hr < 8 ? 'dawn' : 'day'; }
+const OUTDOOR_THEMES = new Set(['town','meadow','forest','dirt','sand','swamp','bog','ice','volcano']);
+function gatherLights(dark){
+  const L = [], th = G.def.theme, ph = dayPhase(), night = ph === 'night' && !G.def.interior;
+  const add = (x, y, r, c, a = 1) => L.push({ x, y, r, c, a });
+  if (dark || night) add(PL.x + 5, PL.y - 2, dark ? 74 : 56, '255,210,150', 1);
+  for (let ty = 0; ty < 10; ty++) for (let tx = 0; tx < 15; tx++) {
+    const c = G.map[ty][tx], x = tx * TS + 8, y = ty * TS + 8;
+    if (c === 'l') add(x, y, 34 + Math.sin(frame * 0.09 + tx) * 3, '255,110,30', 0.9);
+    else if (c === 'j') add(x, y - 1, 20 + Math.sin(frame * 0.2 + ty) * 2, '255,60,40', 0.8);
+    else if (c === 'O') add(x, y, 34, '170,110,255', 0.9);
+    else if (c === 'Z') add(x, y, 26, ['255,64,192','64,240,255','252,224,64','96,255,128','176,96,255'][(tx * 3 + ty) % 5], 0.7);
+    else if (c === 'o' && (night || dark)) add(x, y, 28, '120,200,255', 0.6);
+    else if (c === 'W' && night) { const lw = G.map[ty][tx - 1], rw = G.map[ty][tx + 1]; if (lw === 'W' || rw === 'W') add(x, y - 1, 26 + Math.sin(frame * 0.05 + tx * 2) * 1.5, '255,190,90', 0.9); }
+    else if ((c === 'U' || c === 'V') && dark) add(x, y, 24, '200,200,255', 0.5);
+  }
+  for (const s of G.shots) { const sp = SPELLS[s.id]; if (sp && sp.col) add(s.x, s.y, 26, hexRgb(sp.col), 1); }
+  for (const s of (G.eshots || [])) add(s.x, s.y, 16, hexRgb(s.col || '#ff6040'), 0.8);
+  for (const it of G.items) if (it.k !== 'coin' && it.k !== 'heart') add(it.x + 5, it.y + 4, 14, it.k === 'relic' ? '255,220,120' : '255,240,160', 0.55 + 0.25 * Math.sin(frame * 0.1 + it.x));
+  for (const a of G.amb) if (a.k === 'glow' && Math.sin(a.t * 0.08 + a.ph) > 0) add(a.x, a.y, 9, '210,255,120', 0.9);
+  if (G.pet && S && S.pet !== null) add(G.pet.x + 5, G.pet.y + 6, 20, hslRgb((frame * 4) % 360), 0.6);
+  if (CH().rgb) add(PL.x + 5, PL.y, 30, hslRgb((frame * 4) % 360), 0.7);
+  if (mounted() && (S.mount === 'nightmare' || S.mount === 'shivan')) add(PL.x + 5, PL.y - 4, 22, '255,120,40', 0.6);
+  for (const e of G.enemies) if (!e.dead && MON[e.type].boss) add(e.x + e.w / 2, e.y + e.h / 2, 40, '255,80,80', 0.35);
+  return L;
+}
+const hexRgb = hx => { const n = parseInt(hx.slice(1), 16); return (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255); };
+function hslRgb(hh){ const k = n => (n + hh / 30) % 12, f = n => 0.62 - 0.38 * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)); return Math.round(f(0) * 255) + ',' + Math.round(f(8) * 255) + ',' + Math.round(f(4) * 255); }
+// partículas finas por zona (se dibujan a 4x, por eso se ven suaves)
+function fineParticles(){
+  const th = G.def.theme, ph = dayPhase(), out = !G.def.interior;
+  G.fxp = G.fxp || []; const P = G.fxp;
+  const want = th === 'ice' ? 'snow' : th === 'volcano' ? 'ember' : (th === 'swamp' || th === 'bog' || th === 'necro') ? 'spore' : th === 'sand' ? 'sand' : (th === 'mine' || th === 'crypt' || th === 'inside' || th === 'tower') ? 'mote' : (ph === 'night' && out) ? 'firefly' : 'pollen';
+  if (G.fxpKind !== want || G.fxpRoom !== G.roomId) { P.length = 0; G.fxpKind = want; G.fxpRoom = G.roomId; }
+  const max = { snow:70, ember:40, spore:30, sand:45, mote:28, firefly:16, pollen:24 }[want];
+  while (P.length < max) P.push({ x:Math.random() * W, y:Math.random() * H, s:Math.random(), t:rnd(400), ph:Math.random() * 6.3 });
+  ctx.save();
+  for (const q of P) {
+    q.t++;
+    if (want === 'snow') { q.y += 0.25 + q.s * 0.35; q.x += Math.sin(q.t * 0.02 + q.ph) * 0.25 + 0.08; if (q.y > H) { q.y = -2; q.x = Math.random() * W; } ctx.fillStyle = 'rgba(255,255,255,' + (0.55 + q.s * 0.4) + ')'; ctx.beginPath(); ctx.arc(q.x, q.y, 0.35 + q.s * 0.55, 0, 6.3); ctx.fill(); }
+    else if (want === 'ember') { q.y -= 0.3 + q.s * 0.5; q.x += Math.sin(q.t * 0.05 + q.ph) * 0.3; if (q.y < -2) { q.y = H + 2; q.x = Math.random() * W; } ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(255,' + (120 + (q.s * 100 | 0)) + ',40,' + (0.5 + 0.4 * Math.sin(q.t * 0.2)) + ')'; ctx.beginPath(); ctx.arc(q.x, q.y, 0.3 + q.s * 0.45, 0, 6.3); ctx.fill(); ctx.globalCompositeOperation = 'source-over'; }
+    else if (want === 'spore') { q.y -= 0.08 + q.s * 0.1; q.x += Math.sin(q.t * 0.02 + q.ph) * 0.15; if (q.y < -2) { q.y = H + 2; q.x = Math.random() * W; } ctx.fillStyle = 'rgba(190,240,140,' + (0.25 + 0.25 * Math.sin(q.t * 0.04 + q.ph)) + ')'; ctx.beginPath(); ctx.arc(q.x, q.y, 0.4 + q.s * 0.6, 0, 6.3); ctx.fill(); }
+    else if (want === 'sand') { q.x += 0.6 + q.s * 0.9; q.y += Math.sin(q.t * 0.04 + q.ph) * 0.12; if (q.x > W + 2) { q.x = -2; q.y = Math.random() * H; } ctx.fillStyle = 'rgba(240,210,150,' + (0.3 + q.s * 0.3) + ')'; ctx.fillRect(q.x, q.y, 0.9 + q.s, 0.35); }
+    else if (want === 'mote') { q.x += Math.sin(q.t * 0.01 + q.ph) * 0.06; q.y += Math.cos(q.t * 0.013 + q.ph) * 0.05; const d = Math.hypot(q.x - PL.x, q.y - PL.y), a = Math.max(0, 1 - d / 90) * 0.55; if (a > 0.02) { ctx.fillStyle = 'rgba(255,235,200,' + a + ')'; ctx.beginPath(); ctx.arc(q.x, q.y, 0.3 + q.s * 0.35, 0, 6.3); ctx.fill(); } }
+    else if (want === 'firefly') { q.x += Math.sin(q.t * 0.03 + q.ph) * 0.3; q.y += Math.cos(q.t * 0.025 + q.ph * 2) * 0.25; const on = 0.5 + 0.5 * Math.sin(q.t * 0.07 + q.ph); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, 3); g.addColorStop(0, 'rgba(220,255,130,' + on + ')'); g.addColorStop(1, 'rgba(220,255,130,0)'); ctx.fillStyle = g; ctx.fillRect(q.x - 3, q.y - 3, 6, 6); ctx.globalCompositeOperation = 'source-over'; }
+    else { q.x += Math.sin(q.t * 0.015 + q.ph) * 0.15 + 0.05; q.y += Math.sin(q.t * 0.011 + q.ph * 3) * 0.1 - 0.02; if (q.x > W + 2) q.x = -2; if (q.y < -2) q.y = H + 2; ctx.fillStyle = 'rgba(255,250,200,' + (0.25 + 0.3 * Math.sin(q.t * 0.05 + q.ph) ** 2) + ')'; ctx.beginPath(); ctx.arc(q.x, q.y, 0.35 + q.s * 0.3, 0, 6.3); ctx.fill(); }
+  }
+  ctx.restore();
+}
+// rayos de sol entre los árboles y niebla del pantano
+function atmosphere(){
+  const th = G.def.theme, ph = dayPhase();
+  if ((th === 'forest' || th === 'meadow') && ph === 'day' && !G.def.interior) {
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 4; i++) { const bx = ((i * 73 + frame * 0.05) % 300) - 40, a = 0.035 + 0.02 * Math.sin(frame * 0.01 + i * 2);
+      const g = ctx.createLinearGradient(bx, 0, bx + 40, H); g.addColorStop(0, 'rgba(255,240,180,' + a + ')'); g.addColorStop(1, 'rgba(255,240,180,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(bx, 0); ctx.lineTo(bx + 14, 0); ctx.lineTo(bx + 70, H); ctx.lineTo(bx + 46, H); ctx.fill(); }
+    ctx.restore();
+  }
+  if (th === 'swamp' || th === 'bog' || th === 'necro') {
+    for (let i = 0; i < 3; i++) { const fx = ((i * 110 + frame * (0.12 + i * 0.05)) % 380) - 70, fy = 30 + i * 45; const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, 70); g.addColorStop(0, 'rgba(210,230,200,.13)'); g.addColorStop(1, 'rgba(210,230,200,0)'); ctx.fillStyle = g; ctx.fillRect(fx - 70, fy - 70, 140, 140); }
+  }
+}
+// brillitos sobre el agua
+function waterSparkles(){
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (let ty = 0; ty < 10; ty++) for (let tx = 0; tx < 15; tx++) { const c = G.map[ty][tx]; if (c !== '~' && c !== 'w') continue;
+    for (let k = 0; k < 2; k++) { const ph = ((frame >> 2) + Math.floor(h2(tx + k * 31, ty) * 97)) % 46; if (ph > 8) continue;
+      const sx = tx * TS + 2 + h2(tx, ty + k * 7) * 12, sy = ty * TS + 2 + h2(ty + k, tx) * 12, a = 1 - Math.abs(ph - 4) / 4, s = 0.8 + a * 1.6;
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.75 * a) + ')'; ctx.fillRect(sx - s, sy - 0.15, s * 2, 0.3); ctx.fillRect(sx - 0.15, sy - s, 0.3, s * 2); } }
+  ctx.restore();
+}
+const GRASS_THEMES = new Set(['town','meadow','forest','swamp']);
+function grassBlades(){
+  if (!GRASS_THEMES.has(G.def.theme) || G.def.interior) return;
+  for (let ty = 0; ty < 10; ty++) for (let tx = 0; tx < 15; tx++) {
+    const c = G.map[ty][tx]; if (c !== '.' && c !== ',') continue;
+    for (let k = 0; k < 3; k++) {
+      const bx = tx * TS + 1 + h2(tx * 3 + k, ty) * 14, by = ty * TS + 3 + h2(ty * 5 + k, tx) * 12;
+      if (Math.hypot(bx - PL.x - 5, by - PL.y - 4) < 6) continue;
+      const sw = Math.sin(frame * 0.045 + tx * 0.8 + ty * 0.35 + k) * 0.7, dk = h2(tx + k, ty * 2) < 0.5;
+      ctx.fillStyle = dk ? '#3c7a2c' : '#78c048';
+      ctx.fillRect(bx, by - 1, 0.5, 1); ctx.fillRect(bx + sw * 0.4, by - 2, 0.5, 1); ctx.fillRect(bx + sw * 0.9, by - 3, 0.5, 1);
+      if (!dk) { ctx.fillStyle = '#a8e070'; ctx.fillRect(bx + sw, by - 3.5, 0.5, 0.5); }
+    }
+  }
+}
+function nightWindows(){
+  if (dayPhase() !== 'night' || G.def.interior) return;
+  for (let ty = 0; ty < 10; ty++) for (let tx = 0; tx < 15; tx++) {
+    if (G.map[ty][tx] !== 'W') continue; const lw = G.map[ty][tx - 1], rw = G.map[ty][tx + 1]; if (lw !== 'W' && rw !== 'W') continue;
+    const x = tx * TS, y = ty * TS, fl = 0.85 + 0.15 * Math.sin(frame * 0.07 + tx * 2);
+    ctx.fillStyle = 'rgba(255,196,90,' + fl + ')'; ctx.fillRect(x + 4, y + 4, 3, 6); ctx.fillRect(x + 9, y + 4, 3, 6);
+    ctx.fillStyle = 'rgba(255,240,180,' + fl + ')'; ctx.fillRect(x + 4, y + 4, 3, 1); ctx.fillRect(x + 9, y + 4, 3, 1);
+  }
+}
+// sombras de nubes que cruzan el mapa de día
+function cloudShadows(){
+  const th = G.def.theme; if (G.def.interior || !OUTDOOR_THEMES.has(th) || dayPhase() === 'night' || th === 'volcano') return;
+  for (let i = 0; i < 3; i++) {
+    const cx = ((frame * (0.09 + i * 0.03) + i * 140) % 420) - 90, cy = 20 + ((i * 53) % 120);
+    ctx.save(); ctx.translate(cx, cy); ctx.scale(1.8, 1);
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 34); g.addColorStop(0, 'rgba(10,20,40,.16)'); g.addColorStop(1, 'rgba(10,20,40,0)');
+    ctx.fillStyle = g; ctx.fillRect(-34, -34, 68, 68); ctx.restore();
+  }
+}
+function drawLights(){
+  const th = G.def.theme, ph = dayPhase(), out = !G.def.interior && OUTDOOR_THEMES.has(th);
+  const dark = th === 'mine' || th === 'crypt' || th === 'necro' || (th === 'volcano' && !!G.def.dungeonKey) || (th === 'ice' && !!G.def.dungeonKey);
+  let shade = dark ? 0.8 : th === 'tower' ? 0.35 : 0, tint = null;
+  if (out && !dark) { if (ph === 'night') { shade = 0.5; tint = 'rgba(30,40,110,.18)'; } else if (ph === 'dusk') { shade = 0.14; tint = 'rgba(255,120,50,.12)'; } else if (ph === 'dawn') tint = 'rgba(255,170,190,.09)'; }
+  if (tint) { ctx.fillStyle = tint; ctx.fillRect(0, 0, W, H); }
+  const L = gatherLights(dark || shade > 0.3);
+  if (shade > 0) {
+    FX.setTransform(1, 0, 0, 1, 0, 0); FX.globalCompositeOperation = 'source-over'; FX.clearRect(0, 0, FXC.width, FXC.height);
+    FX.fillStyle = 'rgba(6,4,18,' + shade + ')'; FX.fillRect(0, 0, FXC.width, FXC.height);
+    FX.setTransform(HIRES, 0, 0, HIRES, 0, 0); FX.globalCompositeOperation = 'destination-out';
+    for (const l of L) { const g = FX.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r); g.addColorStop(0, 'rgba(0,0,0,' + l.a + ')'); g.addColorStop(0.55, 'rgba(0,0,0,' + (l.a * 0.55) + ')'); g.addColorStop(1, 'rgba(0,0,0,0)'); FX.fillStyle = g; FX.fillRect(l.x - l.r, l.y - l.r, l.r * 2, l.r * 2); }
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(FXC, 0, 0); ctx.restore();
+  }
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const ga = shade > 0.3 ? 0.26 : 0.14;
+  for (const l of L) { const rr = l.r * 0.8, g = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, rr); g.addColorStop(0, 'rgba(' + l.c + ',' + (ga * l.a) + ')'); g.addColorStop(1, 'rgba(' + l.c + ',0)'); ctx.fillStyle = g; ctx.fillRect(l.x - rr, l.y - rr, rr * 2, rr * 2); }
+  ctx.restore();
+  // viñeta suave en los bordes
+  const v = ctx.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, W * 0.66); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,' + (shade > 0.3 ? 0.35 : 0.22) + ')');
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+}
 function drawLighting(){
   const th = G.def.theme, dark = th === 'mine' || th === 'crypt' || th === 'necro' || (th === 'volcano' && !!G.def.dungeonKey) || (th === 'ice' && !!G.def.dungeonKey);
   if (th === 'volcano') { ctx.fillStyle = 'rgba(255,60,10,' + (0.1 + 0.04 * Math.sin(frame * 0.05)) + ')'; ctx.fillRect(0, 0, W, H); }
   else if (th === 'ice') { ctx.fillStyle = 'rgba(160,210,255,.12)'; ctx.fillRect(0, 0, W, H); }
   else if (th === 'bog' || th === 'necro') { ctx.fillStyle = 'rgba(30,60,20,.2)'; ctx.fillRect(0, 0, W, H); }
-  if (dark || th === 'tower') {
-    const px = PL.x + 5, py = PL.y - 2;
-    const g = ctx.createRadialGradient(px, py, dark ? 26 : 60, px, py, dark ? 140 : 220);
-    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, dark ? 'rgba(4,2,12,.72)' : 'rgba(40,30,80,.25)');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    if (dark) { ctx.fillStyle = 'rgba(255,170,80,.05)'; ctx.fillRect(0, 0, W, H); }
-    return;
-  }
+  if (dark || th === 'tower') { if (dark) { ctx.fillStyle = 'rgba(255,170,80,.05)'; ctx.fillRect(0, 0, W, H); } return; }
   if (G.def.rain) { ctx.fillStyle = 'rgba(30,40,70,.28)'; ctx.fillRect(0, 0, W, H); }
   if (G.roomId === 'arcade' || G.roomId === 'casino') {
     ctx.fillStyle = G.roomId === 'casino' ? 'rgba(40,0,10,.3)' : 'rgba(20,0,40,.35)'; ctx.fillRect(0, 0, W, H);
@@ -1814,7 +1945,7 @@ function drawPerson(x, y, P, dir, f){
   const C = P.c, O = '#1a1020', tall = P.tall ? 2 : 0, side = dir >= 2, flip = dir === 3;
   const eye = C.eye || '#101018';
   const p = (rx, ry, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(flip ? x + 16 - rx - w : x + rx, y + ry - tall, w, h); };
-  ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(x + 3, y + 14, 10, 2);
+  softShadow(x + 8, y + 15, 7, 2.4, 0.42);
   if (P.rgb) rgbAura(x, y - tall, false);
   const st = f ? 1 : 0;
   // legs
@@ -2031,7 +2162,7 @@ function renderShapes(x, y, sz, flip, shapes){
 }
 function drawMon(type, x, y, t, flip){
   const b = (t >> 3) & 1, sz = MON[type].size;
-  const shadow = (w) => { ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x + (sz - w) / 2, y + sz - 2, w, 2); };
+  const shadow = (w) => softShadow(x + sz / 2, y + sz - 1, w / 2 + 2, 2.4, 0.45);
   let S_ = [];
   switch (type) {
     case 'gob':
@@ -4125,7 +4256,7 @@ function drawPoke(id, x, y, t, flip){
   const P = POKE[id]; if (!P) return;
   if (POKE_SPR[id]) {
     const b = (t >> 4) & 1, cv = pokeCanvas(id);
-    ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(x + 3, y + 14, 10, 2);
+    softShadow(x + 8, y + 15, 7, 2.2, 0.4);
     if (flip) { ctx.save(); ctx.translate(x + 17, y - 1 + b); ctx.scale(-1, 1); ctx.drawImage(cv, 0, 0); ctx.restore(); } else ctx.drawImage(cv, x - 1, y - 1 + b);
     if (P.tier === 4 && (t >> 3) & 1) { R(x + 1, y + 1, 1, 1, '#ffffff'); R(x + 14, y + 3, 1, 1, '#fff8c0'); }
     return;
@@ -4136,7 +4267,7 @@ function drawPoke(id, x, y, t, flip){
   const K = key, A = 'pka_' + id, b = (t >> 3) & 1, bob = P.shape === 'w' ? Math.round(Math.sin(t * 0.15) * 1.5) : 0;
   const eye = (ex, ey) => [d_(ex, ey, 2, 2, '#ffffff'), d_(ex + (flip ? 0 : 1), ey + 1, 1, 1, '#101018')];
   let S_ = [];
-  ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(x + 4, y + 14, 8, 2);
+  softShadow(x + 8, y + 15, 6, 2.2, 0.4);
   switch (P.shape) {
     case 'q': S_ = [r_(3, 11, 2, 4 - b, K), r_(10, 11, 2, 3 + b, K), r_(0, 6, 3, 2, A), c_(7, 9, 5, K), c_(12, 6, 3.5, K), r_(10, 1, 2, 3, K), r_(13, 1, 2, 3, K), ...eye(12, 5), d_(14, 8, 2, 1, '#6a2a2a'), d_(5, 8, 3, 2, P.tier > 2 ? '#fff4b0' : 'rgba(255,255,255,.35)')]; break;
     case 'b': S_ = [r_(5, 12, 2, 3 + b, K), r_(9, 12, 2, 4 - b, K), r_(4, 6, 8, 7, K), r_(2, 7, 2, 4, K), r_(12, 7, 2, 4, K), c_(8, 4, 4, K), d_(6, 8, 4, 4, acc), ...eye(9, 3), d_(5, 3, 1, 1, '#101018'), d_(7, 6, 3, 1, '#6a2a2a')]; if (P.type === 'fire') S_.push(d_(0, 9 - b, 2, 3, '#fce040')); break;
@@ -4165,7 +4296,7 @@ function heart(x, y, fill){
 }
 function drawItem(it){
   const x = Math.round(it.x), y = Math.round(it.y + it.z);
-  R(x + 1, Math.round(it.y) + 9, 8, 2, 'rgba(0,0,0,.2)');
+  softShadow(x + 5, it.y + 10, 5, 1.8, 0.35);
   if (it.k === 'coin') { const w = [8, 6, 2, 6][(frame >> 3) & 3]; R(x + 5 - w / 2, y + 1, w, 8, '#8a5a00'); if (w > 2) R(x + 6 - w / 2, y + 2, w - 2, 6, '#fcd040'); }
   else if (it.k === 'heart') heart(x + 1, y + 2, 2);
   else if (it.k === 'beer') drawMug(x, y - 1, 1, frame);
@@ -4259,6 +4390,8 @@ function drawWorld(){
       if (below && below !== 'Q' && h2(tx, ty) < 0.22) { const f = (frame >> 2) % 3; R(tx * TS + 6, ty * TS + 3 - f % 2, 4, 3 + f % 2, '#f88820'); R(tx * TS + 7, ty * TS + 4 - f % 2, 2, 2, '#fce060'); }
     }
   }
+  grassBlades();
+  nightWindows();
   // sprites sorted by y
   const list = [];
   for (const it of G.items) list.push({ y:it.y + 8, f:() => drawItem(it) });
@@ -4310,7 +4443,12 @@ function drawWorld(){
   }
   drawShots();
   drawAmbient();
+  waterSparkles();
+  atmosphere();
+  cloudShadows();
   drawLighting();
+  drawLights();
+  fineParticles();
   drawHazards();
   for (const f of G.floats) tiny(f.s, Math.round(f.x), Math.round(f.y), f.col, 'center');
   drawHUD();
@@ -4325,7 +4463,7 @@ function drawHUD(){
   else {
     // muchos corazones: un corazón + barra + número, en una sola línea
     heart(4, 4, S.hp > 0 ? 2 : 0);
-    R(14, 5, 44, 6, '#1a1020'); R(15, 6, Math.round(42 * clamp(S.hp / S.maxHp, 0, 1)), 4, '#e83040'); R(15, 6, Math.round(42 * clamp(S.hp / S.maxHp, 0, 1)), 1, '#ff9090');
+    R(14, 5, 44, 6, '#1a1020'); R(15, 6, 42, 4, '#4a0a14'); { const hw = 42 * clamp(S.hp / S.maxHp, 0, 1), g = ctx.createLinearGradient(0, 6, 0, 10); g.addColorStop(0, '#ff8a9a'); g.addColorStop(0.35, '#f03048'); g.addColorStop(1, '#a01028'); ctx.fillStyle = g; ctx.fillRect(15, 6, hw, 4); ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.fillRect(15, 6.25, hw, 0.75); }
     tiny(Math.ceil(S.hp / 2) + '/' + Math.ceil(nh), 61, 5, '#fff');
   }
   const hy = 13;
@@ -5645,7 +5783,7 @@ function loop(now){
     if (location.hash === '#test-arcade' && !G.tested) { G.tested = true; S = newSave(0); S.coins = 50; G.state = 'world'; loadRoom('arcade', 7 * TS + 3, 7 * TS + 4); }
     if (location.hash.startsWith('#elegir') && !G.tested) { G.tested = true; G.state = 'select'; G.sel = +location.hash.slice(8) || 0; }
     if (location.hash.startsWith('#intro=') && !G.tested) { G.tested = true; const n = +location.hash.slice(7); for (let i = 0; i < n; i++) step(); G.freeze = true; }
-    if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } if (extra === 'mascota') { S.pet = 24; S.dex = { 24:true, 3:true, 131:true }; } if (extra === 'reliquias') S.relics = { moai:1, alpha:1, moneda:3 }; if (extra && extra.startsWith('montura')) { const m = extra.slice(7) || 'mesa'; S.mounts = [m]; S.mount = m; } if (extra === 'pokes') { G.pokeTest = true; } if (extra === 'pelea' || extra === 'kart') { G.arcTest = extra; } loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4);
+    if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } if (extra === 'mascota') { S.pet = 24; S.dex = { 24:true, 3:true, 131:true }; } if (extra === 'reliquias') S.relics = { moai:1, alpha:1, moneda:3 }; if (extra && extra.startsWith('montura')) { const m = extra.slice(7) || 'mesa'; S.mounts = [m]; S.mount = m; } if (extra === 'pokes') { G.pokeTest = true; } if (extra === 'pelea' || extra === 'kart') { G.arcTest = extra; } if (extra === 'noche') G.forcePhase = 'night'; if (extra === 'atardecer') G.forcePhase = 'dusk'; if (extra === 'dia') G.forcePhase = 'day'; loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4);
       if (extra === 'viajar' || extra === 'volar') { S.stones = { home:true, tolaria:true }; if (extra === 'volar') for (const d of DECKS.slice(0, 6)) for (const c of d.cards) S.cards[c] = 1; openTravel(); G.dialog.ch = 999; G.dialog.showChoices = true; }
       if (extra === 'atascado') { loadRoom('bosqueRoca', W - PL.w - 2, 7 * TS + 4); }
       if (extra === 'mox') addCard(LEGEND);
