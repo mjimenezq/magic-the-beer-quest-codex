@@ -517,7 +517,7 @@ CHARS.push(
   friendCharacter('pablot','PABLOT','EL SOCIO COMERCIAL DE MATÍAS','upspike',{fue:4,des:5,agi:4,int:7},'int',{finance:true,tibia:true},{shirt:'#6048a8',shirtD:'#382868',sleeve:'#6048a8',emblem:'#fcd84a'})
 );
 const CUSTOM_CHAR = CHARS.length;
-CHARS.push(friendCharacter('custom','CREAR', 'CREA TU PROPIO PERSONAJE','spiky',{fue:5,des:5,agi:5,int:5},'fue',{},{}));
+CHARS.push(friendCharacter('custom','CREAR MI PERSONAJE', 'CREA TU PROPIO PERSONAJE','spiky',{fue:5,des:5,agi:5,int:5},'fue',{},{}));
 const CUSTOM_STATS = ['fue','des','agi','int'], CUSTOM_STAT_BUDGET = 20, CUSTOM_SKILL_BUDGET = 6;
 const CUSTOM_STYLES = { spiky:'Pelo en punta', curly:'Rulos', upspike:'Pelo levantado', ponytail:'Pelo largo', bun:'Moño', cap:'Jockey', beanie:'Gorro', tennis:'Cintillo', wizard:'Sombrero de mago', baby:'Bebé' };
 const CUSTOM_SKILLS = {
@@ -5152,44 +5152,67 @@ function updateSlots(){
   if (pressed('a')) {
     SFX.ok(); G.delSlot = null;
     if (s) { S = s; saveGame(); G.state = 'world'; loadRoom(S.room, S.x, S.y); }
-    else { G.newSlot = n; G.state = 'select'; G.sel = 0; }
+    else { G.newSlot = n; G.state = 'select'; G.sel = 0; G.selectScroll = 0; }
   }
 }
-const SEL_COLS = 6, SEL_ROWS = [24, 68];
+const SEL_COLS = 3, SEL_TOP = 22, SEL_BOTTOM = 103, SEL_ROW_H = 44;
+const selectContentHeight = () => (Math.ceil(CUSTOM_CHAR / SEL_COLS) + 1) * SEL_ROW_H;
+const selectMaxScroll = () => Math.max(0, selectContentHeight() - (SEL_BOTTOM - SEL_TOP));
+function setSelectScroll(value){ G.selectScroll = clamp(value,0,selectMaxScroll()); }
+function revealSelected(){
+  const row = G.sel === CUSTOM_CHAR ? Math.ceil(CUSTOM_CHAR / SEL_COLS) : Math.floor(G.sel / SEL_COLS);
+  const top = row * SEL_ROW_H, bottom = top + SEL_ROW_H;
+  if (!Number.isFinite(G.selectScroll)) G.selectScroll=0;
+  if (top < G.selectScroll) setSelectScroll(top);
+  else if (bottom > G.selectScroll + SEL_BOTTOM - SEL_TOP) setSelectScroll(bottom - (SEL_BOTTOM - SEL_TOP));
+}
+function selectAt(p){
+  if (p.y < SEL_TOP || p.y >= SEL_BOTTOM || p.x < 0 || p.x >= 232) return -1;
+  const row = Math.floor((p.y - SEL_TOP + (G.selectScroll || 0)) / SEL_ROW_H);
+  if (row === Math.ceil(CUSTOM_CHAR / SEL_COLS)) return CUSTOM_CHAR;
+  const i = row * SEL_COLS + Math.floor(p.x / 78);
+  return i >= 0 && i < CUSTOM_CHAR ? i : -1;
+}
 function drawSelect(){
-  R(0, 0, W, H, '#10161a');
-  for (let i = 0; i < 15; i++) R(i * 16, 104, 16, 56, i % 2 ? '#1c2a2e' : '#18242a');
-  const page = Math.floor(G.sel / 12);
-  txt('ELIGE PERSONAJE ' + (page + 1) + '/' + Math.ceil(CHARS.length / 12), 120, 8, '#fcd84a', 'center', '#7a3a10');
-  CHARS.forEach((c, i) => {
-    if (Math.floor(i / 12) !== page) return;
-    const local = i % 12;
-    const cx = 20 + (local % SEL_COLS) * 40, y0 = SEL_ROWS[Math.floor(local / SEL_COLS)], sel = i === G.sel, bob = sel ? Math.round(Math.abs(Math.sin(frame * 0.12)) * -3) : 0;
-    if (sel) R(cx - 19, y0 - 11, 38, 42, '#1c2a2e');
-    ctx.save(); ctx.translate(cx - 11, y0 + bob); ctx.scale(1.4, 1.4); drawPerson(0, 0, c, 0, sel ? (frame >> 4) & 1 : 0); ctx.restore();
-    if (sel) R(cx - 16, y0 + 30, 32, 1, '#fcd84a');
-    tiny(c.short || c.n, cx, y0 + 24, sel ? '#fcd84a' : '#fff', 'center');
+  if (!Number.isFinite(G.selectScroll)) revealSelected();
+  R(0,0,W,H,'#10161a');
+  for (let i=0;i<15;i++) R(i*16,104,16,56,i%2?'#1c2a2e':'#18242a');
+  txt('ELIGE TU PERSONAJE',120,5,'#fcd84a','center','#7a3a10');
+  tiny('DESLIZA PARA VER A TODOS',120,15,'#9db8a8','center');
+  ctx.save();ctx.beginPath();ctx.rect(0,SEL_TOP,232,SEL_BOTTOM-SEL_TOP);ctx.clip();
+  CHARS.forEach((c,i)=>{
+    const row=i===CUSTOM_CHAR?Math.ceil(CUSTOM_CHAR/SEL_COLS):Math.floor(i/SEL_COLS);
+    const y=SEL_TOP+row*SEL_ROW_H-G.selectScroll, sel=i===G.sel;
+    if(y+SEL_ROW_H<SEL_TOP || y>SEL_BOTTOM)return;
+    if(i===CUSTOM_CHAR){
+      R(5,y+2,222,40,sel?'#38534a':'#203a32');R(6,y+3,220,1,'#fcd84a');
+      drawPerson(13,y+12,c,0,0);
+      tiny('CREAR MI PERSONAJE',124,y+12,'#fcd84a','center');
+      tiny('ROPA, PELO, OJOS Y HABILIDADES',124,y+24,'#d8e8dc','center');
+      return;
+    }
+    const cx=39+(i%SEL_COLS)*78;
+    if(sel)R(cx-36,y+1,72,42,'#30443d');
+    ctx.save();ctx.translate(cx-10,y+5);ctx.scale(1.2,1.2);drawPerson(0,0,c,0,sel?(frame>>4)&1:0);ctx.restore();
+    tiny(c.short||c.n,cx,y+29,sel?'#fcd84a':'#fff','center');
+    if(sel)R(cx-32,y+39,64,1,'#fcd84a');
+  });ctx.restore();
+  const viewport=SEL_BOTTOM-SEL_TOP, thumb=Math.max(12,viewport*viewport/selectContentHeight());
+  R(235,SEL_TOP,3,viewport,'#2a3a3a');R(235,SEL_TOP+(viewport-thumb)*G.selectScroll/(selectMaxScroll()||1),3,thumb,'#fcd84a');
+  const c=CHARS[G.sel];tiny(c.tag,120,108,'#10d9b8','center');
+  [['FUE','fue'],['DES','des'],['AGI','agi'],['INT','int']].forEach(([label,k],i)=>{
+    const x=16+(i%2)*112,y=118+Math.floor(i/2)*12;tiny(label,x,y+1,'#9db8a8');
+    for(let j=0;j<8;j++)R(x+18+j*9,y,8,6,j<c.st[k]?'#fcd84a':'#2a3a3a');
   });
-  const c = CHARS[G.sel];
-  tiny(c.tag, 120, 108, '#10d9b8', 'center');
-  [['FUE','fue'],['DES','des'],['AGI','agi'],['INT','int']].forEach(([l, k], i) => {
-    const x = 16 + (i % 2) * 112, y = 118 + Math.floor(i / 2) * 12;
-    tiny(l, x, y + 1, '#9db8a8');
-    for (let j = 0; j < 8; j++) R(x + 18 + j * 9, y, 8, 6, j < c.st[k] ? '#fcd84a' : '#2a3a3a');
-  });
-  tiny(TOUCH ? '< > ELIGE  C: PAGINA  A: EMPEZAR' : '< > ELIGE  C: PAGINA  Z: EMPEZAR', 120, 148, '#6a8a80', 'center');
+  tiny(TOUCH?'DESLIZA O USA FLECHAS · A: ELEGIR':'FLECHAS / RUEDA · Z: ELEGIR',120,148,'#9db8a8','center');
 }
 function updateSelect(){
-  if (pressed('left')) { G.sel = (G.sel + CHARS.length - 1) % CHARS.length; SFX.move(); }
-  if (pressed('right')) { G.sel = (G.sel + 1) % CHARS.length; SFX.move(); }
-  if (pressed('up') || pressed('down')) { const pageStart = Math.floor(G.sel / 12) * 12, local = G.sel % 12; const next = pageStart + (local + SEL_COLS) % 12; G.sel = next < CHARS.length ? next : pageStart + local % SEL_COLS; SFX.move(); }
-  if (pressed('c')) { G.sel = Math.floor(G.sel / 12) === 0 ? 12 : 0; SFX.move(); }
-  if (pressed('b')) { G.state = 'slots'; SFX.back(); }
-  if (pressed('a') || pressed('menu')) {
-    SFX.ok();
-    if (G.sel === CUSTOM_CHAR) { openCharacterWizard(); return; }
-    beginAdventure(G.sel);
-  }
+  let delta=0;
+  if(pressed('left'))delta=-1;if(pressed('right'))delta=1;
+  if(pressed('up'))delta=-SEL_COLS;if(pressed('down'))delta=SEL_COLS;
+  if(delta){G.sel=clamp(G.sel+delta,0,CHARS.length-1);revealSelected();SFX.move();}
+  if(pressed('b')){G.state='slots';SFX.back();}
+  if(pressed('a')||pressed('menu')){SFX.ok();if(G.sel===CUSTOM_CHAR){openCharacterWizard();return;}beginAdventure(G.sel);}
 }
 function beginAdventure(ci, custom){
     S = newSave(ci, custom); S.slot = G.newSlot || 1; G.state = 'world';
@@ -6471,8 +6494,7 @@ function pointerClick(p, right){
     if (dc) { (dc.rects || []).forEach((r, i) => { if (inRect(p, r)) { dc.sel = i; pulseKey = 'a'; } }); return; }
     const i = Math.floor((p.y - 20) / 42); if (i >= 0 && i < SLOTS) { if (G.slotSel === i) pulseKey = 'a'; else { G.slotSel = i; SFX.move(); } } return;
   }
-  if (st === 'select' && p.y >= 142) { G.sel = Math.floor(G.sel / 12) === 0 ? 12 : 0; SFX.move(); return; }
-  if (st === 'select') { const col = Math.floor(p.x / 40), row = p.y < 57 ? 0 : p.y < 104 ? 1 : -1, i = Math.floor(G.sel / 12) * 12 + row * SEL_COLS + col; if (row >= 0 && col >= 0 && col < SEL_COLS && i < CHARS.length) { if (G.sel === i) pulseKey = 'a'; else { G.sel = i; SFX.move(); } } return; }
+  if (st === 'select') { const i=selectAt(p); if(i>=0){if(G.sel===i)pulseKey='a';else{G.sel=i;SFX.move();}} return; }
   if (st === 'duel') {
     if (G.dialog) { dialogClick(p); return; }
     const d = G.duel; if (d.phase === 'choose') { (d.rects || []).forEach((r, i) => { if (inRect(p, r)) { if (d.sel === i) pulseKey = 'a'; else { d.sel = i; SFX.move(); } } }); } else pulseKey = 'a';
@@ -6518,16 +6540,31 @@ function menuClick(p){
   } else if (m.tab === 2) { if (p.y > 144) pulseKey = 'a'; }
   else if (m.tab === 4) { m.sel = 1 - (m.sel || 0); SFX.move(); }
 }
-let mouseHeld = false;
+let mouseHeld = false, selectDrag = null;
+function finishSelectDrag(e){
+  if(!selectDrag || e.pointerId!==selectDrag.id)return;
+  const gesture=selectDrag;selectDrag=null;
+  if(!gesture.moved && G.state==='select')pointerClick(canvasPos(e),false);
+}
+cvs.addEventListener('wheel',e=>{if(G.state!=='select')return;e.preventDefault();if(!Number.isFinite(G.selectScroll))revealSelected();setSelectScroll(G.selectScroll+e.deltaY*(e.deltaMode===1?12:e.deltaMode===2?81:0.3));},{passive:false});
 cvs.addEventListener('pointerdown', e => {
   audioInit(); cvs.focus();
   const p = canvasPos(e);
   if (location.hash.startsWith('#pokedex') || location.hash === '#monturas' || location.hash === '#bestiario' || location.hash === '#zonas' || location.hash === '#nuevos' || location.hash === '#bestiario2') return;
+  if(G.state==='select' && e.button===0){
+    if(!Number.isFinite(G.selectScroll))revealSelected();
+    selectDrag={id:e.pointerId,startY:p.y,scroll:G.selectScroll,moved:false};
+    try{cvs.setPointerCapture(e.pointerId);}catch(_){} return;
+  }
   mouseHeld = e.button === 0;
   pointerClick(p, e.button === 2);
 });
-cvs.addEventListener('pointermove', e => { if (mouseHeld && G.state === 'world' && G.moveTarget) { const p = canvasPos(e); G.moveTarget.x = p.x; G.moveTarget.y = p.y; G.moveTarget.t = 0; } });
-addEventListener('pointerup', () => { mouseHeld = false; });
+cvs.addEventListener('pointermove', e => {
+  if(selectDrag && e.pointerId===selectDrag.id){const p=canvasPos(e),delta=p.y-selectDrag.startY;if(Math.abs(delta)>4)selectDrag.moved=true;if(selectDrag.moved)setSelectScroll(selectDrag.scroll-delta);return;}
+  if (mouseHeld && G.state === 'world' && G.moveTarget) { const p = canvasPos(e); G.moveTarget.x = p.x; G.moveTarget.y = p.y; G.moveTarget.t = 0; } });
+addEventListener('pointerup',e=>{finishSelectDrag(e);mouseHeld=false;});
+cvs.addEventListener('pointercancel',()=>{selectDrag=null;mouseHeld=false;});
+cvs.addEventListener('lostpointercapture',()=>{selectDrag=null;});
 cvs.addEventListener('contextmenu', e => e.preventDefault());
 addEventListener('pagehide', saveGame);
 const go = () => requestAnimationFrame(loop);

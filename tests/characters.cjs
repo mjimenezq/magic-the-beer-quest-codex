@@ -9,7 +9,7 @@ function element(){return { textContent:'',style:{},dataset:{},value:'',hidden:f
 const storage=new Map();
 const sandbox={console,URLSearchParams,TextEncoder,TextDecoder,Uint8Array,Uint8ClampedArray,Buffer,Math:Object.create(Math),Date,performance:{now:()=>0},navigator:{maxTouchPoints:0},location:{hash:'',search:'',href:'http://localhost/',protocol:'http:'},requestAnimationFrame(){},setTimeout(){},clearTimeout(){},setInterval(){},clearInterval(){},matchMedia:()=>({matches:false}),addEventListener(){},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},document:{body:element(),createElement:()=>element(),querySelectorAll:()=>[],getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id);}},btoa:s=>Buffer.from(s,'binary').toString('base64'),atob:s=>Buffer.from(s,'base64').toString('binary')};
 sandbox.window=sandbox;
-source=source.replace(/\}\)\(\);\s*$/, `globalThis.gameTest={CHARS,CUSTOM_CHAR,normalizeCustom,customCharacter,characterOf,newSave,loadSave,saveGame,slotKey,speed,defense,aquaticBonus,loadRoom,checkConnectivity,drawSelect,drawPerson,drawDuel,drawTour,beginDuel,updateDuel,oppPick,startTour,prepRound,updateItems,step,encodeSave,decodeSave,myState,remoteCharacter,FRIEND_LINES,FRIEND_DECK,FRIENDS_ON_MAP,getDef,SOLID,G,PL,wizardDefaults,setS(value){S=value;},getS(){return S;},setFrame(value){frame=value;}};})();`);
+source=source.replace(/\}\)\(\);\s*$/, `globalThis.gameTest={CHARS,CUSTOM_CHAR,normalizeCustom,customCharacter,characterOf,newSave,loadSave,saveGame,slotKey,speed,defense,aquaticBonus,loadRoom,checkConnectivity,drawSelect,drawPerson,drawDuel,drawTour,beginDuel,updateDuel,oppPick,startTour,prepRound,updateItems,step,encodeSave,decodeSave,myState,remoteCharacter,FRIEND_LINES,FRIEND_DECK,FRIENDS_ON_MAP,getDef,SOLID,setSelectScroll,selectMaxScroll,revealSelected,selectAt,G,PL,wizardDefaults,setS(value){S=value;},getS(){return S;},setFrame(value){frame=value;}};})();`);
 vm.runInNewContext(source,sandbox,{timeout:5000});
 const g=sandbox.gameTest;
 assert(g,'Test interface initialized');
@@ -27,6 +27,12 @@ for(const fr of g.FRIENDS_ON_MAP.filter(fr=>fr.ch>=12)) {
  const def=g.getDef(fr.room);assert(!g.SOLID.has(def.map[fr.y][fr.x]),fr.room+' NPC on solid tile '+fr.ch);
  assert.equal(def.npcs.filter(n=>n.x===fr.x && n.y===fr.y).length,1);
 }
+g.G.sel=g.CUSTOM_CHAR;g.G.selectScroll=0;g.revealSelected();assert(g.G.selectScroll>0);
+assert.equal(g.selectAt({x:120,y:90}),g.CUSTOM_CHAR);
+g.setSelectScroll(-100);assert.equal(g.G.selectScroll,0);
+g.setSelectScroll(99999);assert.equal(g.G.selectScroll,g.selectMaxScroll());
+g.G.sel=0;g.revealSelected();assert.equal(g.G.selectScroll,0);assert.equal(g.selectAt({x:39,y:30}),0);
+assert.equal(g.selectAt({x:39,y:110}),-1);
 const spec=g.wizardDefaults();spec.n='Mi personaje';spec.skills=['marathon','finance'];spec.c.eye='#1122ff';
 const custom=g.newSave(g.CUSTOM_CHAR,spec);custom.slot=2;g.setS(custom);g.saveGame();
 const restored=g.loadSave(2);assert.equal(restored.customChar.n,'Mi personaje');assert.equal(g.characterOf(restored).c.eye,'#1122ff');assert(g.characterOf(restored).marathon);
