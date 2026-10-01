@@ -243,6 +243,7 @@ function chordInfo(c){
 const DRUMS = {
   none:[], soft:['K:2 -:2 H:2 -:2'], march:['K:1 H:1 S:1 H:1 K:1 K:1 S:1 H:1'],
   battle:['K:1 H:1 S:1 K:1 K:1 H:1 S:1 H:1'], reel:['K:1 H:1 -:1 H:1 K:1 H:1 -:1 H:1'], dark:['K:4 -:2 H:2'],
+  house:['K:1 H:1 K:1 H:1 K:1 H:1 K:1 H:1'], dembow:['K:1.5 S:0.5 K:1 S:1 K:1.5 S:0.5 K:1 S:1'], cueca:['K:1.5 H:1.5 S:1 K:1.5 H:1.5 S:1'], beach:['K:2 S:2 K:1 K:1 S:2'],
 };
 function makeSong(o){
   const pad = [], bass = [], arp = [], drum = [];
@@ -288,6 +289,16 @@ const SONGS = {
   tavern: makeSong({ bpm:168, chords:['D','G','D','A','D','G','A','D'], leadInst:'flute', leadVol:0.1, bass:'walk', drums:'reel', drumVol:0.22, arpVol:0.05,
     lead:'F#5:1 A5:1 D6:1 A5:1 F#5:1 A5:1 F#5:1 E5:1 D5:1 G5:1 B5:1 G5:1 D5:1 G5:1 B5:1 D6:1 A5:1 F#5:1 D5:1 F#5:1 A5:2 F#5:1 D5:1 E5:1 C#5:1 A4:1 C#5:1 E5:2 A5:2 ' +
          'F#5:1 A5:1 D6:1 A5:1 F#5:1 D5:1 E5:1 F#5:1 G5:1 B5:1 D6:1 B5:1 G5:2 E5:2 E5:1 F#5:1 G5:1 E5:1 C#5:1 A4:1 C#5:1 E5:1 D5:4 A4:2 D5:2' }),
+  beach: makeSong({ bpm:140, chords:['G','C','D','C','G','Em','C','D'], leadInst:'lead', leadVol:0.09, bass:'walk', drums:'beach', drumVol:0.24, arpVol:0.05,
+    lead:'B4:2 D5:2 G5:2 D5:2 E5:2 G5:2 C5:4 A4:2 D5:2 F#5:2 A5:2 G5:4 D5:4 B4:2 D5:2 G5:2 B5:2 A5:2 G5:2 E5:4 G5:2 E5:2 C5:2 E5:2 D5:6 -:2' }),
+  talca: makeSong({ bpm:112, chords:['D','A','D','G','D','A','A','D'], leadInst:'flute', leadVol:0.1, bass:'pump', drums:'cueca', drumVol:0.22, arpInst:'harp', arpVol:0.07,
+    lead:'F#5:1.5 A5:1.5 F#5:1 E5:1.5 D5:1.5 E5:1 E5:1.5 C#5:1.5 A4:1 C#5:1.5 E5:1.5 A5:1 F#5:1.5 A5:1.5 D6:1 A5:1.5 F#5:1.5 D5:1 G5:1.5 B5:1.5 G5:1 D5:1.5 B4:1.5 G4:1 ' +
+         'F#5:1.5 A5:1.5 F#5:1 E5:1.5 D5:1.5 E5:1 E5:1.5 G5:1.5 E5:1 C#5:1.5 A4:1.5 C#5:1 E5:3 D5:1.5 C#5:1.5 B4:2 D5:6 -:2' }),
+  electro: makeSong({ bpm:126, chords:['Am','F','C','G','Am','F','C','G'], leadInst:'lead', leadVol:0.08, bass:'pump', bassVol:0.36, drums:'house', drumVol:0.34, arpInst:'lead', arpVol:0.04, padVol:0.05,
+    lead:'A5:1 -:1 E5:1 A5:1 -:1 C6:1 B5:1 A5:1 A5:1 -:1 F5:1 A5:1 -:1 C6:1 A5:1 F5:1 G5:1 -:1 E5:1 G5:1 -:1 C6:1 G5:1 E5:1 G5:1 -:1 D5:1 G5:1 -:1 B5:1 A5:1 G5:1 ' +
+         'A5:1 -:1 E5:1 A5:1 -:1 C6:1 B5:1 A5:1 A5:1 -:1 F5:1 A5:1 -:1 C6:1 A5:1 F5:1 G5:1 -:1 E5:1 G5:1 -:1 C6:1 G5:1 E5:1 G5:2 A5:2 B5:2 D6:2' }),
+  reggaeton: makeSong({ bpm:94, chords:['Am','F','C','G','Am','F','C','G'], leadInst:'flute', leadVol:0.1, bass:'half', bassVol:0.38, drums:'dembow', drumVol:0.36, arp:false, padVol:0.04,
+    lead:'E5:2 E5:1 D5:1 C5:2 A4:2 C5:2 D5:2 E5:3 D5:1 C5:2 C5:1 D5:1 E5:2 G5:2 E5:4 D5:2 B4:2 A5:2 G5:1 E5:1 C5:2 E5:2 F5:2 E5:2 C5:2 A4:2 G5:2 E5:2 C5:2 E5:2 D5:6 -:2' }),
   fanfare: makeSong({ bpm:120, chords:['C','F','G','C','Am','F','G','G'], leadInst:'brass', leadVol:0.11, bass:'walk', drums:'march',
     lead:'G4:2 C5:2 E5:2 G5:2 F5:3 E5:1 D5:2 C5:2 D5:3 E5:1 F5:2 D5:2 E5:4 C5:2 G4:2 A4:2 C5:2 E5:2 A5:2 F5:3 G5:1 A5:2 F5:2 G5:3 F5:1 E5:2 D5:2 D5:6 -:2' }),
 };
@@ -320,6 +331,7 @@ function voice(inst, f, t, dur, vol){
       break; }
   }
 }
+const roomMusic = () => (G.def && G.def.party && G.djMusic) || (G.def && G.def.music);
 function playMusic(name){
   if (musicName === name && music) return;
   musicName = name;
@@ -508,6 +520,13 @@ const NPCDEF = {
   profesor:{ n:'PROFESOR ALERCE', style:'bald', c:{ hair:'#d8d8e0', skin:'#f1c9a0', shirt:'#f4f4f8', shirtD:'#c8ccd8', emblem:'#e83040', pants:'#5a4a3a', shoe:'#2a1a0c', belt:'#5a4a3a' } },
   curador:{ n:'CURADORA DEL MUSEO', style:'bun', c:{ hair:'#8a8a98', skin:'#f1c9a0', shirt:'#3a2a58', shirtD:'#1a1438', emblem:'#e8c040', pants:'#2a2a38', shoe:'#1a1a22' } },
   marchante:{ n:'EL MARCHANTE', style:'bald', glasses:true, c:{ hair:'#c8c8d0', skin:'#e8c4a0', glass:'#e8c040', shirt:'#2a1a3a', shirtD:'#140a20', emblem:'#e8c040', pants:'#1a1a22', shoe:'#0a0a10', belt:'#e8c040' } },
+  surfista:{ n:'PROFE DE SURF', style:'spiky', shades:true, c:{ hair:'#f0d070', hairD:'#c8a040', skin:'#c88a58', shirt:'#20b8c8', shirtD:'#108090', emblem:'#f8f040', pants:'#f07830', shoe:'#c88a58' } },
+  barDuna:{ n:'BARMAN DE LA DUNA', style:'cap', c:{ hat:'#f0c030', hatD:'#c09018', hair:'#2a1a10', skin:'#e0a878', shirt:'#e85878', shirtD:'#a83050', emblem:'#ffffff', pants:'#3a6ad8', shoe:'#e0a878' } },
+  veraneante:{ n:'VERANEANTE', style:'bun', shades:true, c:{ hair:'#7a3a1a', skin:'#f0b890', shirt:'#f05a8a', shirtD:'#c03060', emblem:'#ffffff', pants:'#40b8e0', shoe:'#f0b890' } },
+  vinero:{ n:'VENDEDOR DE VINO', style:'cap', c:{ hat:'#6a1a2a', hatD:'#4a0a1a', hair:'#3a2a20', skin:'#e0a878', shirt:'#f0e8d8', shirtD:'#c8c0b0', emblem:'#6a1a2a', pants:'#3a3a4a', shoe:'#2a1a0c' } },
+  talquino:{ n:'TALQUINO', style:'bald', c:{ hair:'#8a8a90', skin:'#e8b890', shirt:'#2a6a3a', shirtD:'#1a4a28', emblem:'#e8c040', pants:'#4a3a2a', shoe:'#2a1a0c' } },
+  cuico:{ n:'VECINO DE LAS CONDES', style:'spiky', shades:true, c:{ hair:'#e8d080', hairD:'#c0a850', skin:'#f4d8c0', shirt:'#e8e0f0', shirtD:'#b8b0c8', emblem:'#3a6ad8', pants:'#c8b890', shoe:'#6a3a1a' } },
+  conserje:{ n:'CONSERJE', style:'cap', c:{ hat:'#1a2a4a', hatD:'#0a1a30', hair:'#2a1a10', skin:'#d8a070', shirt:'#2a3a6a', shirtD:'#1a2a4a', emblem:'#e8c040', pants:'#1a1a2a', shoe:'#0a0a10' } },
   caballerizo:{ n:'CABALLERIZO', style:'cap', c:{ hat:'#8a5a28', hatD:'#5a3a18', hair:'#5a3a20', skin:'#e0a878', shirt:'#c84030', shirtD:'#8a2018', emblem:'#e8c040', pants:'#4a3a2a', shoe:'#2a1a0c', belt:'#2a1a0c' } },
   viejo:{ n:'VIEJO DEL RIO', style:'wizard', c:{ hat:'#1a3a78', hatD:'#0a1a48', hair:'#f0f0f4', skin:'#e8b088', shirt:'#1a3a78', shirtD:'#0a1a48', pants:'#1a3a78', shoe:'#1a1a22' } },
 };
@@ -822,6 +841,9 @@ function drawMount(id, x, y, dir, f, layer){
   }
 }
 function drawRider(x, y, P, dir, f){
+  if (G.slide) { outl(x + 1, y + 10, 14, 6, '#b88a4a'); drawPerson(x, y - 2, P, 0, 0); return; }
+  const tc = T(Math.floor((PL.x + 5) / TS), Math.floor((PL.y + 4) / TS));
+  if (tc === '~' && S && S.surf) { drawSurfBoard(x - 1, y); drawPerson(x, y - 3, P, dir, 0); return; }
   const M = mounted();
   if (!M || G.warp) { drawPerson(x, y, P, dir, f); return; }
   const walk = Math.floor(PL.walk) % 2;
@@ -869,7 +891,7 @@ const COIN_X = 50; // monedas que sueltan las criaturas y el arcade (30 sept: ba
 const QUEST_COIN_X = 150; // las recompensas en plata de los encargos
 const money = n => '$' + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 const houseBonus = key => { let v = 0; for (const [id, o] of Object.entries(HOUSE)) if (S.house && S.house[id]) v += o.bonus[key] || 0; for (const [id, o] of Object.entries(PRIZES)) if (S.house && S.house[id]) v += o.bonus[key] || 0; return v; };
-const ZONE_TIER = { pueblo:1, bosque:1, pradera:1, costa:2, pantano:2, cerro:2, valpo:1, tolaria:1, mercado:1, bosqueProf:3, pantanoProf:3, minas:3, ruinas:3, guarida:3, islote:3, vina:1, pmontt:1, volcan:4, glaciar:4, urborg:4, dunas:2, pampa:4, fabrica:4, quietud:4, bosqueRoca:4, tempest:1 };
+const ZONE_TIER = { talca:1, lascondes:1, pueblo:1, bosque:1, pradera:1, costa:2, pantano:2, cerro:2, valpo:1, tolaria:1, mercado:1, bosqueProf:3, pantanoProf:3, minas:3, ruinas:3, guarida:3, islote:3, vina:1, pmontt:1, volcan:4, glaciar:4, urborg:4, dunas:2, pampa:4, fabrica:4, quietud:4, bosqueRoca:4, tempest:1 };
 const zoneTier = () => G.def && G.def.dungeonKey ? 3 + (G.def.floor >= 3 ? 1 : 0) : (ZONE_TIER[G.roomId] || 1);
 function defense(){ let d = mounted() ? (mounted().def || 0) : 0; for (const [slot] of GEAR_SLOTS) { const id = S.gear && S.gear[slot]; if (id) d += ARMOR[id].def; } return d; }
 const maxMp = () => 4 + stats().int + (S.house && S.house.biblioteca ? 2 : 0) + houseBonus('mp');
@@ -969,10 +991,39 @@ const ROOMS = {
   pradera:{ name:'PRADERA DE SERRA', theme:'meadow', music:'town', exits:{e:'pueblo'}, decks:['life','replenish'],
     map:['TTTTTTTTTTTTTTT','T,,..,..,..,.,T','T.P...,,...P..T','T,..,....,...,T','T.....o.......=','T,.,......,...=','T...,..,..,..,T','T.P..,....,.P.T','Tc..,..,...,.,T','TTTTTTTTTTTTTTT'],
     enemies:[['warden',4,3],['warden',9,6],['warden',10,2],['angel',6,6]], chests:{'1,8':'urza'} },
-  costa:{ name:'PICHILEMU', theme:'sand', music:'field', exits:{n:'pueblo',s:'islote'}, decks:['langostino','replenish'],
+  costa:{ name:'PICHILEMU', theme:'sand', music:'beach', surfers:3, exits:{n:'pueblo',s:'islote'}, decks:['langostino','replenish'],
     map:['TTTTTT...TTTTTT','Tss.b.....b.ssT','Tsss...s...sssT','Tss..r...r..ssT','~sss.......sss~','~~ss...c...ss~~','~~~s.......s~~~','~~~~s.....s~~~~','~~~~~s...sL~~~~','~~~~~~~~~~~~~~~'],
     enemies:[['merfolk',3,2],['merfolk',11,2],['merfolk',5,6],['merfolk',9,6]], chests:{'7,5':'mar'},
-    npcs:[{id:'barquero',x:9,y:7}] },
+    npcs:[{id:'barquero',x:9,y:7},{id:'surfista',x:12,y:3}],
+    props:[{k:'tablas',x:13,y:2},{k:'cartel',x:12,y:1,txt:'ESCUELA DE SURF',solid:false}] },
+  dunas:{ name:'DUNAS DE CONCON', theme:'sand', music:'beach', chill:true,
+    map:['rrrrrr...rrrrrr','rss..........sr','rs...........sr','r.............r','...............','...............','s.............s','ss...........ss','~ss.........ss~','~~~~~~~~~~~~~~~'],
+    npcs:[{id:'barDuna',x:11,y:1},{id:'veraneante',x:7,y:6}],
+    props:[{k:'duna',x:1,y:2,w:3,h:3,solid:false},{k:'saco',x:4,y:2,act:'saco'},{k:'barra',x:10,y:2,w:3},{k:'cartel',x:10,y:1,txt:'BAR LA DUNA',solid:false},
+      {k:'fogata',x:7,y:3},{k:'reposera',x:3,y:6,act:'reposera',c:'#e83040'},{k:'reposera',x:5,y:7,act:'reposera',c:'#3a8ae8'},{k:'reposera',x:9,y:7,act:'reposera',c:'#f0c030'},{k:'reposera',x:11,y:6,act:'reposera',c:'#40c070'},
+      {k:'quitasol',x:4,y:6,solid:false,top:true,c:'#e83040'},{k:'quitasol',x:10,y:6,solid:false,top:true,c:'#3a8ae8'}] },
+  talca:{ name:'TALCA', theme:'town', music:'talca',
+    map:['TTTTTT...TTTTTT','T.RRRRR.RRRRR.T','T.RRRRR.RRRRR.T','T.WWWWW.WWWWW.T','T......S......T','T.=====.=====.T','T..b...o...b..T','T,..S.....S.,.T','T..b.......b..T','TTTTTTTTTTTTTTT'],
+    roof:(tx) => tx < 7 ? 'red' : 'green',
+    plaques:[['MUSEO',72,19,'#5a1a1a'],['MERCADO',168,19,'#1a3a5a']],
+    signs:{'7,4':'TALCA, PARIS Y LONDRES. Capital de la Region del Maule. Dicen que es la ciudad mas importante del mundo... despues de Paris y Londres, claro.',
+      '4,7':'MUSEO O\'HIGGINIANO. En esta casa Bernardo O\'Higgins firmo el Acta de la Independencia de Chile, en 1818. Talca tiene historia, compadre.',
+      '10,7':'MERCADO CENTRAL Y VINOS DEL MAULE. El Valle del Maule es la zona con mas viñedos de Chile. Aqui el vino se toma como agua.'},
+    npcs:[{id:'vinero',x:11,y:4},{id:'talquino',x:3,y:4}],
+    props:[{k:'parra',x:1,y:8,solid:false},{k:'parra',x:13,y:8,solid:false},{k:'barril',x:12,y:4}] },
+  lascondes:{ name:'LAS CONDES', theme:'town', music:'electro',
+    map:['TTTTTT...TTTTTT','T.RRRRRR......T','T.RRRRRR......T','T.WWWDWW......T','T.....S.......T','T..=========..T','T..=.......=..T','T..=.......=..T','T,.,.......,.,T','TTTTTTTTTTTTTTT'],
+    roof:() => 'blue',
+    plaques:[['CASA DE IVAN',80,19,'#1a1a3a']],
+    doors:{'5,3':'casaIvan'},
+    signs:{'6,4':'LAS CONDES. Aqui vive IVAN, experto en IA y sistemas. Su casa es la mejor de Santiago para carretear: musica, pool, ping pong, taca-taca y salita gamer.'},
+    npcs:[{id:'cuico',x:9,y:6},{id:'conserje',x:4,y:4}],
+    props:[{k:'torre',x:9,y:1,w:2,h:3},{k:'torre',x:12,y:1,w:2,h:3,c:'#5a8ab8'}] },
+  casaIvan:{ name:'CASA DE IVAN', theme:'inside', music:'reggaeton', interior:true, party:true, exitTo:{room:'lascondes',tx:5,ty:4},
+    map:['kkkkkkkkkkkkkkk','kFFFFFFFFFFFFFk','kFFFFFFFFFFFFFk','kFFFFFFFFFFFFFk','kFFFFFFFFFFFFFk','kFFFFFFFFFFFFFk','kFFFFFFFZZZZZZk','kFFFFFFFFFFFFFk','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'],
+    npcs:[{id:'friend',ch:6,role:'cheer',x:8,y:3}],
+    props:[{k:'neon',x:1,y:0,w:13,solid:false},{k:'parlante',x:5,y:1},{k:'dj',x:7,y:1,act:'dj'},{k:'parlante',x:9,y:1},{k:'hielera',x:13,y:1,act:'hielera'},
+      {k:'pool',x:2,y:3,w:2,act:'pool'},{k:'pingpong',x:11,y:3,w:2,act:'pong'},{k:'tacataca',x:2,y:6,w:2,act:'taca'},{k:'sofa',x:12,y:7,w:2},{k:'cartel',x:8,y:5,txt:'SALITA GAMER',solid:false}] },
   islote:{ name:'ISLOTE DEL LANGOSTINO', theme:'sand', music:'dark', decks:['langostino'],
     npcs:[{id:'barquero',x:2,y:5}],
     map:['~~~~~~~~~~~~~~~','~~~sssssssss~~~','~~ss.......ss~~','~ss.........ss~','~s...........s~','Ls...........s~','~ss.........ss~','~~ss.......ss~~','~~~sssssssss~~~','~~~~~~~~~~~~~~~'],
@@ -1075,11 +1126,10 @@ const FRIENDS_ON_MAP = [
   { ch:1, room:'arena', x:10, y:6, role:'rival' },
   { ch:2, room:'bar', x:3, y:4, role:'beer' },
   { ch:3, room:'bar', x:11, y:4, role:'beer' },
-  { ch:4, room:'liga', x:11, y:6, role:'rival' },
+  { ch:4, room:'pmontt', x:2, y:4, role:'rival' },
   { ch:5, room:'bar', x:8, y:6, role:'beer' },
-  { ch:6, room:'arcade', x:10, y:6, role:'cheer' },
-  { ch:7, room:'taberna', x:7, y:4, role:'beer' },
-  { ch:8, room:'taberna', x:11, y:6, role:'beer' },
+  { ch:7, room:'talca', x:5, y:6, role:'beer' },
+  { ch:8, room:'pmontt', x:8, y:4, role:'beer' },
   { ch:9, room:'pmontt', x:12, y:4, role:'cheer' },
   { ch:10, room:'vina', x:2, y:7, role:'beer' },
   { ch:11, room:'salaTempest', x:11, y:6, role:'rival' },
@@ -1105,14 +1155,13 @@ function travelBoat(dest){ SFX.door(); tone(160, 120, 0.6, 'triangle', 0.4); con
 /* ============ WORLD MAP, WILD ZONES & DUNGEONS ============ */
 const WORLD = { guarida:[2,0], cerro:[1,1], bosque:[2,1], bosqueProf:[3,1], minas:[4,1],
   ruinas:[0,2], pradera:[1,2], pueblo:[2,2], pantano:[3,2], tolaria:[4,2], valpo:[1,3], costa:[2,3], pantanoProf:[3,3], mercado:[4,3], vina:[1,4], dunas:[2,4], islote:[2,5], pmontt:[3,4],
-  volcan:[3,0], glaciar:[4,0], urborg:[0,3], pampa:[1,0], fabrica:[0,0], quietud:[0,1], bosqueRoca:[0,4], tempest:[4,4] };
+  volcan:[3,0], glaciar:[4,0], urborg:[0,3], pampa:[1,0], fabrica:[0,0], quietud:[0,1], bosqueRoca:[0,4], tempest:[4,4], talca:[1,5], lascondes:[4,5] };
 const SHORT = { guarida:'GUARIDA', cerro:'CERRO MOX', bosque:'BOSQUE', bosqueProf:'B. PROFUNDO', minas:'MINAS', ruinas:'RUINAS',
-  pradera:'PRADERA', pueblo:'VILLA', pantano:'PANTANO', tolaria:'TOLARIA', valpo:'CURICO', costa:'PICHILEMU', dunas:'DUNAS', pantanoProf:'P. PROFUNDO', islote:'ISLOTE', mercado:'MERCADO', vina:'VIÑA', pmontt:'P. MONTT', volcan:'VOLCAN', glaciar:'GLACIAR', urborg:'URBORG', pampa:'PAMPA', fabrica:'FABRICA', quietud:'QUIETUD', bosqueRoca:'LA ROCA', tempest:'TEMPEST' };
+  pradera:'PRADERA', pueblo:'VILLA', pantano:'PANTANO', tolaria:'TOLARIA', valpo:'CURICO', costa:'PICHILEMU', dunas:'DUNAS', pantanoProf:'P. PROFUNDO', islote:'ISLOTE', mercado:'MERCADO', vina:'VIÑA', pmontt:'P. MONTT', volcan:'VOLCAN', glaciar:'GLACIAR', urborg:'URBORG', pampa:'PAMPA', fabrica:'FABRICA', quietud:'QUIETUD', bosqueRoca:'LA ROCA', tempest:'TEMPEST', talca:'TALCA', lascondes:'LAS CONDES' };
 const WILD = {
   cerro:{ name:'CERRO MOX', theme:'dirt', music:'field', walls:['r','r','T','b'], decks:['burn','goblins','langostino'], enemies:['gob','pup','merfolk','ball'], n:5, chest:'hierro' },
   bosqueProf:{ name:'BOSQUE PROFUNDO', theme:'forest', music:'field', walls:['T','T','T','b'], decks:['goblins','black'], enemies:['gob','shade','pup','specter'], n:6, chest:'bolsa' },
   minas:{ name:'ENTRADA A LAS MINAS', theme:'dirt', music:'dark', walls:['r','r','T'], decks:['burn','goblins'], enemies:['gob','ball','carno'], n:5, dungeon:'minas' },
-  dunas:{ name:'DUNAS DE CONCON', theme:'sand', music:'field', walls:['r','b','r'], decks:['langostino','burn','replenish'], enemies:['merfolk','pup','ball','merfolk'], n:5, chest:'bolsa' },
   ruinas:{ name:'RUINAS DE SERRA', theme:'meadow', music:'town', walls:['P','r','T','b'], decks:['life','replenish'], enemies:['warden','angel','merfolk'], n:5, dungeon:'torre' },
   pantanoProf:{ name:'PANTANO PROFUNDO', theme:'swamp', music:'dark', walls:['x','w','T','w'], decks:['black'], enemies:['shade','specter','carno','negator'], n:5, dungeon:'cripta' },
   volcan:{ name:'VOLCAN DE SHIV', theme:'volcano', music:'boss', walls:['r','r','x'], decks:['burn','goblins'], enemies:['ball','pup','gob','ball'], n:7, dungeon:'fortaleza', hazard:'l', hazRate:0.14, meteors:true, turrets:2, mult:1.8 },
@@ -1334,7 +1383,7 @@ function newSave(ci){
   const ch = CHARS[ci];
   return { v:1, ch:ci, lvl:1, xp:0, st:{...ch.st}, hp:6, maxHp:6, coins:1500, econ:2, leagues:{}, cards:{}, swords:['palo'], eq:'palo',
     chests:{}, bosses:{}, trophies:0, buzz:0, beers:0, room:'pueblo', x:7*TS+3, y:6*TS+6, complete:{}, visited:{}, ligaWins:0, arcadeBest:0, lore:false, quests:{}, kills:{}, killsTotal:0, beerTotal:0,
-    gear:{ shield:null, head:null, body:null, legs:null, feet:null }, armor:[], spells:[], spellSel:0, mp:4, house:{}, found:{}, foundZones:{}, stones:{}, pet:null, dex:{}, keys:{}, relics:{}, spellXp:{}, mounts:[], mount:null };
+    gear:{ shield:null, head:null, body:null, legs:null, feet:null }, armor:[], spells:[], spellSel:0, mp:4, house:{}, found:{}, foundZones:{}, stones:{}, pet:null, dex:{}, keys:{}, relics:{}, spellXp:{}, mounts:[], mount:null, surf:false, talca:{}, sacos:0 };
 }
 const SLOTS = 3, slotKey = n => 'pmq_save_' + n;
 function saveGame(){
@@ -1842,6 +1891,9 @@ function gatherLights(dark){
     else if (c === 'W' && night) { const lw = G.map[ty][tx - 1], rw = G.map[ty][tx + 1]; if (lw === 'W' || rw === 'W') add(x, y - 1, 26 + Math.sin(frame * 0.05 + tx * 2) * 1.5, '255,190,90', 0.9); }
     else if ((c === 'U' || c === 'V') && dark) add(x, y, 24, '200,200,255', 0.5);
   }
+  for (const p of (G.def.props || [])) { const px = p.x * TS + (p.w || 1) * 8, py = p.y * TS + 8;
+    if (p.k === 'fogata') add(px, py, 40 + Math.sin(frame * 0.2) * 3, '255,140,50', 1); else if (p.k === 'dj') add(px, py, 44, hslRgb((frame * 3) % 360), 0.9); else if (p.k === 'neon') add(px, py + 6, 60, hslRgb((frame * 2) % 360), 0.5); else if (p.k === 'parlante') add(px, py, 18, '120,120,255', 0.4); }
+  if (G.def.party) for (let i = 0; i < 4; i++) add(W / 2 + Math.cos(frame * 0.03 + i * 1.57) * 70, 70 + Math.sin(frame * 0.04 + i * 1.57) * 30, 30, hslRgb((frame * 3 + i * 90) % 360), 0.8);
   for (const s of G.shots) { const sp = SPELLS[s.id]; if (sp && sp.col) add(s.x, s.y, 26, hexRgb(sp.col), 1); }
   for (const s of (G.eshots || [])) add(s.x, s.y, 16, hexRgb(s.col || '#ff6040'), 0.8);
   for (const it of G.items) if (it.k !== 'coin' && it.k !== 'heart') add(it.x + 5, it.y + 4, 14, it.k === 'relic' ? '255,220,120' : '255,240,160', 0.55 + 0.25 * Math.sin(frame * 0.1 + it.x));
@@ -1898,6 +1950,52 @@ function waterSparkles(){
       ctx.fillStyle = 'rgba(255,255,255,' + (0.75 * a) + ')'; ctx.fillRect(sx - s, sy - 0.15, s * 2, 0.3); ctx.fillRect(sx - 0.15, sy - s, 0.3, s * 2); } }
   ctx.restore();
 }
+// Escenografía de cada sala: reposeras, quitasoles, mesas de pool, DJ, torres... (tile x, y, ancho w, alto h)
+function propSolidSet(d){ const s = new Set(); for (const p of (d.props || [])) if (p.solid !== false) for (let x = p.x; x < p.x + (p.w || 1); x++) for (let y = p.y; y < p.y + (p.h || 1); y++) s.add(x + y * 15); return s; }
+const propAt = (tx, ty) => (G.def.props || []).find(p => tx >= p.x && tx < p.x + (p.w || 1) && ty >= p.y && ty < p.y + (p.h || 1));
+function outl(x, y, w, hh, col){ R(x - 1, y - 1, w + 2, hh + 2, '#1a1020'); R(x, y, w, hh, col); }
+function drawProp(p){
+  const X = p.x * TS, Y = p.y * TS, wpx = (p.w || 1) * TS, t = frame;
+  switch (p.k) {
+    case 'reposera': { const c = p.c || '#e83040'; R(X + 2, Y + 13, 1, 3, '#8a8a90'); R(X + 13, Y + 13, 1, 3, '#8a8a90'); outl(X + 1, Y + 8, 14, 5, c); for (let i = 0; i < 14; i += 4) R(X + 1 + i, Y + 8, 2, 5, '#ffffff'); outl(X + 11, Y + 2, 4, 7, c); R(X + 12, Y + 3, 2, 5, '#ffffff'); break; }
+    case 'quitasol': { const c = p.c || '#e83040', cx = X + 8, cy = Y - 2; R(cx - 1, cy, 2, 18, '#e8e0d0'); softShadow(cx + 4, Y + 15, 12, 3, 0.35);
+      for (let i = 0; i < 6; i++) { ctx.fillStyle = i % 2 ? '#ffffff' : c; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy + 6, 13, Math.PI + i * Math.PI / 6, Math.PI + (i + 1) * Math.PI / 6); ctx.fill(); }
+      ctx.strokeStyle = '#1a1020'; ctx.lineWidth = 0.5; ctx.beginPath(); ctx.arc(cx, cy + 6, 13, Math.PI, 0); ctx.stroke(); break; }
+    case 'barra': { outl(X, Y + 4, wpx, 12, '#8a5a30'); R(X, Y + 4, wpx, 3, '#c89060'); for (let i = 0; i < wpx; i += 16) R(X + i, Y + 8, 1, 8, '#5a3418'); for (let i = 4; i < wpx; i += 9) { R(X + i, Y, 2, 5, i % 2 ? '#3a9a3a' : '#c8a020'); R(X + i, Y - 1, 2, 1, '#e8e0d0'); } break; }
+    case 'fogata': { R(X + 2, Y + 11, 12, 3, '#5a3418'); R(X + 4, Y + 9, 8, 2, '#7a4a24'); const f = (t >> 2) % 3; R(X + 5, Y + 4 + f % 2, 6, 6, '#f86020'); R(X + 6, Y + 2 + f, 4, 6, '#fcb030'); R(X + 7, Y + 5, 2, 4, '#fff0a0'); break; }
+    case 'tablas': { const cols = ['#f8d040','#40b8e0','#f05a8a']; for (let i = 0; i < 3; i++) { outl(X + 2 + i * 4, Y + 1, 3, 15, cols[i]); R(X + 3 + i * 4, Y + 2, 1, 13, '#ffffff'); } break; }
+    case 'cartel': { const w2 = p.txt.length * 4 + 6, cx = X + 8; R(cx - 1, Y + 8, 2, 8, '#5a3418'); outl(cx - w2 / 2, Y + 1, w2, 8, '#f0e0b0'); tiny(p.txt, cx, Y + 3, '#5a2a10', 'center'); break; }
+    case 'duna': { const cx = X + wpx / 2, cy = Y + (p.h || 1) * TS / 2 + 4, rx = wpx / 2 + 2, ry = (p.h || 1) * TS / 2 + 2;
+      const g = ctx.createRadialGradient(cx - rx * 0.3, cy - ry * 0.5, 2, cx, cy, rx); g.addColorStop(0, '#fff0c8'); g.addColorStop(0.6, '#e8c888'); g.addColorStop(1, '#c8a060');
+      ctx.save(); ctx.translate(cx, cy); ctx.scale(1, ry / rx); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, rx, 0, 6.2832); ctx.translate(-cx, -cy); ctx.fill(); ctx.restore();
+      ctx.strokeStyle = 'rgba(160,120,60,.4)'; ctx.lineWidth = 0.4; for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.ellipse(cx, cy + 4, rx - 4 - i * 4, ry - 4 - i * 3, 0, Math.PI * 0.1, Math.PI * 0.9); ctx.stroke(); } break; }
+    case 'saco': { for (let i = 0; i < 3; i++) { outl(X + 2 + i * 3, Y + 7 - i, 6, 8, '#b88a4a'); R(X + 3 + i * 3, Y + 8 - i, 4, 1, '#d8b070'); } tiny('SACOS', X + 8, Y - 4, '#5a2a10', 'center'); break; }
+    case 'torre': { const c = p.c || '#3a6a9a', hh = (p.h || 1) * TS + 22; outl(X + 1, Y + (p.h || 1) * TS - hh, wpx - 2, hh, c); for (let yy = Y + (p.h || 1) * TS - hh + 3; yy < Y + (p.h || 1) * TS - 2; yy += 4) for (let xx = X + 3; xx < X + wpx - 3; xx += 4) R(xx, yy, 2, 2, (dayPhase() === 'night' ? h2(xx, yy) < 0.5 : h2(xx, yy) < 0.15) ? '#fce890' : '#a8d0f0'); break; }
+    case 'parra': { for (let i = 0; i < 3; i++) { R(X + 2 + i * 5, Y + 4, 1, 12, '#6a4a24'); disc(X + 3 + i * 5, Y + 6, 3, '#3a8a2a'); R(X + 2 + i * 5, Y + 9, 2, 2, '#6a2a6a'); } R(X, Y + 5, 16, 1, '#8a6a40'); break; }
+    case 'barril': { outl(X + 2, Y + 4, 12, 11, '#7a3a1a'); R(X + 2, Y + 6, 12, 1, '#3a3a40'); R(X + 2, Y + 12, 12, 1, '#3a3a40'); R(X + 6, Y + 4, 4, 11, '#8a4a24'); break; }
+    case 'pool': { outl(X, Y + 1, wpx, 14, '#6a3a18'); R(X + 2, Y + 3, wpx - 4, 10, '#1a7a3a'); for (const [a, b] of [[2,3],[wpx / 2 - 1,3],[wpx - 4,3],[2,11],[wpx / 2 - 1,11],[wpx - 4,11]]) R(X + a, Y + b, 2, 2, '#0a0a10');
+      const bc = ['#f8d030','#3a6ae8','#e83040','#8a3ac8','#f08020','#2a9a3a','#1a1020']; bc.forEach((c, i) => R(X + 18 + (i % 3) * 3, Y + 5 + Math.floor(i / 3) * 3, 2, 2, c)); R(X + 8, Y + 7, 2, 2, '#ffffff'); break; }
+    case 'pingpong': { outl(X, Y + 2, wpx, 12, '#1a3a7a'); R(X + 1, Y + 3, wpx - 2, 10, '#2a5ab0'); R(X + 1, Y + 7, wpx - 2, 1, '#ffffff'); R(X + wpx / 2, Y + 1, 1, 14, '#e8e8f0'); R(X + 1, Y + 3, wpx - 2, 1, '#ffffff'); const bx = X + 4 + ((t >> 1) % 24); R(bx, Y + 5 + Math.abs(((t >> 1) % 8) - 4), 1, 1, '#ffffff'); break; }
+    case 'tacataca': { outl(X, Y + 1, wpx, 14, '#5a3418'); R(X + 2, Y + 3, wpx - 4, 10, '#2a8a3a'); for (let i = 0; i < 4; i++) { const rx = X + 5 + i * 7; R(rx, Y, 1, 16, '#c8c8d0'); for (let j = 0; j < 2; j++) R(rx - 1, Y + 4 + j * 5, 3, 2, i % 2 ? '#3a6ae8' : '#e83040'); } break; }
+    case 'dj': { outl(X - 4, Y + 5, 24, 10, '#1a1a24'); R(X - 3, Y + 12, 22, 2, 'hsl(' + ((t * 3) % 360) + ',100%,60%)'); for (const ox of [-1, 11]) { disc(X + ox + 3, Y + 8, 3, '#2a2a34'); R(X + ox + 3 + Math.round(Math.cos(t * 0.2) * 2), Y + 8 + Math.round(Math.sin(t * 0.2) * 2), 1, 1, '#ffffff'); } R(X + 6, Y + 6, 4, 3, '#40f0e0'); break; }
+    case 'parlante': { const pu = ((t >> 3) % 4 === 0) ? 1 : 0; outl(X + 3, Y + 1, 10, 15, '#18181e'); disc(X + 8, Y + 5, 2 + pu, '#3a3a48'); disc(X + 8, Y + 11, 3 + pu, '#3a3a48'); R(X + 7, Y + 10, 2, 2, '#60606e'); break; }
+    case 'hielera': { outl(X + 2, Y + 6, 12, 9, '#2a6ae8'); R(X + 2, Y + 6, 12, 3, '#ffffff'); R(X + 4, Y + 3, 2, 4, '#c8a020'); R(X + 8, Y + 2, 2, 5, '#3a9a3a'); break; }
+    case 'sofa': { outl(X + 1, Y + 4, wpx - 2, 11, '#7a1a2a'); R(X + 1, Y + 4, wpx - 2, 4, '#a02a3a'); R(X + 1, Y + 8, 4, 7, '#5a0a1a'); R(X + wpx - 5, Y + 8, 4, 7, '#5a0a1a'); break; }
+    case 'neon': { for (let i = 0; i < wpx; i += 2) R(X + i, Y + 13, 2, 1, 'hsl(' + ((t * 2 + i * 3) % 360) + ',100%,62%)'); break; }
+  }
+}
+function drawProps(top){ for (const p of (G.def.props || [])) if (!!p.top === top) drawProp(p); }
+// Surfistas que pasan por el mar de Pichilemu
+function updateSurfers(){
+  for (const s of (G.surfers || [])) { const nx = s.x + s.vx, c = T(Math.floor((nx + (s.vx > 0 ? 12 : 0)) / TS), Math.floor(s.y / TS)); if (c !== '~' || nx < 2 || nx > W - 14) s.vx = -s.vx; else s.x = nx; s.t++; }
+}
+function drawSurfer(s){
+  const bob = Math.round(Math.sin(s.t * 0.12) * 1.5), x = Math.round(s.x), y = Math.round(s.y) + bob;
+  ctx.fillStyle = 'rgba(255,255,255,.75)'; for (let i = 0; i < 4; i++) ctx.fillRect(x + (s.vx > 0 ? -3 - i * 3 : 15 + i * 3), y + 13 - (i % 2), 2, 1);
+  outl(x - 1, y + 12, 16, 3, s.board); R(x, y + 12, 14, 1, '#ffffff');
+  drawPerson(x - 1, y - 2, NPCDEF.surfista, s.vx > 0 ? 3 : 2, 0);
+}
+function drawSurfBoard(x, y){ const bob = Math.round(Math.sin(frame * 0.12)); outl(x - 1, y + 12 + bob, 18, 3, '#f8d040'); R(x, y + 12 + bob, 16, 1, '#ffffff'); ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fillRect(x - 3, y + 15, 3, 1); ctx.fillRect(x + 18, y + 15, 3, 1); }
 const GRASS_THEMES = new Set(['town','meadow','forest','swamp']);
 function grassBlades(){
   if (!GRASS_THEMES.has(G.def.theme) || G.def.interior) return;
@@ -1935,7 +2033,7 @@ function cloudShadows(){
 function drawLights(){
   const th = G.def.theme, ph = dayPhase(), out = !G.def.interior && OUTDOOR_THEMES.has(th);
   const dark = th === 'mine' || th === 'crypt' || th === 'necro' || (th === 'volcano' && !!G.def.dungeonKey) || (th === 'ice' && !!G.def.dungeonKey);
-  let shade = dark ? 0.8 : th === 'tower' ? 0.35 : 0, tint = null;
+  let shade = dark ? 0.8 : th === 'tower' ? 0.35 : G.def.party ? 0.45 : 0, tint = null;
   if (out && !dark) { if (ph === 'night') { shade = 0.5; tint = 'rgba(30,40,110,.18)'; } else if (ph === 'dusk') { shade = 0.14; tint = 'rgba(255,120,50,.12)'; } else if (ph === 'dawn') tint = 'rgba(255,170,190,.09)'; }
   if (tint) { ctx.fillStyle = tint; ctx.fillRect(0, 0, W, H); }
   const L = gatherLights(dark || shade > 0.3);
@@ -2622,7 +2720,8 @@ function loadRoom(id, px, py){
     if (d.mult && d.mult !== 1) { e.hp = e.max = Math.round(e.hp * d.mult); e.dmgMult = d.mult > 1.6 ? 2 : 1; }
   });
   if (bossResting && d.bossFloor) G.map[4][7] = 'O';
-  G.wild = []; G.balls = [];
+  G.wild = []; G.balls = []; G.propSolid = propSolidSet(d); G.slide = null; G.hielera = false;
+  G.surfers = []; for (let i = 0; i < (d.surfers || 0); i++) G.surfers.push({ x:[20, 180, 12][i] || 60, y:[9, 9, 7][i] * TS + 2, vx:[0.6, -0.5, 0.35][i] || 0.4, t:rnd(100), board:['#f05a8a','#40b8e0','#f8d040'][i % 3] });
   if (d.safari) { S.safariBalls = 15; for (let i = 0; i < 6; i++) spawnWildPoke(); }
   G.pet = S.pet !== null ? { x:px - 14, y:py + 2, t:0, cd:40, tgt:null } : null;
   if (d.keyPos && !(S.keys && S.keys[id])) G.items.push({ k:'key', id, x:d.keyPos[0] * TS + 3, y:d.keyPos[1] * TS + 3, z:0, vz:0, t:20 });
@@ -2642,7 +2741,7 @@ function loadRoom(id, px, py){
   const boss = G.enemies.find(e => MON[e.type].boss);
   if (boss) { SFX.boss(); G.bossBar = boss; if (MON[boss.type].raid) toast('JEFE RAID: SE RECOMIENDAN 2 O 3 JUGADORES', '#ff9040'); } else G.bossBar = null;
   if (d.mult >= 1.8 && !d.dungeonKey && !d.interior) toast('ZONA PELIGROSA: CRIATURAS MUY FUERTES', '#ff8060');
-  playMusic(boss ? 'boss' : d.music);
+  playMusic(boss ? 'boss' : (d.party && G.djMusic) || d.music);
   S.room = id; S.x = px; S.y = py; saveGame();
 }
 function spawnEnemy(type, x, y){
@@ -2656,13 +2755,19 @@ function blocked(x, y, w, h, fly){
   const x0 = Math.floor(x / TS), x1 = Math.floor((x + w - 0.01) / TS), y0 = Math.floor(y / TS), y1 = Math.floor((y + h - 0.01) / TS);
   for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
     if (ty < 0 || ty > 9 || tx < 0 || tx > 14) continue;
+    if (G.propSolid && G.propSolid.has(tx + ty * 15)) return true;
+    if (G.map[ty][tx] === '~' && PLAYER_CHECK && S && S.surf && !G.def.interior) continue;
     if (isSolidTile(G.map[ty][tx])) return true;
   }
   return false;
 }
 const ov = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 const npcHit = e => G.npcs.some(n => ov(e, n));
+let PLAYER_CHECK = false; // mientras se mueve el jugador (para que pueda surfear sobre el mar)
 function moveBox(e, dx, dy, fly, isPlayer){
+  PLAYER_CHECK = !!isPlayer; const r = moveBox_(e, dx, dy, fly, isPlayer); PLAYER_CHECK = false; return r;
+}
+function moveBox_(e, dx, dy, fly, isPlayer){
   let hit = 0;
   if (dx) {
     e.x += dx;
@@ -2733,7 +2838,7 @@ function dropLoot(e){
     G.items.push({ k, id, v, x, y, z:0, vz:-2.2, t:0 });
   };
   if (m.boss) {
-    S.bosses[e.type] = true; G.bossBar = null; playMusic(G.def.music);
+    S.bosses[e.type] = true; G.bossBar = null; playMusic(roomMusic());
     if (G.def.bossFloor) { G.map[4][7] = 'O'; G.cacheDirty = true; }
     if (GUARDIANS.includes(e.type)) toast('GUARDIANES DERROTADOS: ' + guardiansDone() + '/5', '#fcd84a');
     drop('card', m.cards[0]); drop('sword', m.sword); if (BOSS_GEAR[e.type]) drop('gear', BOSS_GEAR[e.type]); if (e.type === 'shivan' && !(S.mounts || []).includes('shivan')) setTimeout(() => giveMount('shivan'), 600);
@@ -2797,19 +2902,60 @@ function startAttack(){
   PL.atk = ATK; PL.atkCd = Math.max(12, 28 - stats().agi); G.swing++; SFX.swing();
 }
 function interactPoint(dist){ const [dx, dy] = DIRV[PL.dir]; return { x: PL.x + 5 + dx * dist, y: PL.y + 4 + dy * dist }; }
+const TALCA_SPOTS = ['7,4', '4,7', '10,7'];
+function hostTalk(n){
+  if (n.ch === 7 && G.roomId === 'talca') {
+    S.talca = S.talca || {}; const seen = TALCA_SPOTS.filter(k => S.talca[k]).length;
+    if (S.talcaDone) { say(['TEBAX: ' + pick(['Te dije que Talca era lo mejor. Talca, Paris y Londres, en ese orden.', '¿Otro vinito del Maule? Yo invito... bueno, tu invitas.', 'Cuando seas campeon, haz la celebracion aqui. Hay vino para todos.'])], [{ t:'JUGAR UNA PARTIDA', fn:() => offerDuel(n) }, { t:'CHAO', fn:null }]); return true; }
+    if (seen >= TALCA_SPOTS.length) { S.talcaDone = true; S.coins += 30000; S.st.int += 1; SFX.win(); saveGame(); say(['TEBAX: ¡Viste todo Talca! El letrero, el Museo O\'Higginiano y los vinos del Maule.', 'Toma, $30.000 y +1 INT. Ahora eres talquino honorario, compadre.']); return true; }
+    say(['TEBAX: ¡Bienvenido a Talca, mi tierra! Aqui la cerveza es buena, pero el vino del Maule es mejor.', 'Haz el tour: lee el letrero de la plaza, el del Museo O\'Higginiano y el del Mercado. Despues vuelve conmigo. (' + seen + '/' + TALCA_SPOTS.length + ')'], [{ t:'VAMOS', fn:null }, { t:'MEJOR UNA PARTIDA', fn:() => offerDuel(n) }]);
+    return true;
+  }
+  if (n.ch === 6 && G.roomId === 'casaIvan') {
+    say(['IVAN: ¡Bienvenido a mi casa, compadre! Aqui no hay monstruos, solo carrete.', 'El DJ esta arriba, la hielera a la derecha, pool, ping pong, taca-taca y la salita gamer abajo. Mi IA eligio la musica, asi que no reclames.'],
+      [{ t:'¿PARTIDITA DE PREMODERN?', fn:() => offerDuel(n) }, { t:'A CARRETEAR', fn:null }]);
+    return true;
+  }
+  return false;
+}
+function propAction(p){
+  if (p.act === 'saco') {
+    say(['ARRIENDO DE SACOS: Un saco para tirarte por la duna, $500. ¿Te lanzas?'], [{ t:'¡ME LANZO! ($500)', fn:() => { if (S.coins < 500) { say(['No tienes ni para el saco...']); return; } S.coins -= 500; G.slide = { t:0, x:2 * TS + 3, y:2 * TS + 2, y1:7 * TS + 4 }; PL.x = G.slide.x; PL.y = G.slide.y; SFX.ok(); } }, { t:'MEJOR NO', fn:null }]);
+  } else if (p.act === 'reposera') {
+    S.hp = S.maxHp; S.mp = maxMp(); SFX.heal(); for (let i = 0; i < 3; i++) floatText('Z', PL.x + 4 + i * 4, PL.y - 8 - i * 5, '#c8e8ff');
+    say([pick(['Te tiras en la reposera con una chela en la mano. Puro chill.', 'Sol, arena y el ruido de las olas. Recuperas toda la vida y la magia.', 'Te quedas dormido un rato. Despiertas medio quemado, pero como nuevo.'])]);
+  } else if (p.act === 'dj') {
+    const set = m => () => { G.djMusic = m; playMusic(m); toast(m === 'electro' ? 'DJ IVAN: ¡ELECTRONICA!' : '¡DALE QUE VA! REGUETON', '#ff60d0'); };
+    say(['DJ IVAN: ¿Que ponemos, compadre? La casa esta prendida.'], [{ t:'ELECTRONICA', fn:set('electro') }, { t:'REGUETON', fn:set('reggaeton') }, { t:'DEJALO ASI', fn:null }]);
+  } else if (p.act === 'hielera') {
+    if (G.hielera) { say(['La hielera ya esta vacia. Ivan dice que la proxima la traes tu.']); return; }
+    G.hielera = true; S.hp = Math.min(S.maxHp, S.hp + 8); SFX.beer(); say(['Sacas una chela helada de la hielera de Ivan. ¡Salud!']);
+  } else if (p.act === 'pool' || p.act === 'pong' || p.act === 'taca') {
+    const nm = { pool:'POOL', pong:'PING PONG', taca:'TACA-TACA' }[p.act], help = { pool:'Embocar las 6 bolas en 14 tiros o menos. Flechas apuntan, A carga la fuerza y A de nuevo tira.', pong:'Primero a 5 puntos contra Ivan. Arriba y abajo mueven tu paleta.', taca:'Primero a 3 goles. Arriba y abajo mueven tus palos, A le pega fuerte.' }[p.act];
+    say([nm + ': ' + help], [{ t:'JUGAR', fn:() => startFree(p.act) }, { t:'NO', fn:null }]);
+  }
+}
+function updateSlide(){
+  const s = G.slide; s.t++; const v = Math.min(3.2, 0.4 + s.t * 0.08);
+  PL.y = Math.min(s.y1, PL.y + v); PL.dir = 0;
+  if (s.t % 2 === 0) G.parts.push({ k:'smoke', x:PL.x + 5 + (Math.random() - 0.5) * 8, y:PL.y + 8, vx:(Math.random() - 0.5), vy:-0.4, t:6 });
+  if (PL.y >= s.y1) { G.slide = null; S.sacos = (S.sacos || 0) + 1; SFX.win(); floatText('¡WIIIIII!', PL.x + 5, PL.y - 14, '#fff8c0'); toast('BAJADAS EN SACO: ' + S.sacos, '#f0d090'); if (S.sacos % 10 === 0) { addXP(20); toast('¡' + S.sacos + ' BAJADAS! +20 EXP', '#fcd84a'); } saveGame(); }
+}
 function tryInteract(){
   for (const dist of [11, 20]) {
     const pt = interactPoint(dist);
     for (const n of G.npcs) if (pt.x > n.x - 4 && pt.x < n.x + n.w + 4 && pt.y > n.y - 10 && pt.y < n.y + n.h + 4) {
       n.dir = PL.dir === 0 ? 1 : PL.dir === 1 ? 0 : PL.dir === 2 ? 3 : 2;
+      if (n.id === 'friend' && hostTalk(n)) return true;
       if (isDuelist(n) && !questMarker(n.id)) offerDuel(n); else talkTo(n.id, n);
       return true;
     }
     const tx = Math.floor(pt.x / TS), ty = Math.floor(pt.y / TS), c = T(tx, ty);
+    const pr = propAt(tx, ty); if (pr && pr.act) { propAction(pr); return true; }
     if (c === 'Z') { arcadePrompt(tx, ty); return true; }
     if (HOUSE_SET.has(c) && G.roomId === 'hogar') { houseInteract(c); return true; }
     if (c === '^' && G.roomId === 'hogar') { trophyInteract(tx); return true; }
-    if (c === 'S') { const s = G.def.signs && G.def.signs[tx + ',' + ty]; if (s) { say([s]); return true; } }
+    if (c === 'S') { const s = G.def.signs && G.def.signs[tx + ',' + ty]; if (s) { if (G.roomId === 'talca') { S.talca = S.talca || {}; S.talca[tx + ',' + ty] = true; } say([s]); return true; } }
     if (c === 'c') {
       const key = G.roomId + ':' + tx + ',' + ty;
       G.map[ty][tx] = 'C'; S.chests[key] = true; G.cacheDirty = true;
@@ -3085,6 +3231,9 @@ function updatePet(){
   }
 }
 function unstuckPlayer(){
+  PLAYER_CHECK = true; const r = unstuckPlayer_(); PLAYER_CHECK = false; return r;
+}
+function unstuckPlayer_(){
   if (!blocked(PL.x, PL.y, PL.w, PL.h)) return false;
   const cx = Math.floor((PL.x + 5) / TS), cy = Math.floor((PL.y + 4) / TS);
   for (let r = 1; r < 15; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
@@ -3097,6 +3246,8 @@ function unstuckPlayer(){
 }
 function updateWorld(){
   const p = PL;
+  if (G.slide) { updateSlide(); return; }
+  updateSurfers();
   unstuckPlayer();
   updatePet(); if (G.def.safari) updateSafari();
   if (G.zoneT > 0) G.zoneT--;
@@ -3779,6 +3930,26 @@ function talkTo(id, npc, skipQuest){
     say(['EL MARCHANTE: Aqui no hay ofertas, cabro. Solo piezas unicas de Dominaria para los jugadores de verdad.', 'Tienes ' + have + ' de ' + LUXURY.length + ' piezas de mi coleccion. Algunas piden nivel y trofeos de liga: no le vendo un Mox Eterno a cualquiera.'], null, () => openShop('lujo', 'EL MARCHANTE'));
     return;
   }
+  if (id === 'surfista') {
+    if (S.surf) { say(['PROFE DE SURF: ¡Buena ola, compadre! Ya sabes surfear: anda al mar con tu tabla y suelta las piernas.', 'Punta de Lobos tiene las mejores olas de Chile. Eso no lo digo yo, lo dice el mundo.']); return; }
+    say(['PROFE DE SURF: ¡Bienvenido a la escuela de surf de Pichilemu! Aqui vienen surfistas de todo el mundo.', 'Una clase vale $25.000. Aprendes a pararte en la tabla y despues puedes andar sobre el mar en cualquier playa.'],
+      [{ t:'TOMAR LA CLASE ($25.000)', fn:() => { if (S.coins < 25000) { say(['PROFE DE SURF: Te faltan lucas, compadre. Vuelve cuando tengas.']); return; } S.coins -= 25000; S.surf = true; SFX.win(); saveGame(); say(['¡Aprendiste a surfear!', 'Ahora puedes caminar sobre el mar: tu personaje se sube a la tabla solo. ¡Cuidado con el Langostino!']); } }, { t:'OTRO DIA', fn:null }]);
+    return;
+  }
+  if (id === 'barDuna') {
+    say(['BARMAN: ¡Bienvenido al Bar La Duna! Aqui no hay monstruos, solo arena, sol y chelas heladas.', 'Una chela de la duna vale $2.000: te deja como nuevo y te da +1 INT en el proximo torneo.'],
+      [{ t:'UNA CHELA ($2.000)', fn:() => { if (S.coins < 2000) { say(['BARMAN: Sin lucas no hay chela, jefe.']); return; } S.coins -= 2000; S.hp = S.maxHp; S.buzz = Math.min(5, (S.buzz || 0) + 1); SFX.beer(); saveGame(); say(['¡Salud! La chela de la duna te dejo nuevo.', 'Cerveza acumulada: +' + S.buzz + ' INT en el proximo torneo.']); } }, { t:'NADA', fn:null }]);
+    return;
+  }
+  if (id === 'veraneante') { say(['VERANEANTE: ' + pick(['Vine a Concon a tirarme en saco por la duna. Llevo 14 bajadas y todavia tengo arena hasta en las orejas.', 'Dicen que en Viña hay monstruos. Aqui lo unico peligroso es el sol: echate bloqueador.', 'Las reposeras son gratis. Tirate un rato y te recuperas entero.'])]); return; }
+  if (id === 'vinero') {
+    say(['VENDEDOR DE VINO: Vino del Valle del Maule, la zona con mas viñas de Chile. Una botella, $8.000.', 'Te cura entero y te da +2 INT en el proximo torneo. Dicen que Tebax se toma dos antes de cada liga.'],
+      [{ t:'COMPRAR VINO ($8.000)', fn:() => { if (S.coins < 8000) { say(['VENDEDOR: Te faltan lucas, mijo.']); return; } S.coins -= 8000; S.hp = S.maxHp; S.buzz = Math.min(5, (S.buzz || 0) + 2); SFX.beer(); saveGame(); say(['¡Salud con vino del Maule! +2 INT en el proximo torneo.']); } }, { t:'NO, GRACIAS', fn:null }]);
+    return;
+  }
+  if (id === 'talquino') { say(['TALQUINO: ' + pick(['Talca, Paris y Londres, mijo. Asi de importantes somos.', 'Aqui O\'Higgins firmo la Independencia. En Santiago no te cuentan eso.', 'En Talca hace un calor en verano que hasta los Ball Lightning andan a la sombra.', 'Pregunta por Tebax: el te muestra la ciudad mejor que cualquier guia.'])]); return; }
+  if (id === 'cuico') { say(['VECINO: ' + pick(['¿Y tu auto? ¿Viniste a pata? Que valiente.', 'Aqui en Las Condes los Goblins pagan contribuciones.', 'La casa de Ivan es un carrete: hay DJ, pool y hasta salita gamer. Yo voy por el ping pong.', 'Mi hijo estudia en Estados Unidos pero juega Premodern con nosotros por internet.'])]); return; }
+  if (id === 'conserje') { say(['CONSERJE: ' + pick(['Buenas. ¿Viene donde don Ivan? Pase no mas, ya la tiene prendida.', 'Si se cura mucho en el carrete, aqui tiene un vaso de agua. Gratis.'])]); return; }
   if (id === 'caballerizo') {
     const own = (S.mounts || []);
     const ch = [{ t:'COMPRAR MONTURA', fn:() => openShop('monturas', 'MONTURAS DE PREMODERN') }];
@@ -4451,6 +4622,7 @@ function drawWorld(){
   }
   grassBlades();
   nightWindows();
+  drawProps(false);
   // sprites sorted by y
   const list = [];
   for (const it of G.items) list.push({ y:it.y + 8, f:() => drawItem(it) });
@@ -4489,7 +4661,9 @@ function drawWorld(){
     if (!(PL.inv > 0 && (PL.inv >> 1) & 1)) { const [wy, wa] = warpPlayer(); if (wa > 0) { ctx.globalAlpha = Math.max(0, Math.min(1, wa)); drawRider(Math.round(PL.x - 3), Math.round(PL.y - 8) + wy, playerLook(), G.warp && G.warp.mode === 'fly' ? 0 : PL.dir, G.warp ? (frame >> 3) & 1 : PL.atk > 0 ? 1 : Math.floor(PL.walk) % 2); ctx.globalAlpha = 1; } }
     if (PL.atk > 0 && PL.dir !== 1) drawSword();
   } });
+  for (const s of (G.surfers || [])) list.push({ y:s.y + 12, f:() => drawSurfer(s) });
   list.sort((a, b) => a.y - b.y).forEach(o => o.f());
+  drawProps(true);
   for (const q of G.parts) {
     const x = Math.round(q.x), y = Math.round(q.y);
     if (q.k === 'smoke') disc(x, y, Math.max(1, 4 - (q.t >> 3)), q.t < 10 ? '#fff' : '#c8c8d8');
@@ -4844,7 +5018,7 @@ function updateTraga(A){
     if (S.coins < SLOT_BET) { A.msg = 'NO TE ALCANZA'; SFX.back(); return; }
     S.coins -= SLOT_BET; A.net -= SLOT_BET; A.final = [slotRoll(), slotRoll(), slotRoll()]; A.spin = [24, 36, 48]; A.spinning = true; A.msg = ''; SFX.ok();
   }
-  if (pressed('b') || pressed('menu')) { G.state = 'world'; playMusic(G.def.music); saveGame(); say(['Te levantas de la maquina. Balance: ' + (A.net >= 0 ? '+' : '-') + money(Math.abs(A.net)) + '.']); }
+  if (pressed('b') || pressed('menu')) { G.state = 'world'; playMusic(roomMusic()); saveGame(); say(['Te levantas de la maquina. Balance: ' + (A.net >= 0 ? '+' : '-') + money(Math.abs(A.net)) + '.']); }
 }
 function drawSlotSym(s, cx, cy){
   if (s === 'M') { for (let r = 0; r < 9; r++) { const w = 9 - Math.abs(r - 4) * 2; R(cx - w, cy - 9 + r * 2, w * 2, 2, r < 4 ? '#a0fff0' : '#20b8a0'); } txt('MOX', cx, cy - 3, '#0a3a30', 'center', null); return; }
@@ -4885,11 +5059,12 @@ function startArcade(game){
   G.state = 'arcade'; playMusic('boss'); SFX.ok();
 }
 function arcadeExit(A){
+  if (A.free) { freeExit(A); return; }
   const g = ARCADE_GAMES.find(x => x.id === A.game), coins = arcadePrize(g, A.score, A.won);
   S.arcadeBests = S.arcadeBests || {};
   const prev = A.game === 'smash' ? (S.arcadeBest || 0) : (S.arcadeBests[A.game] || 0), rec = A.score > prev;
   if (rec) { if (A.game === 'smash') S.arcadeBest = A.score; else S.arcadeBests[A.game] = A.score; }
-  S.coins += coins; G.state = 'world'; playMusic(G.def.music); saveGame();
+  S.coins += coins; G.state = 'world'; playMusic(roomMusic()); saveGame();
   say([g.n + ': ' + (A.resultText || A.score + ' puntos') + '. ' + (coins ? 'Ganaste ' + money(coins) + '.' : 'No cumpliste la meta: sin premio.') + (rec ? ' ¡NUEVO RECORD!' : ' Record: ' + prev + '.')]);
 }
 function updateArcade(){
@@ -4899,6 +5074,9 @@ function updateArcade(){
   if (A.game === 'bloques') return updateBloques(A);
   if (A.game === 'laberinto') return updateMaze(A);
   if (A.game === 'pelea') return updatePelea(A);
+  if (A.game === 'pong') return updatePong(A);
+  if (A.game === 'taca') return updateTaca(A);
+  if (A.game === 'pool') return updatePool(A);
   if (A.game === 'kart') return updateKart(A);
   if (A.game === 'stb') return;
   if (A.fx) { A.fx.t++; if (A.fx.t > 14) A.fx = null; }
@@ -4925,6 +5103,7 @@ function arcadeFrame(title, col){
 }
 function arcadeDone(A){
   if (!A.done) return;
+  if (A.free) { R(40, 56, 160, 46, '#ff40c0'); R(41, 57, 158, 44, '#1a1040'); txt(A.title || 'FIN', 120, 64, '#fce040', 'center', '#000'); tiny(A.resultText || '', 120, 80, '#fff', 'center'); if (A.t - A.doneT > 40 && (frame >> 4) & 1) tiny('A PARA SALIR', 120, 90, '#c8c0e8', 'center'); return; }
   const g = ARCADE_GAMES.find(x => x.id === A.game);
   R(50, 56, 140, 46, '#ff40c0'); R(51, 57, 138, 44, '#1a1040');
   txt(A.title || (A.lives > 0 && A.game !== 'bloques' ? '¡TIEMPO!' : 'GAME OVER'), 120, 64, '#fce040', 'center', '#000');
@@ -4938,6 +5117,9 @@ function drawArcade(){
   if (A.game === 'bloques') { drawBloques(A); arcadeDone(A); scanlines(); return; }
   if (A.game === 'laberinto') { drawMaze(A); arcadeDone(A); scanlines(); return; }
   if (A.game === 'pelea') { drawPelea(A); arcadeDone(A); scanlines(); return; }
+  if (A.game === 'pong') { drawPong(A); arcadeDone(A); return; }
+  if (A.game === 'taca') { drawTaca(A); arcadeDone(A); return; }
+  if (A.game === 'pool') { drawPool(A); arcadeDone(A); return; }
   if (A.game === 'kart') { drawKart(A); arcadeDone(A); return; }
   if (A.game === 'stb') { R(0, 0, W, H, '#06060e'); txt('SUPER TRIO BROS', 120, 60, '#fce040', 'center', '#c83a20'); tiny('JUGANDO EN LA MAQUINA...', 120, 80, '#c8c0e8', 'center'); return; }
   R(0, 0, W, H, '#2a1a4a'); R(20, 0, 200, H, '#120a24');
@@ -5184,6 +5366,92 @@ function openStb(A){
   addEventListener('message', onMsg); bt.onclick = () => end(0, false);
 }
 
+/* ---- juegos de la casa de Iván (gratis, por diversión) ---- */
+function startFree(game){
+  G.arc = { game, free:true, t:0, score:0, lives:1, done:false };
+  const A = G.arc;
+  if (game === 'pong') Object.assign(A, { py:85, cy:85, bx:120, by:85, bvx:1.8, bvy:0.8, sp:0, sc:0, serve:60 });
+  if (game === 'taca') Object.assign(A, { py:85, cy:85, bx:120, by:85, bvx:0, bvy:0, sp:0, sc:0, serve:60, kick:0 });
+  if (game === 'pool') initPool(A);
+  G.state = 'arcade'; SFX.ok();
+}
+function freeExit(A){
+  G.state = 'world'; playMusic(roomMusic());
+  if (A.won) { S.partyWins = (S.partyWins || 0) + 1; S.buzz = Math.min(5, (S.buzz || 0) + 1); }
+  saveGame(); say([(A.won ? '¡Le ganaste a Ivan! ' + (A.resultText || '') + ' Te convida una chela: +1 INT en el proximo torneo.' : 'Perdiste contra Ivan. ' + (A.resultText || '') + ' "La IA me dijo que ganaba", dice riendose.')]);
+}
+function updatePong(A){
+  if (A.serve > 0) { A.serve--; return; }
+  A.py = clamp(A.py + ((K.down ? 2.4 : 0) - (K.up ? 2.4 : 0)), 44, 126);
+  A.cy += clamp(A.by - A.cy, -1.7, 1.7); A.cy = clamp(A.cy, 44, 126);
+  A.bx += A.bvx; A.by += A.bvy;
+  if (A.by < 36 || A.by > 134) { A.bvy = -A.bvy; A.by = clamp(A.by, 36, 134); tone(400, 400, 0.04, 'square', 0.2); }
+  const hitP = (px, py) => Math.abs(A.bx - px) < 4 && Math.abs(A.by - py) < 13;
+  if (A.bvx < 0 && hitP(40, A.py)) { A.bvx = Math.min(4.2, -A.bvx * 1.06); A.bvy = (A.by - A.py) * 0.12; SFX.hit(); }
+  if (A.bvx > 0 && hitP(200, A.cy)) { A.bvx = -Math.min(4.2, A.bvx * 1.06); A.bvy = (A.by - A.cy) * 0.12; SFX.hit(); }
+  if (A.bx < 28 || A.bx > 212) { if (A.bx < 28) A.sc++; else A.sp++; SFX.coin(); Object.assign(A, { bx:120, by:85, bvx:(A.bx < 28 ? 1.8 : -1.8), bvy:(Math.random() - 0.5) * 2, serve:50 });
+    if (A.sp >= 5 || A.sc >= 5) { A.won = A.sp >= 5; A.resultText = A.sp + ' a ' + A.sc + '.'; A.title = A.won ? '¡GANASTE!' : 'PERDISTE'; A.done = true; A.doneT = A.t; } }
+}
+function drawPong(A){
+  R(0, 0, W, H, '#1a1020'); outl(24, 30, 192, 110, '#1a4a9a'); R(25, 31, 190, 108, '#2a5ab0'); R(25, 31, 190, 1, '#ffffff'); R(25, 138, 190, 1, '#ffffff'); R(25, 84, 190, 1, 'rgba(255,255,255,.5)'); R(119, 26, 2, 118, '#e8e8f0');
+  outl(37, A.py - 12, 4, 24, '#e83040'); outl(199, A.cy - 12, 4, 24, '#3a2a48');
+  softShadow(A.bx + 2, A.by + 3, 3, 1.4, 0.4); disc(A.bx, A.by, 2, '#ffffff');
+  txt(String(A.sp), 90, 8, '#fff', 'center', '#000'); txt(String(A.sc), 150, 8, '#fff', 'center', '#000'); tiny('TU', 90, 22, '#ff9090', 'center'); tiny('IVAN', 150, 22, '#c8c0e8', 'center');
+}
+function updateTaca(A){
+  if (A.serve > 0) { A.serve--; if (A.serve === 0) { A.bvx = Math.random() < 0.5 ? 1.4 : -1.4; A.bvy = (Math.random() - 0.5) * 1.6; } return; }
+  A.py = clamp(A.py + ((K.down ? 2 : 0) - (K.up ? 2 : 0)), 55, 115); A.cy += clamp(A.by - A.cy, -1.3, 1.3); A.cy = clamp(A.cy, 55, 115);
+  if (pressed('a')) A.kick = 10; if (A.kick > 0) A.kick--;
+  A.bx += A.bvx; A.by += A.bvy; A.bvx *= 0.996; A.bvy *= 0.996;
+  if (A.by < 38 || A.by > 132) { A.bvy = -A.bvy; A.by = clamp(A.by, 38, 132); }
+  const rods = [[60, 2, 'p'], [95, 3, 'c'], [145, 3, 'p'], [180, 2, 'c']];
+  for (const [rx, n, who] of rods) { const ry = who === 'p' ? A.py : A.cy; for (let i = 0; i < n; i++) { const fy = ry + (i - (n - 1) / 2) * 30; if (Math.abs(A.bx - rx) < 5 && Math.abs(A.by - fy) < 5) {
+      const dir = who === 'p' ? 1 : -1, pw = who === 'p' && A.kick > 0 ? 4 : 2.4; A.bvx = dir * pw; A.bvy = (A.by - fy) * 0.35 + (Math.random() - 0.5); A.bx = rx + dir * 6; SFX.hit(); } } }
+  if (A.bx < 30) { if (A.by > 70 && A.by < 100) { A.sc++; SFX.lose(); } else { A.bvx = Math.abs(A.bvx); A.bx = 30; } }
+  if (A.bx > 210) { if (A.by > 70 && A.by < 100) { A.sp++; SFX.win(); } else { A.bvx = -Math.abs(A.bvx); A.bx = 210; } }
+  if (A.bx < 30 || A.bx > 210) { Object.assign(A, { bx:120, by:85, bvx:0, bvy:0, serve:50 }); if (A.sp >= 3 || A.sc >= 3) { A.won = A.sp >= 3; A.resultText = A.sp + ' a ' + A.sc + '.'; A.title = A.won ? '¡GOLAZO, GANASTE!' : 'PERDISTE'; A.done = true; A.doneT = A.t; } }
+  if (Math.abs(A.bvx) < 0.3 && A.serve <= 0) A.bvx = A.bx < 120 ? 0.8 : -0.8;
+}
+function drawTaca(A){
+  R(0, 0, W, H, '#1a1020'); outl(22, 32, 196, 106, '#5a3418'); R(26, 36, 188, 98, '#2a8a3a'); for (let x = 26; x < 214; x += 24) R(x, 36, 12, 98, '#2e9440'); R(119, 36, 2, 98, '#e8f0e8');
+  R(22, 70, 4, 30, '#0a0a10'); R(214, 70, 4, 30, '#0a0a10');
+  for (const [rx, n, who] of [[60, 2, 'p'], [95, 3, 'c'], [145, 3, 'p'], [180, 2, 'c']]) { R(rx - 1, 30, 2, 110, '#c8c8d0'); const ry = who === 'p' ? A.py : A.cy; for (let i = 0; i < n; i++) { const fy = ry + (i - (n - 1) / 2) * 30; outl(rx - 3, fy - 4, 6, 8, who === 'p' ? '#e83040' : '#3a6ae8'); R(rx - 2, fy - 4, 4, 2, '#f0c890'); } }
+  softShadow(A.bx + 1, A.by + 2, 3, 1.4, 0.4); disc(A.bx, A.by, 2, '#ffffff');
+  txt(A.sp + ' - ' + A.sc, 120, 8, '#fff', 'center', '#000'); tiny('TU (ROJO)    IVAN (AZUL)', 120, 22, '#c8c0e8', 'center'); if (A.t < 300) tiny('A: CHUTE FUERTE', 120, 144, '#c8c0e8', 'center');
+}
+function initPool(A){
+  A.balls = [{ x:70, y:85, vx:0, vy:0, c:'#ffffff', cue:true }]; const cols = ['#f8d030','#3a6ae8','#e83040','#8a3ac8','#f08020','#2a9a3a'];
+  let i = 0; for (let r = 0; r < 3; r++) for (let k = 0; k <= r; k++) A.balls.push({ x:150 + r * 7, y:85 + (k - r / 2) * 7, vx:0, vy:0, c:cols[i++] });
+  Object.assign(A, { ang:0, ch:false, pow:0, pd:1, shots:0, sunk:0 });
+}
+const POCKETS = [[30, 38], [120, 36], [210, 38], [30, 132], [120, 134], [210, 132]];
+function updatePool(A){
+  const moving = A.balls.some(b => Math.abs(b.vx) + Math.abs(b.vy) > 0.03);
+  if (!moving) {
+    if (K.left || K.up) A.ang -= 0.04; if (K.right || K.down) A.ang += 0.04;
+    if (pressed('a')) { if (!A.ch) { A.ch = true; A.pow = 0; A.pd = 1; } else { const cue = A.balls[0], p = 1 + A.pow * 6; cue.vx = Math.cos(A.ang) * p; cue.vy = Math.sin(A.ang) * p; A.ch = false; A.shots++; SFX.hit(); } }
+    if (A.ch) { A.pow += 0.025 * A.pd; if (A.pow >= 1 || A.pow <= 0) A.pd = -A.pd; }
+  }
+  for (let st = 0; st < 2; st++) {
+    for (const b of A.balls) { b.x += b.vx / 2; b.y += b.vy / 2; if (b.x < 33 || b.x > 207) { b.vx = -b.vx * 0.9; b.x = clamp(b.x, 33, 207); } if (b.y < 41 || b.y > 129) { b.vy = -b.vy * 0.9; b.y = clamp(b.y, 41, 129); } }
+    for (let i = 0; i < A.balls.length; i++) for (let j = i + 1; j < A.balls.length; j++) { const a = A.balls[i], b = A.balls[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+      if (d > 0 && d < 5) { const nx = dx / d, ny = dy / d, p = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny; if (p > 0) { a.vx -= p * nx; a.vy -= p * ny; b.vx += p * nx; b.vy += p * ny; tone(900, 900, 0.02, 'square', 0.15); } const o = (5 - d) / 2; a.x -= nx * o; a.y -= ny * o; b.x += nx * o; b.y += ny * o; } }
+  }
+  for (const b of A.balls) { b.vx *= 0.985; b.vy *= 0.985; if (Math.abs(b.vx) + Math.abs(b.vy) < 0.03) { b.vx = 0; b.vy = 0; }
+    if (POCKETS.some(([px, py]) => Math.hypot(b.x - px, b.y - py) < 6)) { if (b.cue) { b.x = 70; b.y = 85; b.vx = b.vy = 0; A.shots++; toast('¡LA BLANCA! TIRO DE CASTIGO', '#ff9080'); SFX.back(); } else { b.dead = true; A.sunk++; SFX.coin(); } } }
+  A.balls = A.balls.filter(b => !b.dead);
+  if (A.sunk >= 6 || A.shots > 14) { A.won = A.sunk >= 6 && A.shots <= 14; A.resultText = 'Embocaste ' + A.sunk + ' de 6 en ' + Math.min(A.shots, 15) + ' tiros.'; A.title = A.won ? '¡MESA LIMPIA!' : 'SE ACABARON LOS TIROS'; A.done = true; A.doneT = A.t; }
+}
+function drawPool(A){
+  R(0, 0, W, H, '#1a1020'); outl(22, 30, 196, 112, '#6a3a18'); R(28, 36, 184, 100, '#1a7a3a'); R(28, 36, 184, 2, '#2a9a4a');
+  for (const [px, py] of POCKETS) disc(px, py, 5, '#0a0a10');
+  for (const b of A.balls) { softShadow(b.x + 1, b.y + 2, 3, 1.5, 0.4); disc(b.x, b.y, 2.5, '#1a1020'); disc(b.x, b.y, 2, b.c); ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fillRect(b.x - 1, b.y - 1, 1, 1); }
+  const cue = A.balls[0], moving = A.balls.some(b => Math.abs(b.vx) + Math.abs(b.vy) > 0.03);
+  if (cue && cue.cue && !moving) { ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 0.5; ctx.setLineDash([2, 2]); ctx.beginPath(); ctx.moveTo(cue.x, cue.y); ctx.lineTo(cue.x + Math.cos(A.ang) * 60, cue.y + Math.sin(A.ang) * 60); ctx.stroke(); ctx.setLineDash([]);
+    const back = 6 + (A.ch ? A.pow * 10 : 0); ctx.strokeStyle = '#c89060'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(cue.x - Math.cos(A.ang) * back, cue.y - Math.sin(A.ang) * back); ctx.lineTo(cue.x - Math.cos(A.ang) * (back + 40), cue.y - Math.sin(A.ang) * (back + 40)); ctx.stroke(); }
+  txt('POOL', 120, 6, '#fce040', 'center', '#000'); tiny('BOLAS ' + A.sunk + '/6   TIROS ' + A.shots + '/14', 120, 20, '#fff', 'center');
+  if (A.ch) { R(70, 146, 100, 6, '#1a1020'); R(71, 147, Math.round(98 * A.pow), 4, A.pow > 0.75 ? '#f05030' : '#f8d030'); } else if (A.t < 400) tiny('FLECHAS APUNTAN, A CARGA Y A TIRA', 120, 148, '#c8c0e8', 'center');
+}
 function scanlines(){ ctx.fillStyle = 'rgba(0,0,0,.18)'; for (let y = 0; y < H; y += 2) ctx.fillRect(0, y, W, 1); }
 
 /* ---- BLOQUES DE URZA (bloques que caen) ---- */
@@ -5391,7 +5659,7 @@ function updateDuel(){
     }
   } else if (d.phase === 'end') {
     if (d.t > 40 && pressed('a')) {
-      G.state = 'world'; playMusic(G.def.music);
+      G.state = 'world'; playMusic(roomMusic());
       if (d.won) { S.coins += d.bet * 2; addXP(4 + Math.floor(d.bet / 1000)); say([d.opp.name + ': ¡Buena partida! Me ganaste.', 'Ganaste ' + money(d.bet * 2) + '.']); }
       else say([d.opp.name + ': ¡Gane! La suerte estuvo de mi lado.', 'Perdiste la apuesta de ' + money(d.bet) + '.']);
       S.duelsWon = (S.duelsWon || 0) + (d.won ? 1 : 0);
@@ -5734,7 +6002,7 @@ function step(){
   else if (G.state === 'tour') updateTour();
   else if (G.state === 'arcade') updateArcade();
   else if (G.state === 'duel') { if (G.dialog) updateDialog(); else updateDuel(); }
-  else if (G.state === 'ending') { if (G.t > 200 && pressed('a')) { G.state = 'world'; playMusic(G.def.music); } }
+  else if (G.state === 'ending') { if (G.t > 200 && pressed('a')) { G.state = 'world'; playMusic(roomMusic()); } }
   else if (G.state === 'world') {
     if (G.fade > 0) G.fade--;
     if (G.warp) updateWarp();
@@ -5842,10 +6110,11 @@ function loop(now){
     if (location.hash === '#test-arcade' && !G.tested) { G.tested = true; S = newSave(0); S.coins = 50; G.state = 'world'; loadRoom('arcade', 7 * TS + 3, 7 * TS + 4); }
     if (location.hash.startsWith('#elegir') && !G.tested) { G.tested = true; G.state = 'select'; G.sel = +location.hash.slice(8) || 0; }
     if (location.hash.startsWith('#intro=') && !G.tested) { G.tested = true; const n = +location.hash.slice(7); for (let i = 0; i < n; i++) step(); G.freeze = true; }
-    if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } if (extra === 'mascota') { S.pet = 24; S.dex = { 24:true, 3:true, 131:true }; } if (extra === 'reliquias') S.relics = { moai:1, alpha:1, moneda:3 }; if (extra && extra.startsWith('montura')) { const m = extra.slice(7) || 'mesa'; S.mounts = [m]; S.mount = m; } if (extra === 'pokes') { G.pokeTest = true; } if (extra === 'pelea' || extra === 'kart') { G.arcTest = extra; } if (extra === 'noche') G.forcePhase = 'night'; if (extra === 'lujo') G.lujoTest = true; if (extra === 'atardecer') G.forcePhase = 'dusk'; if (extra === 'dia') G.forcePhase = 'day'; loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4);
+    if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } if (extra === 'mascota') { S.pet = 24; S.dex = { 24:true, 3:true, 131:true }; } if (extra === 'reliquias') S.relics = { moai:1, alpha:1, moneda:3 }; if (extra && extra.startsWith('montura')) { const m = extra.slice(7) || 'mesa'; S.mounts = [m]; S.mount = m; } if (extra === 'pokes') { G.pokeTest = true; } if (extra === 'pelea' || extra === 'kart') { G.arcTest = extra; } if (extra === 'noche') G.forcePhase = 'night'; if (extra === 'lujo') G.lujoTest = true; if (extra === 'surf') S.surf = true; if (extra === 'pong' || extra === 'taca' || extra === 'pool') G.freeTest = extra; if (extra === 'atardecer') G.forcePhase = 'dusk'; if (extra === 'dia') G.forcePhase = 'day'; loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4);
       if (extra === 'viajar' || extra === 'volar') { S.stones = { home:true, tolaria:true }; if (extra === 'volar') for (const d of DECKS.slice(0, 6)) for (const c of d.cards) S.cards[c] = 1; openTravel(); G.dialog.ch = 999; G.dialog.showChoices = true; }
       if (extra === 'atascado') { loadRoom('bosqueRoca', W - PL.w - 2, 7 * TS + 4); }
       if (extra === 'mox') addCard(LEGEND);
+      if (G.freeTest) { startFree(G.freeTest); const A = G.arc; if (A.serve) A.serve = 0; G.freeze = true; }
       if (G.lujoTest) { S.lvl = 40; S.coins = 3000000; openShop('lujo', 'EL MARCHANTE'); }
       if (G.arcTest) { startArcade(G.arcTest); const A = G.arc; if (A.k) { A.k.cd = 0; A.k.spd = 130; A.k.z = KSEG * 75; A.k.opps[0].z = KSEG * 80; A.k.opps[1].z = KSEG * 90; } if (A.f) { A.phase = 'fight'; A.f[0].st = 'punch'; A.f[0].st_t = 5; A.f[0].x = 100; A.f[1].x = 128; A.f[1].hp = 64; } G.freeze = true; }
       if (extra === 'tomo') { S.ch = 10; G.enemies = []; for (let i = 0; i < 70; i++) step(); G.freeze = true; }
