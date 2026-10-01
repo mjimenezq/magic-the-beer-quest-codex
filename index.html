@@ -997,7 +997,7 @@ const ROOMS = {
   pradera:{ name:'PRADERA DE SERRA', theme:'meadow', music:'town', exits:{e:'pueblo'}, decks:['life','replenish'],
     map:['TTTTTTTTTTTTTTT','T,,..,..,..,.,T','T.P...,,...P..T','T,..,....,...,T','T.....o.......=','T,.,......,...=','T...,..,..,..,T','T.P..,....,.P.T','Tc..,..,...,.,T','TTTTTTTTTTTTTTT'],
     enemies:[['warden',4,3],['warden',9,6],['warden',10,2],['angel',6,6]], chests:{'1,8':'urza'} },
-  costa:{ name:'PICHILEMU', theme:'sand', music:'beach', surfers:3, exits:{n:'pueblo',s:'islote'}, decks:['langostino','replenish'],
+  costa:{ name:'PICHILEMU', theme:'sand', music:'beach', surfers:3, exits:{n:'pueblo',s:'dunas'}, decks:['langostino','replenish'],
     map:['TTTTTT...TTTTTT','Tss.b.....b.ssT','Tsss...s...sssT','Tss..r...r..ssT','~sss.......sss~','~~ss...c...ss~~','~~~s.......s~~~','~~~~s.....s~~~~','~~~~~s...sL~~~~','~~~~~~~~~~~~~~~'],
     enemies:[['merfolk',3,2],['merfolk',11,2],['merfolk',5,6],['merfolk',9,6]], chests:{'7,5':'mar'},
     npcs:[{id:'barquero',x:9,y:7},{id:'surfista',x:12,y:3}],
@@ -2802,7 +2802,7 @@ function blocked(x, y, w, h, fly){
   return false;
 }
 const ov = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
-const npcHit = e => G.npcs.some(n => ov(e, n));
+const npcHit = e => G.npcs.some(n => ov(e, n) && !(G.roomId === 'valpo' && e.x >= 6 * TS && e.x + e.w <= 9 * TS && e.y < 6 * TS));
 let PLAYER_CHECK = false; // mientras se mueve el jugador (para que pueda surfear sobre el mar)
 function moveBox(e, dx, dy, fly, isPlayer){
   PLAYER_CHECK = !!isPlayer; const r = moveBox_(e, dx, dy, fly, isPlayer); PLAYER_CHECK = false; return r;
@@ -2846,6 +2846,8 @@ function addXP(n){
     if (S.lvl >= MAX_LVL) { S.xp = 0; SFX.win(); say(['¡NIVEL 200! Llegaste al nivel maximo.', 'Ya no hay criatura en Dominaria ni en el mundo Pokemon que te asuste. Eres leyenda.']); break; }
   }
 }
+const meleeDamage = (st=stats()) => 1 + Math.floor(st.fue / 3) + Math.floor((S.lvl - 1) / 3);
+const meleeCritDamage = (st=stats()) => meleeDamage(st) * 2;
 function addCard(id){
   const was = S.cards[id] || 0;
   S.cards[id] = was + 1;
@@ -3031,6 +3033,7 @@ function changeRoom(side){
   }
   let x = PL.x, y = PL.y;
   if (side === 'n') y = H - PL.h - 2; if (side === 's') y = 2; if (side === 'w') x = W - PL.w - 2; if (side === 'e') x = 2;
+  if (WORLD[to]) { if (side === 'n' || side === 's') x = 7 * TS + 3; else y = 4 * TS + 4; }
   loadRoom(to, x, y); return true;
 }
 
@@ -3250,18 +3253,33 @@ function updateSafari(){
   G.balls = G.balls.filter(b => !b.dead);
   if (G.wild.length < 6 && frame % 240 === 0) spawnWildPoke();
 }
+// Si la mascota quedó trabada en un pilar o un árbol, reaparece en un lugar libre junto al jugador
+function petRescue(pt){
+  const [dx, dy] = DIRV[PL.dir];
+  const tries = [[-dx * 14, -dy * 14], [12, 0], [-12, 0], [0, 12], [0, -12], [12, 12], [-12, 12], [12, -12], [-12, -12], [0, 0]];
+  for (const [a, b] of tries) { const x = PL.x + a, y = PL.y + b; if (x < 0 || y < 0 || x > W - 10 || y > H - 8 || blocked(x, y, 10, 8)) continue;
+    for (let i = 0; i < 8; i++) G.parts.push({ k:'smoke', x:pt.x + 5, y:pt.y + 4, vx:Math.cos(i * 0.8) * 0.8, vy:Math.sin(i * 0.8) * 0.8, t:0 });
+    pt.x = x; pt.y = y; pt.stuck = 0; pt.calm = 90;
+    for (let i = 0; i < 8; i++) G.parts.push({ k:'smoke', x:x + 5, y:y + 4, vx:Math.cos(i * 0.8) * 0.8, vy:Math.sin(i * 0.8) * 0.8, t:0 });
+    return; }
+  pt.stuck = 0;
+}
 // La mascota: sigue al jugador y ataca a la criatura más cercana
 function updatePet(){
   const pt = G.pet; if (!pt || S.pet === null) return;
   pt.t++; if (pt.cd > 0) pt.cd--;
   const P = POKE[S.pet], px = PL.x + 5, py = PL.y + 4;
   if (Math.hypot(pt.x - px, pt.y - py) > 140) { pt.x = PL.x; pt.y = PL.y; }
-  const foe = G.enemies.filter(e => !e.dead && Math.hypot(e.x + e.w / 2 - px, e.y + e.h / 2 - py) < 90).sort((a, b2) => Math.hypot(a.x - pt.x, a.y - pt.y) - Math.hypot(b2.x - pt.x, b2.y - pt.y))[0];
+  if (pt.calm > 0) pt.calm--;
+  const foe = pt.calm > 0 ? null : G.enemies.filter(e => !e.dead && Math.hypot(e.x + e.w / 2 - px, e.y + e.h / 2 - py) < 90).sort((a, b2) => Math.hypot(a.x - pt.x, a.y - pt.y) - Math.hypot(b2.x - pt.x, b2.y - pt.y))[0];
   let tx, ty, sp;
   if (foe) { tx = foe.x + foe.w / 2 - 5; ty = foe.y + foe.h / 2 - 5; sp = 1.7; }
   else { const [dx, dy] = DIRV[PL.dir]; tx = PL.x - dx * 14; ty = PL.y - dy * 12; sp = 1.3; }
   const dx = tx - pt.x, dy = ty - pt.y, dd = Math.hypot(dx, dy);
+  const ox = pt.x, oy = pt.y;
   if (dd > (foe ? 3 : 10)) { const s = Math.min(sp + (dd > 60 ? 1.2 : 0), dd); const box = { x:pt.x, y:pt.y, w:10, h:8 }; moveBox(box, dx / dd * s, dy / dd * s, P.shape === 'w'); pt.x = box.x; pt.y = box.y; if (Math.abs(dx) > 0.5) pt.flip = dx < 0; }
+  if (dd > 18 && Math.hypot(pt.x - ox, pt.y - oy) < 0.3) pt.stuck = (pt.stuck || 0) + 1; else pt.stuck = 0;
+  if (pt.stuck > 30) petRescue(pt);
   if (foe && pt.cd <= 0 && Math.hypot(foe.x + foe.w / 2 - pt.x - 5, foe.y + foe.h / 2 - pt.y - 5) < foe.w / 2 + 10) {
     const dmg = P.tier * 2 + Math.floor(S.lvl / 3), kx = Math.sign(foe.x - pt.x) * 1.2, ky = Math.sign(foe.y - pt.y) * 1.2;
     pt.cd = 45; floatText(String(dmg), foe.x + foe.w / 2, foe.y - 4, POKE_TYPE[P.type][1]);
@@ -3328,8 +3346,8 @@ function updateWorld(){
         const ex = e.x + e.w / 2, ey = e.y + e.h / 2;
         if (Math.hypot(hx - ex, hy - ey) < e.w / 2 + 4) {
           e.lastSwing = G.swing;
-          const crit = Math.random() < st.des * 0.03;
-          const dmg = (1 + Math.floor(st.fue / 3) + Math.floor((S.lvl - 1) / 3)) * (crit ? 2 : 1);
+          const crit = Math.random() < Math.min(0.75, st.des * 0.03);
+          const dmg = meleeDamage(st) * (crit ? 2 : 1);
           SFX.hit();
           floatText(crit ? dmg + '!' : String(dmg), ex, e.y - 4, crit ? '#fcd84a' : '#fff');
           const kd = Math.hypot(ex - cx, ey - cy) || 1, kf = MON[e.type].boss ? 0.6 : 2.6;
@@ -3724,6 +3742,7 @@ function shopItems(kind){
     for (const [id, a] of Object.entries(ARMOR)) if (a.price) L.push({ kind:'armor', id, name:a.n, price:a.price, info:GEAR_SLOTS.find(g => g[0] === a.slot)[1] + '. +' + a.def + ' DEF ' + (Object.keys(a.st).length ? statLine(a.st) : ''), owned:S.armor.includes(id) });
   } else if (kind === 'magia') { for (const id of SPELL_ORDER) { const s = SPELLS[id]; L.push({ kind:'spell', id, name:s.n + (S.spells.includes(id) ? ' ' + spellXpLine(id) : ''), price:s.price, info:s.mp + ' MP. ' + s.desc + ' SUBE DE NIVEL CON EL USO (HASTA 5).', owned:S.spells.includes(id) }); } }
   else if (kind === 'sur') { for (const [id, p] of Object.entries(SUR_SHOP)) { const a = ARMOR[id]; L.push({ kind:'armor', id, name:a.n, price:p, info:GEAR_SLOTS.find(g => g[0] === a.slot)[1] + '. +' + a.def + ' DEF ' + (Object.keys(a.st).length ? statLine(a.st) : ''), owned:S.armor.includes(id) }); } }
+  else if (kind === 'liga') { for (const [id, c] of Object.entries(CARDS)) if (!(S.cards[id] || 0)) L.push({ kind:'card', id, name:c.n, price:c.legend ? 250000 : 12000, info:(c.legend ? 'CARTA LEGENDARIA. ' : 'CARTA SUELTA. ') + c.cost + ' - ' + c.t + '. ' + c.tx }); }
   else if (kind === 'monturas') { for (const [id, m] of Object.entries(MOUNTS)) if (!m.boss) L.push({ kind:'mount', id, name:m.n, price:m.price, info:'MONTURA. ' + m.desc, owned:(S.mounts || []).includes(id) }); }
   else if (kind === 'lujo') { for (const it of LUXURY) { const name = it.kind === 'sword' ? SWORDS[it.id].n : it.kind === 'armor' ? ARMOR[it.id].n : it.kind === 'mount' ? MOUNTS[it.id].n : HOUSE[it.id].n;
       const info = (it.kind === 'sword' ? 'ARMA. ' + statLine(SWORDS[it.id].st) : it.kind === 'armor' ? GEAR_SLOTS.find(g => g[0] === ARMOR[it.id].slot)[1] + '. +' + ARMOR[it.id].def + ' DEF ' + statLine(ARMOR[it.id].st) : it.kind === 'mount' ? 'MONTURA. ' + MOUNTS[it.id].desc : HOUSE[it.id].desc) + (reqOk(it.req) ? '' : '  ' + reqText(it.req));
@@ -3743,12 +3762,14 @@ function buyItem(it){
   if (it.kind === 'sword') { S.swords.push(it.id); const sum = o => Object.values(o).reduce((a, b) => a + b, 0); if (sum(SWORDS[it.id].st) > sum(SWORDS[S.eq].st)) S.eq = it.id; }
   else if (it.kind === 'armor') { S.armor.push(it.id); const A = ARMOR[it.id], cur = S.gear[A.slot]; if (!cur || ARMOR[cur].def < A.def) S.gear[A.slot] = it.id; }
   else if (it.kind === 'spell') learnSpell(it.id);
+  else if (it.kind === 'card') { addCard(it.id); sh.msg = 'CARTA AGREGADA A TU COLECCION'; }
   else if (it.kind === 'mount') { S.mounts = S.mounts || []; S.mounts.push(it.id); S.mount = it.id; toast('MONTADO EN ' + MOUNTS[it.id].n.toUpperCase() + ' (R PARA BAJAR)', '#fcd84a'); }
   else if (it.kind === 'house') { S.house[it.id] = true; const b = (HOUSE[it.id] || PRIZES[it.id]).bonus; for (const [k, v] of Object.entries(b.st || {})) S.st[k] += v; if (b.maxHp) { S.maxHp += b.maxHp; S.hp = S.maxHp; } }
-  SFX.chest(); sh.msg = '¡COMPRADO!'; sh.msgT = 60; sh.items = shopItems(sh.kind); G.cacheDirty = true; saveGame();
+  SFX.chest(); sh.msg = '¡COMPRADO!'; sh.msgT = 60; sh.items = shopItems(sh.kind); sh.sel = Math.min(sh.sel, Math.max(0, sh.items.length - 1)); sh.scroll = Math.min(sh.scroll, sh.sel); G.cacheDirty = true; saveGame();
 }
 function updateShop(){
   const sh = G.shop, n = sh.items.length;
+  if (!n) { if (pressed('a') || pressed('b') || pressed('menu')) { G.shop = null; SFX.back(); } return; }
   if (pressed('up')) { sh.sel = (sh.sel + n - 1) % n; SFX.move(); }
   if (pressed('down')) { sh.sel = (sh.sel + 1) % n; SFX.move(); }
   if (sh.sel < sh.scroll) sh.scroll = sh.sel; if (sh.sel >= sh.scroll + 8) sh.scroll = sh.sel - 7;
@@ -3761,6 +3782,7 @@ function drawShop(){
   R(0, 0, W, H, '#14101e'); R(0, 0, W, 17, '#2a1a3a');
   txt(sh.title, 6, 5, '#fcd84a', 'left', null);
   tiny(money(S.coins), 234, 7, '#fcd84a', 'right');
+  if (!sh.items.length) { R(18, 42, 204, 48, '#241c40'); txt('COLECCION COMPLETA', 120, 54, '#fcd84a', 'center', '#000'); tiny('Ya tienes todas las cartas disponibles.', 120, 68, '#e8e4ff', 'center'); tiny('A O X PARA SALIR', 120, 151, '#9db8a8', 'center'); return; }
   sh.rows = [];
   for (let i = 0; i < 8; i++) {
     const idx = sh.scroll + i, it = sh.items[idx]; if (!it) break;
@@ -3910,11 +3932,11 @@ function leagueTalk(key){
   const L = LEAGUES[key], who = NPCDEF[L.npc].n, done = DECKS.filter(d => deckDone(d.id)), won = S.leagues && S.leagues[key];
   const intro = who + ': ' + (won ? 'Ya eres campeón de la ' + L.n + '. Puedes volver a jugarla cuando quieras, el premio se paga igual.'
     : '¡Bienvenido a la ' + L.n + '! ' + L.rounds + ' rondas contra lo mejor de ' + L.place + '. Inscripción: ' + money(L.fee) + '. Ganarla cuenta para la Liga Nacional.');
-  if (!done.length) { say([intro, who + ': Pero necesitas un mazo completo de ' + DECK_SIZE + ' cartas para inscribirte.']); return; }
+  if (!done.length) { say([intro, who + ': Pero necesitas un mazo completo de ' + DECK_SIZE + ' cartas para inscribirte.'], [{ t:'TIENDA DE CARTAS', fn:() => openShop('liga', L.n + ' - TIENDA') }, { t:'VOLVER', fn:null }]); return; }
   say([intro, who + ': Campeón se lleva ' + money(L.champ + L.perWin * L.rounds) + '. ¿Con qué mazo juegas?'], deckChoices(done, d => {
     if (S.coins < L.fee) { say([who + ': La inscripción es ' + money(L.fee) + '. Te faltan ' + money(L.fee - S.coins) + '.']); return; }
     S.coins -= L.fee; startTour(d.id, { rounds:L.rounds, diff:L.diff, league:key, name:L.n, perWin:L.perWin, champ:L.champ });
-  }));
+  }).concat([{ t:'TIENDA DE CARTAS', fn:() => openShop('liga', L.n + ' - TIENDA') }, { t:'VOLVER', fn:null }]));
 }
 function talkTo(id, npc, skipQuest){
   if (!skipQuest && questHook(id, npc)) return;
@@ -4085,12 +4107,12 @@ function talkTo(id, npc, skipQuest){
         'Y derrota a TODOS los jefes de Chile: llevas ' + bs + ' de ' + ALL_BOSSES.length + '. Los jefes vuelven a aparecer siempre, así que puedes pelear con ellos las veces que quieras.']);
       return;
     }
-    if (!done.length) { say(['ORGANIZADORA: Necesitas un mazo completo de ' + DECK_SIZE + ' cartas para inscribirte.']); return; }
+    if (!done.length) { say(['ORGANIZADORA: Necesitas un mazo completo de ' + DECK_SIZE + ' cartas para inscribirte.'], [{ t:'TIENDA DE CARTAS', fn:() => openShop('liga', 'LIGA NACIONAL - TIENDA') }, { t:'VOLVER', fn:null }]); return; }
     say(['ORGANIZADORA: ¡La Liga Nacional! Son 5 rondas contra los mejores de Chile. Inscripción: $25.000. ¿Con qué mazo juegas?'],
       deckChoices(done, d => {
         if (S.coins < 25000) { say(['ORGANIZADORA: La inscripción es $25.000. Te faltan ' + money(25000 - S.coins) + '.']); return; }
         S.coins -= 25000; startTour(d.id, { rounds:5, diff:0.06, liga:true, name:'LIGA NACIONAL', perWin:8000, champ:80000 });
-      }));
+      }).concat([{ t:'TIENDA DE CARTAS', fn:() => openShop('liga', 'LIGA NACIONAL - TIENDA') }, { t:'VOLVER', fn:null }]));
     return;
   }
   if (id === 'arcadeOrg') {
@@ -4178,14 +4200,16 @@ function randomLook(name){
 function startTour(deck, cfg){
   cfg = cfg || { rounds:3, diff:0, liga:false, name:'TORNEO' };
   const names = [...OPP_NAMES].sort(() => Math.random() - 0.5).slice(0, cfg.rounds);
-  G.tour = { deck, cfg, room:G.roomId, px:PL.x, py:PL.y, round:0, wins:0, phase:'vs', t:0, buzz:S.buzz, opps:names.map(n => ({ n, deck:pick(DECKS).id, look:randomLook(n) })), ev:[], ei:0, lives:[20, 20], cur:null, pops:[] };
+  G.tour = { deck, cfg, room:G.roomId, px:PL.x, py:PL.y, round:0, wins:0, phase:'strategy', sel:0, tactic:null, t:0, buzz:S.buzz, opps:names.map(n => ({ n, deck:pick(DECKS).id, look:randomLook(n) })), ev:[], ei:0, lives:[20, 20], cur:null, pops:[] };
   S.buzz = 0; S.beers = 0;
   G.state = 'tour'; playMusic('fanfare'); SFX.ok();
-  prepRound();
 }
 function prepRound(){
-  const T_ = G.tour, o = T_.opps[T_.round];
-  const pw = clamp(0.5 + mu(T_.deck, o.deck) + (stats().int - 5) * 0.03 + T_.buzz * 0.02 + (owned(LEGEND) ? 0.05 : 0) + houseBonus('tourInt') * 0.02 - T_.round * 0.04 - T_.cfg.diff, 0.15, 0.9);
+  const T_ = G.tour, o = T_.opps[T_.round], st = stats(), tactics = TACTICS.slice(0, 3), style = DECK_STYLE[o.deck];
+  const tactic = tactics[T_.sel].id, counter = BEATS[tactic] === style, exposed = BEATS[style] === tactic;
+  T_.tactic = tactic; T_.roll = [1 + rnd(6), 1 + rnd(6)]; T_.counter = counter; T_.exposed = exposed;
+  const statBonus = Math.min(0.12, (st.fue + st.des + st.agi) * 0.004);
+  const pw = clamp(0.5 + mu(T_.deck, o.deck) + (st.int - 5) * 0.03 + statBonus + T_.buzz * 0.02 + (owned(LEGEND) ? 0.05 : 0) + houseBonus('tourInt') * 0.02 + (counter ? 0.12 : exposed ? -0.12 : 0) + (T_.roll[0] - T_.roll[1]) * 0.035 - T_.round * 0.04 - T_.cfg.diff, 0.08, 0.92);
   T_.pwin = pw; T_.iwin = Math.random() < pw;
   T_.ev = genDuel(T_.deck, o.deck, T_.iwin); T_.ei = 0; T_.lives = [20, 20]; T_.cur = null; T_.phase = 'vs'; T_.t = 0; T_.pops = [];
 }
@@ -4208,7 +4232,13 @@ function updateTour(){
   const T_ = G.tour; T_.t++;
   for (const p of T_.pops) p.t++;
   T_.pops = T_.pops.filter(p => p.t < 40);
-  if (T_.phase === 'vs') { if (T_.t > 100 || (T_.t > 20 && pressed('a'))) { T_.phase = 'duel'; T_.t = 0; } }
+  if (T_.phase === 'strategy') {
+    const n = TACTICS.length - 1;
+    if (pressed('up') || pressed('left')) { T_.sel = (T_.sel + n - 1) % n; SFX.move(); }
+    if (pressed('down') || pressed('right')) { T_.sel = (T_.sel + 1) % n; SFX.move(); }
+    if (pressed('a')) { prepRound(); SFX.ok(); }
+  }
+  else if (T_.phase === 'vs') { if (T_.t > 100 || (T_.t > 20 && pressed('a'))) { T_.phase = 'duel'; T_.t = 0; } }
   else if (T_.phase === 'duel') {
     const step = K.a ? 10 : 42;
     if (T_.t >= step) {
@@ -4225,7 +4255,7 @@ function updateTour(){
     }
   } else if (T_.phase === 'res') {
     if (T_.t > 40 && pressed('a')) {
-      if (T_.iwin && T_.round < T_.cfg.rounds - 1) { T_.round++; prepRound(); }
+      if (T_.iwin && T_.round < T_.cfg.rounds - 1) { T_.round++; T_.sel = 0; T_.phase = 'strategy'; T_.t = 0; }
       else { T_.phase = 'end'; T_.t = 0; finishTour(); }
     }
   } else if (T_.phase === 'end') {
@@ -4241,7 +4271,7 @@ function finishTour(){
   const T_ = G.tour, w = T_.wins, N = T_.cfg.rounds, champ = w === N, liga = T_.cfg.liga;
   const big = liga || !!T_.cfg.league;
   const coins = w * (T_.cfg.perWin || 2000) + (champ ? (T_.cfg.champ || 5000) : 0);
-  S.coins += coins; addXP(w * (big ? 12 : 6) + (champ ? (big ? 60 : 15) : 0));
+  S.coins += coins; addXP((T_.round + 1) * (big ? 4 : 2) + w * (big ? 10 : 6) + (champ ? (big ? 20 : 15) : 0));
   const lines = [champ ? (liga ? '¡CAMPEÓN NACIONAL DE PREMODERN! Ganaste las ' + N + ' rondas de la Liga.' : T_.cfg.league ? '¡CAMPEÓN DE LA ' + T_.cfg.name + '! Ganaste las ' + N + ' rondas.' : '¡CAMPEÓN DEL TORNEO PREMODERN! Ganaste las ' + N + ' rondas.') : 'Ganaste ' + w + ' de ' + (T_.round + 1) + ' partidas.', 'Premio: ' + money(coins) + '.'];
   const reward = { lines };
   if (champ && T_.cfg.league) { S.leagues = S.leagues || {}; const first = !S.leagues[T_.cfg.league]; S.leagues[T_.cfg.league] = true; lines.push(first ? 'Ligas regionales ganadas: ' + leaguesDone() + '/5.' + (leaguesDone() === 5 ? ' ¡Ya cumples una parte de lo que pide la Liga Nacional!' : '') : 'Ya eras campeón de esta liga: te llevas el premio igual.'); }
@@ -4257,8 +4287,19 @@ function finishTour(){
 function drawTour(){
   const T_ = G.tour, o = T_.opps[T_.round];
   R(0, 0, W, H, '#1a1430');
-  for (let i = 0; i < 15; i++) R(i * 16, 108, 16, 52, i % 2 ? '#2a2248' : '#241c40');
-  R(0, 106, W, 2, '#3a3060');
+  if (T_.cfg.league || T_.cfg.liga) {
+    const colors = ['#fcd84a','#40d8e8','#f070a0','#60d870'];
+    for (let i = 0; i < 20; i++) if (((frame + i * 7) % 17) < 8) R((i * 37 + frame * (i % 3 + 1)) % W, 18 + (i * 19) % 78, 2, 2, colors[i % colors.length]);
+    tiny('FIESTA DEL TORNEO', 120, 18, '#fcd84a', 'center');
+  }
+  for (let i = 0; i < 15; i++) R(i * 16, 108, 16, 52, i % 2 ? '#3a2418' : '#4a2c1c');
+  R(0, 106, W, 3, '#b08048'); R(8, 111, 224, 40, '#17101c');
+  R(10, 113, 220, 36, S.house && S.house.playmat ? '#285b73' : '#31502f');
+  R(11, 114, 218, 1, 'rgba(255,255,255,.42)'); R(11, 147, 218, 1, 'rgba(0,0,0,.45)');
+  tiny(S.house && S.house.playmat ? 'PLAYMAT DE LA LIGA' : 'MESA DEL TORNEO', 120, 139, '#d8d0b0', 'center');
+  for (const x of [25, 194]) { R(x, 118, 18, 24, '#f4ecd8'); R(x + 2, 120, 14, 20, '#7050a0'); R(x + 4, 122, 10, 1, '#fcd84a'); }
+  drawDie(103, 119, T_.roll ? T_.roll[0] : 1, '#f4ecd8');
+  drawDie(123, 119, T_.roll ? T_.roll[1] : 1, '#f0a0a0');
   txt((T_.cfg.liga ? 'LIGA ' : 'RONDA ') + (T_.round + 1) + '/' + T_.cfg.rounds, 120, 4, '#fcd84a', 'center', '#000');
   // player
   ctx.save(); ctx.translate(18, 30); ctx.scale(2, 2); drawPerson(0, 0, playerLook(), 0, 0); ctx.restore();
@@ -4271,10 +4312,18 @@ function drawTour(){
   const lifeBox = (x, v) => { R(x - 20, 90, 40, 20, '#000'); R(x - 19, 91, 38, 18, v <= 5 ? '#6a1a1a' : '#2a2248'); txt(String(Math.max(0, v)), x, 94, '#fff', 'center', '#000', 16); };
   lifeBox(34, T_.lives[0]); lifeBox(206, T_.lives[1]);
   for (const p of T_.pops) txt(p.s, p.side === 0 ? 34 : 206, 50 - p.t * 0.5, p.col, 'center', '#000', 16);
-  if (T_.phase === 'vs') {
+  if (T_.phase === 'strategy') {
+    R(34, 55, 172, 48, '#080610'); R(36, 57, 168, 44, '#302044');
+    tiny('ELIGE TU PLAN PARA ESTA RONDA', 120, 59, '#fcd84a', 'center');
+    const oppStyle = DECK_STYLE[o.deck];
+    TACTICS.slice(0, 3).forEach((t, i) => { const y = 68 + i * 10, on = T_.sel === i, mark = BEATS[t.id] === oppStyle ? ' +VENTAJA' : BEATS[oppStyle] === t.id ? ' -PELIGRO' : ' NEUTRO'; if (on) R(43, y - 1, 154, 10, '#59406e'); tiny(t.n + mark, 48, y, on ? '#fff' : '#bdb0d0'); });
+    tiny('RIVAL: ' + ({agro:'AGRESIVO',ctrl:'CONTROL',combo:'COMBO'})[oppStyle] + '  /  TU MAZO: ' + ({agro:'AGRO',ctrl:'CONTROL',combo:'COMBO'})[DECK_STYLE[T_.deck]], 120, 104, '#d8c8e8', 'center');
+    tiny('FLECHAS ELIGEN · A CONFIRMA', 120, 151, '#fcd84a', 'center');
+  } else if (T_.phase === 'vs') {
     txt('VS', 120, 60, '#fcd84a', 'center', '#7a3a10', 16);
-    tiny('PROBABILIDAD ESTIMADA: ' + Math.round(T_.pwin * 100) + '%', 120, 90, '#c8c0e8', 'center');
-    if (T_.buzz) tiny('+' + T_.buzz + ' INT POR LA CERVEZA', 120, 98, '#fcd84a', 'center');
+    tiny('DADOS ' + T_.roll[0] + ' VS ' + T_.roll[1] + (T_.counter ? ' · BUEN MATCHUP' : T_.exposed ? ' · CUIDADO' : ''), 120, 90, T_.counter ? '#80e890' : T_.exposed ? '#ff9080' : '#c8c0e8', 'center');
+    tiny('POSIBILIDAD: ' + Math.round(T_.pwin * 100) + '%  · A: EMPEZAR', 120, 98, '#c8c0e8', 'center');
+    if (T_.buzz) tiny('+' + T_.buzz + ' INT POR LA CERVEZA', 120, 104, '#fcd84a', 'center');
   } else if (T_.cur) {
     drawCardBig(T_.cur.card, 74, 18);
     tiny(T_.cur.who === 0 ? 'TU JUGADA' : 'JUGADA RIVAL', 120, 150, '#c8c0e8', 'center');
@@ -4337,6 +4386,7 @@ function updateMenu(){
 }
 const THEME_COL = { town:'#d8b060', forest:'#3e8a36', dirt:'#a88050', swamp:'#4a6a40', meadow:'#88c860', sand:'#e8d098', volcano:'#c84a20', ice:'#c8e8ff', bog:'#5a6a3a' };
 const zoneTheme = id => WILD[id] ? WILD[id].theme : ROOMS[id].theme;
+const LEAGUE_MAP = { vina:'vina', curico:'valpo', pmontt:'pmontt', urza:'tolaria', tempest:'tempest', nacional:'tolaria' };
 function drawWorldMap(){
   const cw = 44, chh = 20, ox = 10, oy = 20, rows = 6, cur = zoneOf(G.roomId), vis = S.visited || {};
   const center = id => [ox + WORLD[id][0] * cw + cw / 2, oy + WORLD[id][1] * chh + chh / 2];
@@ -4354,12 +4404,14 @@ function drawWorldMap(){
       tiny(SHORT[id].replace('. ', '.'), px + w / 2, py + h / 2 - 2, '#1a1020', 'center');
       const dk = WILD[id] && WILD[id].dungeon, boss = dk ? DUNGEONS[dk].boss : id === 'guarida' ? 'siege' : id === 'islote' ? 'dread' : null;
       if (boss) { R(px + w - 6, py - 2, 7, 6, '#1a1020'); R(px + w - 5, py - 1, 5, 4, S.bosses[boss] ? '#60e070' : '#e83040'); }
+      const marks = Object.entries(LEAGUE_MAP).filter(([k, place]) => place === id && (k !== 'nacional' || leaguesDone() === 5 && bossesDone() === ALL_BOSSES.length));
+      if (marks.length) { const complete = marks.every(([k]) => k === 'nacional' ? (S.ligaWins || 0) > 0 : S.leagues && S.leagues[k]); R(px + w - 7, py + 1, 6, 7, '#1a1020'); R(px + w - 6, py + 2, 4, 5, complete ? '#40a850' : '#f0c030'); tiny(marks.some(([k]) => k === 'nacional') ? 'N' : 'L', px + w - 4, py + 2, '#1a1020', 'center'); }
       if (id === cur && (frame >> 4) & 1) { ctx.strokeStyle = '#fcd84a'; ctx.lineWidth = 2; ctx.strokeRect(px - 1, py - 1, w + 2, h + 2); }
     } else if (near) { R(px, py, w, h, '#8a7a5a'); tiny('?', px + w / 2, py + h / 2 - 2, '#e8d8a8', 'center'); }
   }
   const floor = G.def.dungeonKey ? ' - ' + DUNGEONS[G.def.dungeonKey].name + (G.def.bossFloor ? ' (GUARDIAN)' : ' PISO ' + G.def.floor) : '';
   tiny('ESTAS EN: ' + SHORT[cur] + floor, 120, 146, '#fcd84a', 'center');
-  tiny('ROJO: JEFE SIN DERROTAR  VERDE: YA LO VENCISTE', 120, 153, '#6a8a80', 'center');
+  tiny('L: LIGA DISPONIBLE  ROJO/VERDE: JEFE', 120, 153, '#6a8a80', 'center');
 }
 function drawQuests(){
   txt('ENCARGOS', 8, 21, '#fcd84a', 'left', '#000');
@@ -4492,7 +4544,7 @@ function drawMenu(){
       tiny(h, 76, y + 9, '#6a8a80');
     });
     tiny('VIDA ' + S.hp / 2 + '/' + S.maxHp / 2 + '   MONEDAS ' + money(S.coins) + '   TROFEOS ' + S.trophies, 76, 104, '#c8d8d0');
-    tiny('ESPADA: ' + SWORDS[S.eq].n, 76, 112, '#c8d8d0');
+    tiny('GOLPE ' + meleeDamage(st) + ' / CRIT ' + meleeCritDamage(st) + '  DES ' + Math.min(75, Math.round(st.des * 3)) + '%', 76, 112, '#fcd84a');
     tiny('CARTAS: ' + totalCards() + '/' + ALL_CARDS.length + '   MAZOS COMPLETOS: ' + DECKS.filter(d => deckDone(d.id)).length + '/' + DECKS.length, 76, 120, '#c8d8d0');
     tiny('COMPAÑERO: ' + (S.pet !== null && S.pet !== undefined ? POKE[S.pet].n : 'NINGUNO') + '   POKEDEX ' + Object.keys(S.dex || {}).length + '/151', 76, 128, '#c8f0a0');
     tiny('ANTIGUEDADES: ' + relicCount() + ' (' + money(relicValue()) + ')   MONTURA: ' + (S.mount ? MOUNTS[S.mount].n.toUpperCase() : (S.mounts || []).length ? 'A PIE (R)' : 'NINGUNA'), 76, 136, '#e8c040');
@@ -4516,6 +4568,27 @@ function pickWildPoke(){ const tot = POKE.reduce((a, p) => a + POKE_WEIGHT[p.tie
 const POKE_MAPS = {"bulba":["......gGGg......","....gGGGGGGg....","...gGGgGGGGGg...","...gGGGGgGGGg...","....gGGGGGGg....","..BBBBBBBBBBBB..",".BBdBBBBBBwrBBB.",".BBBBBBdBBwrBBB.",".BBBBBBBBBBBBBB.","..BBdBBBBBkkBB..","..BBBBBBBBBBB...","..BB.BB..BB.BB..","..BB.BB..BB.BB.."],"charm":[".....CCCC.......","....CCCCCC......","....CCCCwkC.....","....CCCCwkCC....","....CCCCCCCC....",".....CCCCCC.....","....CCyyyCC.....","...CCCyyyyCC..R.","...CC.yyyyC..RFR",".....CyyyyC..RF.",".....CCyyCCCCC..",".....CC..CC.....","....CCC..CCC...."],"squirt":[".....BBBB.......","....BBBBBB......","....BBBBwkB.....","....BBBBwkBB....","....BBBBBBBB....","...ssBBBBBB.....","..SSsyyyyB......","..SSsyyyyBB.....","..SSsyyyyB......","..SSsyyyyB......",".BBSssyyBBB.....","....BB..BB......","...BBB..BBB....."],"pika":[".k..........k...",".kY........Yk...","..YY......YY....","...YYYYYYYY.....","..YYYYYYYYYY....","..YYkwYYkwYY....","..RRYYYYYYRR..L.","...YYYkkYYY..LL.","...YYYYYYYY.LLL.","..YYYYYYYYYYLL..","..YYYYYYYYYY.n..","..YYYYYYYYYY....","...YYY..YYY....."],"eevee":[".EE........EE...",".EEE......EEE...","..EEE....EEE....","...EEEEEEEE.....","..EEEEEEEEEE....","..EEkwEEkwEE....","..EEEEEEEEEE....","...EEEkkEEE.....","..cccccccccc..EE",".ccccccccccc.EEc","..EEEEEEEEE.EEcc","..EEEEEEEEE..cc.","...EE....EE....."],"jiggly":["......PPP.......",".....PP.........","....PPPPPPP.....","..dPPPPPPPPPd...",".dPPPPPPPPPPPd..",".PPPwbPPPwbPPP..",".PPPbbPPPbbPPP..",".PPPPPPkkPPPPP..",".PPPPPPPPPPPPP..","..PPPPPPPPPPP...","...PPPPPPPPP....","...PP.....PP...."],"gengar":["..G.G......G.G..","..GGG.G..G.GGG..","..GGGGGGGGGGGG..",".GGGGGGGGGGGGGG.",".GGrrGGGGGGrrGG.",".GGGrGGGGGGrGGG.",".GGwwwwwwwwwwGG.",".GGGwkwkwkwkGGG.","GGGGGGGGGGGGGGGG",".GGGGGGGGGGGGGG.","..GGGGGGGGGGGG..","..GGG......GGG..",".GGG........GGG."],"snorlax":["...S.......S....","...SSSSSSSSS....","..SSSSSSSSSSS...","..SSkkSSSkkSS...","..SScccccccSS...","..SSSckkkcSSS...",".SSSSccccccSSSS.","SSSSccccccccSSSS","SSSccccccccccSSS","SSSccccccccccSSS",".SSccccccccccSS.","..SSccccccccSS..",".cccSS....SScc.."],"karp":["......yyy.......",".....yyyyy......","..y.MMMMMMMM....",".yyMMMMMMMMMMM..",".yyMMMMMMMMwkMM.","yyyMMMMMMMMMMMM.",".yyMMMMMMMMMMyy.","..yMMMMMMMMMM.y.","....MMMMMMMM....",".....yy..yy....."],"mewtwo":["....MM...MM.....","....MMMMMMM.....","....MMMMMMMM....","....MMMkpMMM....",".....MMMMMM.....","......MMM.......","...MMMMMMMMM....","..MM.MMMMM.MM...","..M..ppppp..M...",".....ppppp...pp.",".....MMMMM..pp..",".....MM.MMppp...","....MM...MM....."],"mew":["....P....P......","....PP..PP......","....PPPPPP......","...PPPPPPPP.....","...PbbPPbbP.....","...PPPPPPPP.....","....PPPPPP......",".....PPPP...P...","....PPPPPP..P...","....P.PP.P.P....","......PP..P.....",".....P..PP......"],"psy":[".....k.k.k......","....YYYYYY......","...YYYYYYYY.....","...YwkYYwkY.....","...YYccccYY.....","...YYccccYY.....","....YYYYYY......","..YYYYYYYYYY....","..Y.YYYYYY.Y....","....YYYYYY......","....YYYYYY......","....cc..cc......"],"meowth":["..n........n....","..nC......Cn....","...CCCCCCCC.....","..CCCCooCCCC....","..CCCCooCCCC....","..CkCCCCCCkC....",".wCCCkkkCCCCw...","...CCCCCCCC.....","....CCCCCC......","...CCCCCCCC.....","...C.CCCC.C.n...",".....C..C..n....","....CC..CC......"],"voltorb":[".....rrrrrr.....","...rrrrrrrrrr...","..rrrrrrrrrrrr..","..rrkkrrrrkkrr..",".rrrrkwrrkwrrrr.",".rrrrrrrrrrrrrr.",".wwwwwwwwwwwwww.",".wwwwwwwwwwwwww.","..wwwwwwwwwwww..","..wwwwwwwwwwww..","...wwwwwwwwww...",".....wwwwww....."],"ditto":["................","................","....DDDDDDD.....","...DDDDDDDDD....","..DDDkDDDkDDD...","..DDDDDDDDDDD...",".DDDDDkkkDDDDD..","DDDDDDDDDDDDDDD.","DDDDDDDDDDDDDDD.",".DDD.DDDDD.DDD.."],"dratini":[".........wBBB...","........BBBBBw..","........BkBBB...",".........BBBcc..","..........BBc...","...BBBB...BB....","..BBccBB..BB....",".BB....BBBB.....",".BB.....BB......","..BBB...........","....BBBBBBB.....",".......BBBBB...."],"clefairy":["..k.......k.....","..PP.....PP.....","..PPPPPPPPP.....",".PPPPPPPPPPP....",".PPkPPPPkPPP....",".PdPPPPPPdPP....","..PPPkkPPPP.....",".PPPPPPPPPPP....","PP.PPPPPPP.PP...","...PPPPPPP......","...PP...PP......","..ccc...ccc....."],"oddish":["...L...L..L.....","....L.L..L......","...LLLLLLLL.....","....LLLLLL......",".....LLLL.......","....BBBBBB......","...BBBBBBBB.....","...BrBBBBrB.....","...BBBBBBBB.....","....BBBBBB......","....BB..BB......"],"abra":["..Y........Y....","..YY......YY....","...YYYYYYYY.....","..YYYYYYYYYY....","..YYkkYYkkYY....","...YYYYYYYY.....","....YYccYY......","...YYYYYYYYY..Y.","..YYbYYYYYbYYYY.","....YYYYYY...Y..","...ccYYYYcc.....","...ccc..ccc....."],"char":["..WW.......CC...",".WWWW.....CCCC..","WWWWW....CCwkC..","WWWWWC...CCCCCC.",".WWWCCC..CCCC...","..WWCCCCCCCC....","...CCyyyyCC.....","...CCyyyyyCC....","..CCCyyyyyCC..R.","..CC.yyyyyC..RFR",".....CyyyC...RF.",".....CCCCCCCCC..","....CCC..CCC...."],"blast":["....BBBB........","...BBBBBB.......","..gBBBBwkB......",".ggBBBBBBB......",".SSSBBBBB.......","SSSyyyyyBB......","SSSyyyyyyBB.....","SSSyyyyyyB......",".SSyyyyyBB......",".SSSyyyBBB......","..BBB..BBB......"],"bird":["......BBB.......",".....BBBBB......","....BBBBwkoo....","....BBBBBBoo....","..BBBBBccBB.....",".BBBBBcccc......","BBBBBBccccB.....",".BBBBBBccBB.....","..BBBBBBBB......","...oo..oo......."],"rat":[".........PP.....","........PPPP....",".......PPPPPP...","......PPPwkPPP..","..PPPPPPPPPPPPkk",".PPPPPPPPPcccc..","PPPPPPPPPccc....",".PPPPPPPPPPP....","..PP.PP..PP.PP.."],"fox":[".........V...V..",".........VV.VV..","OO.......VVVVV..","OOO.....VVwkVV..","OOOO....VVVVVVk.",".OOOO..VVVVVV...","..OOOVVVVVVcc...","...OVVVVVVccc...","....VVVVVVVV....","....VV.VV.VV...."],"dog":["........cc......",".......cOOOO....","......cOOwkOO...","......cOOOOOOkk.","......ccOOOO....",".cc..cccOOO.....","ccOOOOkOOOO.....",".OOkOOOOkOO.....","..OOOOOOOOO.....","..OO.OO..OO.OO.."],"pony":[".......RF.......","......RFFR......","......FRFcc.....",".....RFcccwk....",".....FFccccccc..","R...FFccccc.....","RF..Fccc........","RFFcccccccccc...",".FFccccccccccc..","...cc.cc..cc.cc.","...gg.gg..gg.gg."],"slow":["......PPPPP.....",".....PPPPPPP....",".....PPwPPwP....",".....PPkPPkP....",".....PcccccP....",".....PPccccP....","..PPPPPPPPPP....",".PPPPPPPPPPPPP..","PP.PPPPPPPPP.PPc","...PP....PP....."],"magnet":[".......g........",".......g........",".....GGGGG......","....GGGGGGG.....","...GGwwwwwGG....","rrrGGwwkwwGGbbb.","r..GGwwwwwGG..b.","rrrGGGGGGGGGbbb.","....GGGGGGG.....",".....GGGGG......",".......g........"],"onix":[".........GGGG...","........GGwkGG..","........GGGGGGg.","...GG....GGGG...","..GGGG..GGG.....","..GGGG.GGGG.....","...GGGGGGG......","....GGGG........","...GGGG.........","..GGGGG.........",".GGGG..........."],"cubone":[".....wwww.......","....wwwwwww.....","...wwkwwkww.....","...wwwwwwwwB....","....wwBBBBB.....","...BBBBBBB...b..","..BBccccBBB.bb..","..BB.cccBBBbb...","....BBBBBBb.....","...BB....BB....."],"lapras":["..........LL....",".........LLwk...",".........LLLLL..",".........LL.....","..sss....LL.....",".sssss..LL......","sssssssLLL......","LLLccccLLLL.....","LLccccccLLLL....",".LLccccLLLL....."],"gyara":["...........BB...","..........BBBBr.",".........BBwkBBr",".........BBBBBB.","........BBwwwB..","...BB...BBccB...","..BBBB..BccB....",".BBccBB.BcB.....",".BcccBBBBB......","..BBccBBB.......","r..BBBBB........","rr.............."],"dragonite":["......k...k.....",".......OOOO.....","......OOOOOO....","......OOwkOO....",".g....OOOOOOO...","gg...OOOOOO.....","ggg.OOccccOO....","gggOOOccccOOO...",".ggOOOcccccOO...","...OOOcccccOOO..","....OOcccOO..OO.","....OOO..OOO...."],"machop":["....kMk.........","....MMMM........","...MMMMMM.......","...MMwkMM.......","...MMMMMM.......",".MMMMMMMMMM.....","MM.MMMMMM.MM....","M..MMMMMM..M....","...MMMMMM.......","...MM..MM.......","..MMM..MMM......"],"geo":["....GGGGGG......","...GGGGGGGG.....",".G.GGwkGwkGG.G..","GGGGGGGGGGGGGGG.","G..GGGkkkkGG..G.","...GGGGGGGGG....","....GGGGGGG....."],"zubat":["PP.....ZZ.....PP","PPP...ZZZZ...PPP","PPPP.ZZZZZZ.PPPP",".PPPPZZkkZZPPPP.","..PPPZZwwZZPPP..","...PP.ZZZZ.PP...","......Z..Z......","......Z..Z......"],"diglett":["......DDDD......",".....DDDDDD.....",".....DkDDkD.....",".....DDppDD.....",".....DDDDDD.....","...gggDDDDggg...",".ggggggggggggg.."],"gastly":["..a.........a...",".aaa..GGGG..aaa.","aaa..GGGGGG..aaa","aa..GwkGGkwG..aa","a...GGGGGGGG...a","aa..GGwwwwGG..aa",".aa..GGGGGG..aa.","..aaa.GGGG.aaa..","....aaaaaaaa...."],"caterpie":[".........r......","........CCC.....",".......CCwkC....","......CCCCCCy...","...CC.CCCCCy....",".CCCCCCCCCC.....","CyCyCyCyCy......"],"poliwag":["....BBBBBB......","...BBBBBBBB.....","..BBwkBBwkBB....","..BBwwwwwwBB....","..BwwkkkkwwB....","..BwwkwwkwwB....","..BBwwkkwwBB.cc.","...BBBBBBBB.c...","....BB..BB.cc..."],"staryu":[".......G........","......GGG.......","......GGG.......","GGGGGGGrGGGGGG..",".GGGGGrrrGGGG...","..GGGGGrGGGG....","...GGGGGGGGG....","..GGGG...GGGG...",".GGG.......GGG.."],"butterfree":["kwwwk.....kwwwk.","kwwwwk...kwwwwk.","kwwwwwkPkwwwwwk.",".kwwwwwPPwwwwwk.","..kwwwrPrwwwk...","..kkkkPPPkkkk...","..kwwwPPPwwwk...","..kwwkPPPkwwk...","...kk..PP.kk...."],"chansey":["...P.......P....","...PPPPPPPPP....","..PPPPPPPPPPP...","..PPkPPPPkPPP...",".PPPPPPPPPPPPP..","PPPPwwwwwwPPPPP.","PPPPwwrrwwPPPPP.",".PPPwwwwwwPPPP..","..PPPPPPPPPPP...","..PP.......PP..."],"scyther":["........SSS.....",".......SSwkS....",".......SSSSSS...","..w....SSS......",".ww...SSSc......","www..SSSSc..w...",".ww.SSSSSSSww...","..w.SScccSSw....","....SScccSS.....","....SS...SS.....","...SS.....SS...."]};
 const POKE_SPR = {"0":["bulba",{"B":"#78c8a8","d":"#3a8a70","G":"#58b048","g":"#2a7a3a","r":"#c02020"}],"1":["bulba",{"B":"#68b8a0","d":"#2a7a60","G":"#e878a8","g":"#a83868","r":"#c02020"}],"2":["bulba",{"B":"#58a890","d":"#2a6a58","G":"#f05878","g":"#3a8a30","r":"#c02020"}],"3":["charm",{"C":"#f08030","y":"#f8d878","F":"#fce040","R":"#e83020"}],"4":["charm",{"C":"#d84828","y":"#f0c890","F":"#fce040","R":"#e83020"}],"5":["char",{"C":"#f08030","y":"#f8d878","W":"#2a8a9a","F":"#fce040","R":"#e83020"}],"6":["squirt",{"B":"#78c8f0","S":"#a86830","s":"#f0e0a0","y":"#f0d898"}],"7":["squirt",{"B":"#6890e0","S":"#8a5020","s":"#f0e0a0","y":"#f0d898"}],"8":["blast",{"B":"#5890d0","S":"#a86830","g":"#9aa0a8","y":"#f0d898"}],"9":["caterpie",{"C":"#78c050","y":"#f8d030","r":"#e83030"}],"11":["butterfree",{"P":"#5a4a9a","r":"#e83030"}],"15":["bird",{"B":"#c89860","c":"#f0e0b8","o":"#e8a040"}],"16":["bird",{"B":"#c08850","c":"#f0d8a8","o":"#e8a040"}],"17":["bird",{"B":"#c89060","c":"#f8e0b0","o":"#e88830"}],"18":["rat",{"P":"#9a6ab8","c":"#f0e0c0"}],"19":["rat",{"P":"#c8905a","c":"#f0e0c0"}],"20":["bird",{"B":"#a86a3a","c":"#e8c090","o":"#e86040"}],"21":["bird",{"B":"#b88050","c":"#e8c090","o":"#e86040"}],"24":["pika",{"Y":"#f8d830","R":"#e83030","L":"#f8d830","n":"#9a6a20"}],"25":["pika",{"Y":"#e88a28","R":"#f8e070","L":"#f8c830","n":"#7a4a18"}],"34":["clefairy",{"P":"#f8c0c8","d":"#e88898","c":"#a87060"}],"35":["clefairy",{"P":"#f0b0c0","d":"#d87888","c":"#8a5848"}],"36":["fox",{"V":"#d86838","O":"#f09040","c":"#f8d8a8"}],"37":["fox",{"V":"#f0e0a0","O":"#f8f0c8","c":"#fff8e0"}],"38":["jiggly",{"P":"#f8b0c8","d":"#c87898","b":"#3a90d0"}],"39":["jiggly",{"P":"#f8c8d8","d":"#d898b0","b":"#3a90d0"}],"40":["zubat",{"Z":"#4a78c8","P":"#a868c0"}],"41":["zubat",{"Z":"#5878c8","P":"#c84070"}],"42":["oddish",{"L":"#58b048","B":"#4868b8","r":"#e83040"}],"43":["oddish",{"L":"#e85830","B":"#3a5aa8","r":"#e83040"}],"49":["diglett",{"D":"#a87040","p":"#f0a0a0","g":"#7a5a30"}],"51":["meowth",{"C":"#f0e0b0","o":"#f0c030","n":"#7a5030"}],"52":["meowth",{"C":"#f8e8b8","o":"#e83040","n":"#c8a070"}],"53":["psy",{"Y":"#f8d850","c":"#f8f0c0"}],"54":["psy",{"Y":"#5888d8","c":"#f0e070"}],"57":["dog",{"O":"#e88838","c":"#f8e8c0"}],"58":["dog",{"O":"#e88030","c":"#f8e8b0"}],"59":["poliwag",{"B":"#5880d0","c":"#5880d0"}],"60":["poliwag",{"B":"#4a70c0","c":"#4a70c0"}],"62":["abra",{"Y":"#e8c030","c":"#8a5a28","b":"#8a5a28"}],"63":["abra",{"Y":"#f0c838","c":"#8a5a28","b":"#c8c8d8"}],"64":["abra",{"Y":"#e0b028","c":"#7a4a18","b":"#c8c8d8"}],"65":["machop",{"M":"#98a8b8"}],"66":["machop",{"M":"#8898a8"}],"73":["geo",{"G":"#a89878"}],"74":["geo",{"G":"#988870"}],"76":["pony",{"c":"#f8f0d0","F":"#fce040","R":"#f86020","g":"#c8a878"}],"77":["pony",{"c":"#f8f0e0","F":"#fce040","R":"#f84020","g":"#c8a878"}],"78":["slow",{"P":"#f0a0b8","c":"#f8e8d8"}],"80":["magnet",{"G":"#b8c0d0","g":"#8a90a0","r":"#e83040","b":"#3a6ae8"}],"91":["gastly",{"G":"#2a2a3a","a":"#9868c8"}],"92":["gengar",{"G":"#8a68c0","r":"#f0e040"}],"93":["gengar",{"G":"#7058a0","r":"#e83030"}],"94":["onix",{"G":"#a8a8b0","g":"#7a7a88"}],"99":["voltorb",{"r":"#e83030"}],"100":["voltorb",{"r":"#f4f4f8","w":"#e83030"}],"103":["cubone",{"B":"#c8a060","c":"#f0e0c0","b":"#f0f0e8"}],"104":["cubone",{"B":"#a88a50","c":"#e8d8b0","b":"#f0f0e8"}],"112":["chansey",{"P":"#f8c0d0","r":"#f8a0b8"}],"119":["staryu",{"G":"#c8a058","r":"#e83040"}],"120":["staryu",{"G":"#8a68b8","r":"#e83040"}],"122":["scyther",{"S":"#78c050","c":"#f0e8c0","w":"#e8e8f0"}],"128":["karp",{"M":"#e85830","y":"#f8e0a0"}],"129":["gyara",{"B":"#4878d8","c":"#f8f0c8","r":"#e83040"}],"130":["lapras",{"L":"#5898e0","s":"#9a8ab0","c":"#f0e0c0"}],"131":["ditto",{"D":"#b88ad8"}],"132":["eevee",{"E":"#c08850","c":"#f8e8c0"}],"133":["eevee",{"E":"#68b8e8","c":"#f8f0c0"}],"134":["eevee",{"E":"#f8d040","c":"#f4f4f8"}],"135":["eevee",{"E":"#f08838","c":"#f8e8b0"}],"142":["snorlax",{"S":"#2a6a80","c":"#f0e0c0"}],"143":["bird",{"B":"#78b8f0","c":"#e0f0ff","o":"#4878c8"}],"144":["bird",{"B":"#f8d830","c":"#f0a020","o":"#e88820"}],"145":["bird",{"B":"#f8c830","c":"#f05020","o":"#f08020"}],"146":["dratini",{"B":"#6890e8","c":"#f8f8f8"}],"147":["dratini",{"B":"#5878d8","c":"#88d0ff"}],"148":["dragonite",{"O":"#f0a840","c":"#f8e0a0","g":"#78c0a8"}],"149":["mewtwo",{"M":"#c8b8d0","p":"#9070b0"}],"150":["mew",{"P":"#f8b8d0","b":"#3a70d0"}]};
 const POKE_COL = {"CHARIZARD":["#f08030","#40a0a0"],"BLASTOISE":["#5890d0","#a86830"],"CATERPIE":["#78c050","#f8d030"],"METAPOD":["#78b858","#4a8a3a"],"BUTTERFREE":["#a8a0e0","#f4f4f8"],"WEEDLE":["#c8903a","#e83040"],"KAKUNA":["#e8c040","#b89020"],"BEEDRILL":["#f0c838","#2a2a3a"],"PIDGEY":["#c89860","#f0e0b8"],"PIDGEOTTO":["#c08850","#e83040"],"PIDGEOT":["#c89060","#f8d040"],"RATTATA":["#9a6ab8","#f0e0c0"],"RATICATE":["#c8905a","#f0e0c0"],"SPEAROW":["#a86a3a","#e86040"],"FEAROW":["#b88050","#e8c090"],"EKANS":["#9a68b8","#f0d040"],"ARBOK":["#8a58a8","#f0c040"],"SANDSHREW":["#e8c870","#f8f0c8"],"SANDSLASH":["#d0a048","#8a5a28"],"NIDORAN H":["#a8b8e8","#4a6ab8"],"NIDORINA":["#88a8d8","#3a5aa8"],"NIDOQUEEN":["#5888b8","#f0e0b0"],"NIDORAN M":["#c890d0","#7a3a9a"],"NIDORINO":["#b878c8","#6a2a8a"],"NIDOKING":["#9858a8","#f0e0b0"],"VULPIX":["#d86838","#f8b860"],"NINETALES":["#f0e0a0","#e8c060"],"ZUBAT":["#4a78c8","#a868c0"],"GOLBAT":["#5878c8","#c84070"],"GLOOM":["#5a6ab0","#c84020"],"VILEPLUME":["#4a5aa0","#e85040"],"PARAS":["#e88038","#e83030"],"PARASECT":["#e05830","#e83030"],"VENONAT":["#8a58b8","#e83030"],"VENOMOTH":["#b098d8","#d8c8f0"],"DIGLETT":["#a87040","#f0a0a0"],"DUGTRIO":["#986030","#f0a0a0"],"PERSIAN":["#f0e0b0","#e83040"],"GOLDUCK":["#5888d8","#f0e070"],"MANKEY":["#f0e0c8","#a87050"],"PRIMEAPE":["#f0d8c0","#a86040"],"GROWLITHE":["#e88838","#f8e8c0"],"ARCANINE":["#e88030","#f8e8b0"],"POLIWAG":["#5880d0","#f4f4f8"],"POLIWHIRL":["#5070c0","#f4f4f8"],"POLIWRATH":["#3a58a8","#f4f4f8"],"MACHOP":["#98a8b8","#e8d8b0"],"MACHOKE":["#8898a8","#e8c860"],"MACHAMP":["#7888a0","#e8c860"],"BELLSPROUT":["#f0d040","#78c050"],"WEEPINBELL":["#e8d040","#78c050"],"VICTREEBEL":["#d8c030","#58a040"],"TENTACOOL":["#58a0e0","#e83040"],"TENTACRUEL":["#4888d0","#e83040"],"GEODUDE":["#a89878","#786850"],"GRAVELER":["#988870","#685840"],"GOLEM":["#888060","#a89878"],"PONYTA":["#f8f0d0","#f88830"],"RAPIDASH":["#f8f0d0","#f86830"],"SLOWPOKE":["#f0a0b8","#f8e8d8"],"SLOWBRO":["#e898b0","#a8a0a0"],"MAGNEMITE":["#b8c0d0","#e83040"],"MAGNETON":["#a8b0c0","#e83040"],"FARFETCHD":["#c09060","#78c050"],"DODUO":["#c08850","#f0d8a0"],"DODRIO":["#b07840","#2a2a3a"],"SEEL":["#f0f0f8","#d8a8b0"],"DEWGONG":["#f8f8ff","#d0d8f0"],"GRIMER":["#9868b0","#6a3a8a"],"MUK":["#8858a8","#5a2a7a"],"SHELLDER":["#9868c8","#2a2a3a"],"CLOYSTER":["#8868b8","#c8c8d8"],"GASTLY":["#2a2a3a","#9868c8"],"HAUNTER":["#8a68c0","#5a3a90"],"ONIX":["#a8a8b0","#686870"],"DROWZEE":["#e8c040","#9a6a28"],"HYPNO":["#f0d040","#f4f4f8"],"KRABBY":["#e86030","#f0d8b0"],"KINGLER":["#e05028","#f0d8b0"],"EXEGGCUTE":["#f0c8b0","#e8a080"],"EXEGGUTOR":["#c8a060","#58a040"],"CUBONE":["#c8a060","#f0f0e8"],"MAROWAK":["#b89050","#f0f0e8"],"HITMONLEE":["#b88858","#d8c8a8"],"HITMONCHAN":["#c89870","#e83040"],"LICKITUNG":["#f0a0b8","#f8e8c8"],"KOFFING":["#8a68a8","#f0e8a0"],"WEEZING":["#7a58a0","#f0e8a0"],"RHYHORN":["#a8a8b8","#f4f4f8"],"RHYDON":["#a8a0a8","#f4f4f8"],"CHANSEY":["#f8c0d0","#f4f4f8"],"TANGELA":["#4868c8","#e83040"],"KANGASKHAN":["#a87848","#f0d8a0"],"HORSEA":["#68b0e8","#f0e0a0"],"SEADRA":["#5898d8","#f0e0a0"],"GOLDEEN":["#f4f4f8","#f08030"],"SEAKING":["#f08838","#f4f4f8"],"STARYU":["#c8a058","#e83040"],"STARMIE":["#8a68b8","#e83040"],"MR MIME":["#f8c8d0","#4868c8"],"SCYTHER":["#78c050","#f0e8c0"],"JYNX":["#e83050","#f0d040"],"ELECTABUZZ":["#f8d040","#2a2a3a"],"MAGMAR":["#f08030","#f8d040"],"PINSIR":["#a89070","#f4f4f8"],"TAUROS":["#b08048","#4a3a2a"],"GYARADOS":["#4878d8","#f8f0c8"],"LAPRAS":["#5898e0","#d0c0a0"],"VAPOREON":["#68b8e8","#f8f0c0"],"JOLTEON":["#f8d040","#f4f4f8"],"FLAREON":["#f08838","#f8e8b0"],"PORYGON":["#f07890","#58b0e0"],"OMANYTE":["#68b8e8","#f0e0b0"],"OMASTAR":["#58a8e0","#e0d0a0"],"KABUTO":["#a87040","#2a2a3a"],"KABUTOPS":["#a87040","#f0d8a0"],"AERODACTYL":["#b0a0c8","#8a78a8"],"ARTICUNO":["#78b8f0","#f4f4f8"],"ZAPDOS":["#f8d830","#e88820"],"MOLTRES":["#f8c830","#f05020"],"DRAGONITE":["#f0a840","#78c0a8"],"WIGGLYTUFF":["#f8c8d8","#f4f4f8"],"VENUSAUR":["#58a890","#f05878"],"IVYSAUR":["#68b8a0","#e878a8"],"CHARMELEON":["#d84828","#f0c890"],"WARTORTLE":["#6890e0","#a86830"],"RAICHU":["#e88a28","#f8e070"],"ELECTRODE":["#f4f4f8","#e83030"]};
+// Completa las especies sin sprite propio con siluetas pixeladas de familias parecidas.
+// Los sprites dibujados a mano en POKE_SPR siempre tienen prioridad.
+function pokeTemplate(p){
+  const n = p.n, type = p.type;
+  if (p.shape === 'q') return type === 'electric' ? 'pika' : type === 'fire' ? (n.includes('RAPIDASH') || n.includes('PONYTA') ? 'pony' : 'dog') : type === 'water' ? 'slow' : type === 'grass' ? 'oddish' : type === 'ice' ? 'fox' : type === 'normal' ? (n.includes('RAT') ? 'rat' : 'eevee') : type === 'ground' || type === 'poison' ? 'fox' : 'dog';
+  if (p.shape === 'b') return type === 'fire' ? 'charm' : type === 'water' ? 'squirt' : type === 'psychic' ? 'abra' : type === 'ground' || type === 'rock' ? 'cubone' : type === 'dragon' ? 'dragonite' : 'machop';
+  if (p.shape === 'w') return type === 'bug' ? 'butterfree' : type === 'poison' ? 'zubat' : type === 'fire' ? 'char' : 'bird';
+  if (p.shape === 'o') return type === 'electric' ? 'voltorb' : type === 'ghost' ? 'gengar' : type === 'fairy' ? 'jiggly' : type === 'grass' ? 'oddish' : type === 'rock' ? 'geo' : type === 'water' ? 'staryu' : 'ditto';
+  if (p.shape === 's') return type === 'rock' ? 'onix' : type === 'water' ? 'gyara' : 'dratini';
+  if (p.shape === 'f') return n.includes('LAPRAS') ? 'lapras' : n.includes('POLI') ? 'poliwag' : n.includes('STARYU') || n.includes('STARMIE') ? 'staryu' : 'karp';
+  return n.includes('SCYTHER') || n.includes('BEEDRILL') ? 'scyther' : 'caterpie';
+}
+for (const p of POKE) if (!POKE_SPR[p.i]) {
+  const template = pokeTemplate(p), rows = POKE_MAPS[template], [base, accent] = POKE_COL[p.n] || POKE_TYPE[p.type], chars = new Set(rows.join('').replace(/\./g, ''));
+  const pal = {};
+  for (const ch of chars) {
+    if (ch === 'k' || ch === 'w') continue;
+    pal[ch] = ch === 'r' ? accent : /[a-z]/.test(ch) ? shadeCol(accent, 0.78) : shadeCol(base, 1.08);
+  }
+  POKE_SPR[p.i] = [template, pal];
+}
 // Dibuja (una sola vez) el sprite píxel a píxel con contorno oscuro y luz/sombra automáticas
 const POKE_CANVAS = {};
 function pokeCanvas(id){
@@ -4770,7 +4843,7 @@ function drawHUD(){
   }
   // plata y cartas en una sola línea arriba a la derecha
   ctx.globalAlpha = aR;
-  const top = money(S.coins) + '  ' + totalCards() + '/' + ALL_CARDS.length, tw = top.length * 4 + 16;
+  const top = 'ATQ ' + meleeDamage() + '  ' + money(S.coins) + '  ' + totalCards() + '/' + ALL_CARDS.length, tw = top.length * 4 + 16;
   R(W - tw - 2, 2, tw, 9, 'rgba(0,0,0,.45)'); R(W - tw + 1, 4, 4, 5, '#fcd040');
   tiny(top, W - 5, 4, '#fff', 'right'); R(W - 5 - (String(totalCards()).length + String(ALL_CARDS.length).length + 1) * 4 - 6, 4, 4, 5, '#c8e8d8');
   ctx.globalAlpha = 1;
@@ -5670,11 +5743,11 @@ function resolveDuel(d){
   const r1 = 1 + rnd(6), r2 = 1 + rnd(6);
   const myAdv = BEATS[myT] === d.opT ? 2 : 0, opAdv = BEATS[d.opT] === myT ? 2 : 0;
   const myDeck = DECK_STYLE[d.deck] === myT ? 1 : 0, opDeck = DECK_STYLE[d.opp.deck] === d.opT ? 1 : 0;
-  const myInt = Math.floor(st.int / 5) + houseBonus('tourInt'), pen = d.borrowed ? -1 : 0, luck = (CH().cheat ? 1 : 0) + (owned(LEGEND) ? 1 : 0);
+  const myInt = Math.floor(st.int / 5) + houseBonus('tourInt'), myStats = Math.floor((st.fue + st.des + st.agi) / 12), myLvl = Math.floor((S.lvl - 1) / 10), pen = d.borrowed ? -1 : 0, luck = (CH().cheat ? 1 : 0) + (owned(LEGEND) ? 1 : 0);
   const matchup = Math.round(mu(d.deck, d.opp.deck) * 10);
-  const my = r1 + myAdv + myDeck + myInt + pen + luck + matchup, op = r2 + opAdv + opDeck + d.opp.bonus + (d.opp.cheats ? 1 : 0);
+  const my = r1 + myAdv + myDeck + myInt + myStats + myLvl + pen + luck + matchup, op = r2 + opAdv + opDeck + d.opp.bonus + (d.opp.cheats ? 1 : 0);
   d.dice = [r1, r2]; d.tot = [my, op];
-  d.lines = ['TU: dado ' + r1 + (myAdv ? ' +2 ventaja' : '') + (myDeck ? ' +1 mazo' : '') + (myInt ? ' +' + myInt + ' INT' : '') + (luck ? ' +' + luck + ' suerte' : '') + (pen ? ' -1 prestado' : '') + (matchup ? ' ' + (matchup > 0 ? '+' : '') + matchup + ' duelo' : '') + ' = ' + my,
+  d.lines = ['TU: dado ' + r1 + (myAdv ? ' +2 ventaja' : '') + (myDeck ? ' +1 mazo' : '') + (myInt ? ' +' + myInt + ' INT' : '') + (myStats ? ' +' + myStats + ' STATS' : '') + (myLvl ? ' +' + myLvl + ' NIVEL' : '') + (luck ? ' +' + luck + ' suerte' : '') + (pen ? ' -1 prestado' : '') + (matchup ? ' ' + (matchup > 0 ? '+' : '') + matchup + ' duelo' : '') + ' = ' + my,
              'RIVAL: dado ' + r2 + (opAdv ? ' +2 ventaja' : '') + (opDeck ? ' +1 mazo' : '') + (d.opp.bonus ? ' +' + d.opp.bonus + ' experto' : '') + (d.opp.cheats ? ' +1 trampa' : '') + ' = ' + op];
   const diff = my - op;
   d.pops = [];
@@ -5709,6 +5782,7 @@ function updateDuel(){
   } else if (d.phase === 'end') {
     if (d.t > 40 && pressed('a')) {
       G.state = 'world'; playMusic(roomMusic());
+      addXP(2 + d.turn * 2);
       if (d.won) { S.coins += d.bet * 2; addXP(4 + Math.floor(d.bet / 1000)); say([d.opp.name + ': ¡Buena partida! Me ganaste.', 'Ganaste ' + money(d.bet * 2) + '.']); }
       else say([d.opp.name + ': ¡Gane! La suerte estuvo de mi lado.', 'Perdiste la apuesta de ' + money(d.bet) + '.']);
       S.duelsWon = (S.duelsWon || 0) + (d.won ? 1 : 0);
@@ -6165,6 +6239,7 @@ function loop(now){
       if (extra === 'mox') addCard(LEGEND);
       if (G.freeTest) { startFree(G.freeTest); const A = G.arc; if (A.serve) A.serve = 0; G.freeze = true; }
       if (G.lujoTest) { S.lvl = 40; S.coins = 3000000; openShop('lujo', 'EL MARCHANTE'); }
+      if (extra === 'trabada') { let px = 0, py = 0; for (let y = 2; y < 8; y++) for (let x = 2; x < 13; x++) if (!px && G.map[y][x] === 'P' && G.map[y - 1][x] !== 'P' && G.map[y + 1][x] !== 'P') { px = x; py = y; } S.pet = 24; G.pet = { x:px * TS + 3, y:(py - 1) * TS + 4, t:0, cd:40 }; PL.x = px * TS + 3; PL.y = (py + 1) * TS + 4; PL.dir = 0; G.enemies = []; const before = [G.pet.x, G.pet.y]; for (let i = 0; i < 80; i++) step(); const pre = document.createElement('pre'); pre.id = 'conn'; pre.textContent = 'PILAR ' + px + ',' + py + ' MASCOTA ANTES ' + before.map(Math.round) + ' DESPUES ' + [G.pet.x, G.pet.y].map(Math.round) + ' JUGADOR ' + [PL.x, PL.y].map(Math.round) + ' DIST ' + Math.round(Math.hypot(G.pet.x - PL.x, G.pet.y - PL.y)); document.body.append(pre); G.freeze = true; }
       if (G.arcTest) { startArcade(G.arcTest); const A = G.arc; if (A.k) { A.k.cd = 0; A.k.spd = 130; A.k.z = KSEG * 75; A.k.opps[0].z = KSEG * 80; A.k.opps[1].z = KSEG * 90; } if (A.f) { A.phase = 'fight'; A.f[0].st = 'punch'; A.f[0].st_t = 5; A.f[0].x = 100; A.f[1].x = 128; A.f[1].hp = 64; } G.freeze = true; }
       if (extra === 'tomo') { S.ch = 10; G.enemies = []; for (let i = 0; i < 70; i++) step(); G.freeze = true; }
       if (extra === 'mapa') { S.visited = { pueblo:true, bosque:true, tolaria:true, pantano:true, costa:true, pradera:true }; dispatchEvent(new KeyboardEvent('keydown', { code:'KeyM' })); }
