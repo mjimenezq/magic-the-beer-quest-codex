@@ -4248,6 +4248,9 @@ function drawWorld(){
       if (G.roomId === 'casino') { for (let i = 0; i < 3; i++) R(x + i * 3 + 1, y + 2, 2, 3, SLOT_COL[SLOT_SYM[(k + i * 2 + tx) % 6]]); }
       else if (g === 'bloques') { R(x + 1, y + 4, 8, 2, '#5080f0'); R(x + 1, y + 3, 3, 1, '#f05050'); R(x + 3 + (k % 3), (y + (k % 4)), 2, 2, '#f0e040'); }
       else if (g === 'laberinto') { R(x, y, 10, 1, '#4aa0ff'); R(x, y + 5, 10, 1, '#4aa0ff'); for (let i = 1; i < 10; i += 2) if (i > (k % 10)) R(x + i, y + 3, 1, 1, '#ffd8b0'); R(x + (k % 10), y + 2, 2, 2, '#ffe040'); }
+      else if (g === 'pelea') { R(x + 1 + (k % 2), y + 1, 2, 4, '#f0c890'); R(x + 7 - (k % 2), y + 1, 2, 4, '#f05050'); R(x, y, 4, 1, '#fce040'); R(x + 6, y, 4, 1, '#fce040'); }
+      else if (g === 'kart') { R(x, y + 2, 10, 4, '#3a3a48'); R(x + 4, y + 2 + (k % 2) * 2, 1, 1, '#fff'); R(x + 3 + (k % 3) - 1, y + 4, 3, 2, '#e83040'); }
+      else if (g === 'stb') { R(x, y + 5, 10, 1, '#c87830'); R(x + 1 + (k % 6), y + 2, 2, 3, '#e83040'); R(x + 6, y + 1, 3, 2, '#e8a020'); }
       else { R(x + 3, y + 2 + (k % 2), 4, 3, '#6ab040'); R(x + 4, y + 3 + (k % 2), 1, 1, '#fce040'); R(x + 1, y + 5, 8, 1, '#3a2a18'); }
       if ((k + tx) % 5 === 0) R(x, y, 10, 6, 'rgba(255,255,255,.12)');
       R(tx * TS + 1, ty * TS - 3, 14, 3, ['#ff40c0','#40f0ff','#fce040','#60ff80','#b060ff'][(tx * 3 + ty) % 5]);
@@ -4603,12 +4606,23 @@ function updateSelect(){
 /* ============ ARCADE: GOBLIN SMASH ============ */
 const HOLES = [[120, 44], [170, 80], [120, 116], [70, 80]]; // arriba, derecha, abajo, izquierda
 const ARCADE_GAMES = [
-  { id:'smash', n:'GOBLIN SMASH', help:'Los goblins salen de los hoyos: aprieta la flecha del hoyo donde aparece. No le pegues al Ball Lightning.', div:3 },
-  { id:'bloques', n:'BLOQUES DE URZA', help:'Encaja los bloques que caen y completa lineas. Flechas mueven, A o arriba giran, B deja caer.', div:4 },
-  { id:'laberinto', n:'COME-MANA', help:'Come todos los puntos del laberinto sin que te pillen los goblins. Las piedras grandes los asustan.', div:12 },
+  { id:'smash', n:'GOBLIN SMASH', help:'Los goblins salen de los hoyos: aprieta la flecha del hoyo donde aparece. No le pegues al Ball Lightning.', goal:25, step:3 },
+  { id:'pelea', n:'PREMODERN KOMBAT', help:'Pelea 1 contra 1 al mejor de 3 rounds. Flechas mueven, arriba salta, abajo bloquea, A golpe, B patada, C lanza un Lightning Bolt.', goal:1, step:60, win:true },
+  { id:'kart', n:'MANA KART', help:'Carrera de 3 vueltas contra 3 rivales. A o arriba acelera, abajo frena, flechas doblan. Las cajas ? te dan turbo. Paga si sales 1° o 2°.', goal:1, step:1, win:true },
+  { id:'bloques', n:'BLOQUES DE URZA', help:'Encaja los bloques que caen y completa lineas. Flechas mueven, A o arriba giran, B deja caer.', goal:300, step:60 },
+  { id:'stb', n:'SUPER TRIO BROS', help:'El juego de plataformas de la casa, tipo Mario Bros 3. Paga si terminas el primer nivel.', goal:1, step:2000, win:true },
+  { id:'laberinto', n:'COME-MANA', help:'Come todos los puntos del laberinto sin que te pillen los goblins. Las piedras grandes los asustan.', goal:220, step:40 },
 ];
 const ARCADE_PRICE = 1000;
-const gameAt = (tx, ty) => ARCADE_GAMES[(tx + ty * 2) % 3];
+// Las máquinas del arcade se reparten los juegos en orden
+const gameAt = (tx, ty) => { let i = 0; if (G.map) for (let y = 0; y < 10; y++) for (let x = 0; x < 15; x++) if (G.map[y][x] === 'Z') { if (x === tx && y === ty) return ARCADE_GAMES[i % ARCADE_GAMES.length]; i++; } return ARCADE_GAMES[0]; };
+// Premio: nada si no cumples la meta; si la cumples, el doble de la ficha más un extra con tope
+function arcadePrize(g, score, won){
+  const ok = g.win ? !!won : score >= g.goal;
+  if (!ok) return 0;
+  const extra = g.win ? Math.min(4000, Math.floor(score / g.step) * 250) : Math.min(4000, Math.floor((score - g.goal) / g.step) * 250);
+  return Math.round((ARCADE_PRICE * 2 + extra) * (CH().coder ? 1.5 : 1));
+}
 const SLOT_SYM = ['W','U','B','R','G','M'], SLOT_W = [5, 5, 5, 5, 5, 2];
 const SLOT_COL = { W:'#f8f0d0', U:'#3a7ae8', B:'#3a2a48', R:'#e05030', G:'#40a040', M:'#40e0c0' };
 function slotRoll(){ let r = Math.random() * 27; for (let i = 0; i < 6; i++) { r -= SLOT_W[i]; if (r < 0) return i; } return 0; }
@@ -4664,22 +4678,22 @@ function arcadePrompt(tx, ty){
     return;
   }
   const g = gameAt(tx || 0, ty || 0);
-  say([g.n + ': ' + g.help, 'Ficha: ' + money(ARCADE_PRICE) + '. Record: ' + ((S.arcadeBests || {})[g.id] || (g.id === 'smash' ? S.arcadeBest || 0 : 0)) + '.'],
+  say([g.n + ': ' + g.help, 'Ficha: ' + money(ARCADE_PRICE) + '. ' + (g.win ? 'Solo paga si ganas.' : 'Meta: ' + g.goal + ' puntos (si no llegas, no ganas nada).') + ' Record: ' + ((S.arcadeBests || {})[g.id] || (g.id === 'smash' ? S.arcadeBest || 0 : 0)) + '.'],
     [{ t:'JUGAR (' + money(ARCADE_PRICE) + ')', fn:() => { if (S.coins < ARCADE_PRICE) { say(['No te alcanza para la ficha.']); return; } S.coins -= ARCADE_PRICE; startArcade(g.id); } }, { t:'NO', fn:null }]);
 }
 function startArcade(game){
   game = game || 'smash';
   G.arc = { game, t:0, time:30 * 60, score:0, lives:3, hole:-1, kind:'gob', ht:0, win:60, cool:40, flash:0, fx:null, done:false };
-  if (game === 'bloques') initBloques(G.arc); else if (game === 'laberinto') initMaze(G.arc);
+  if (game === 'bloques') initBloques(G.arc); else if (game === 'laberinto') initMaze(G.arc); else if (game === 'pelea') initPelea(G.arc); else if (game === 'kart') initKart(G.arc); else if (game === 'stb') { openStb(G.arc); return; }
   G.state = 'arcade'; playMusic('boss'); SFX.ok();
 }
 function arcadeExit(A){
-  const g = ARCADE_GAMES.find(x => x.id === A.game), coins = Math.floor(A.score / g.div) * COIN_X * (CH().coder ? 2 : 1);
+  const g = ARCADE_GAMES.find(x => x.id === A.game), coins = arcadePrize(g, A.score, A.won);
   S.arcadeBests = S.arcadeBests || {};
   const prev = A.game === 'smash' ? (S.arcadeBest || 0) : (S.arcadeBests[A.game] || 0), rec = A.score > prev;
   if (rec) { if (A.game === 'smash') S.arcadeBest = A.score; else S.arcadeBests[A.game] = A.score; }
   S.coins += coins; G.state = 'world'; playMusic(G.def.music); saveGame();
-  say([g.n + ': ' + A.score + ' puntos. Ganaste ' + money(coins) + '.' + (rec ? ' ¡NUEVO RECORD!' : ' Record: ' + prev + '.')]);
+  say([g.n + ': ' + (A.resultText || A.score + ' puntos') + '. ' + (coins ? 'Ganaste ' + money(coins) + '.' : 'No cumpliste la meta: sin premio.') + (rec ? ' ¡NUEVO RECORD!' : ' Record: ' + prev + '.')]);
 }
 function updateArcade(){
   const A = G.arc; A.t++;
@@ -4687,6 +4701,9 @@ function updateArcade(){
   if (A.done) { if (A.t - A.doneT > 40 && (pressed('a') || pressed('b'))) arcadeExit(A); return; }
   if (A.game === 'bloques') return updateBloques(A);
   if (A.game === 'laberinto') return updateMaze(A);
+  if (A.game === 'pelea') return updatePelea(A);
+  if (A.game === 'kart') return updateKart(A);
+  if (A.game === 'stb') return;
   if (A.fx) { A.fx.t++; if (A.fx.t > 14) A.fx = null; }
   A.time--; if (A.flash > 0) A.flash--;
   if (A.hole < 0) { if (--A.cool <= 0) { A.hole = rnd(4); A.kind = Math.random() < 0.22 ? 'ball' : 'gob'; A.ht = 0; A.win = Math.max(20, 62 - A.score * 1.3); } }
@@ -4713,8 +4730,9 @@ function arcadeDone(A){
   if (!A.done) return;
   const g = ARCADE_GAMES.find(x => x.id === A.game);
   R(50, 56, 140, 46, '#ff40c0'); R(51, 57, 138, 44, '#1a1040');
-  txt(A.lives > 0 && A.game !== 'bloques' ? '¡TIEMPO!' : 'GAME OVER', 120, 64, '#fce040', 'center', '#000');
-  tiny('PUNTOS: ' + A.score + '   PREMIO: ' + money(Math.floor(A.score / g.div) * COIN_X), 120, 80, '#fff', 'center');
+  txt(A.title || (A.lives > 0 && A.game !== 'bloques' ? '¡TIEMPO!' : 'GAME OVER'), 120, 64, '#fce040', 'center', '#000');
+  const pz = arcadePrize(g, A.score, A.won);
+  tiny((A.resultText || 'PUNTOS: ' + A.score + (g.win ? '' : ' / META ' + g.goal)) + '   PREMIO: ' + (pz ? money(pz) : 'NADA'), 120, 80, pz ? '#fff' : '#ff9080', 'center');
   if (A.t - A.doneT > 40 && (frame >> 4) & 1) tiny('A PARA SALIR', 120, 90, '#c8c0e8', 'center');
 }
 function drawArcade(){
@@ -4722,6 +4740,9 @@ function drawArcade(){
   if (A.game === 'slots') { drawTraga(A); return; }
   if (A.game === 'bloques') { drawBloques(A); arcadeDone(A); scanlines(); return; }
   if (A.game === 'laberinto') { drawMaze(A); arcadeDone(A); scanlines(); return; }
+  if (A.game === 'pelea') { drawPelea(A); arcadeDone(A); scanlines(); return; }
+  if (A.game === 'kart') { drawKart(A); arcadeDone(A); return; }
+  if (A.game === 'stb') { R(0, 0, W, H, '#06060e'); txt('SUPER TRIO BROS', 120, 60, '#fce040', 'center', '#c83a20'); tiny('JUGANDO EN LA MAQUINA...', 120, 80, '#c8c0e8', 'center'); return; }
   R(0, 0, W, H, '#2a1a4a'); R(20, 0, 200, H, '#120a24');
   R(24, 4, 192, 150, '#1a1020'); R(26, 6, 188, 146, '#0a1a18');
   for (let y = 10; y < 150; y += 12) R(26, y, 188, 1, '#0e2420');
@@ -4745,9 +4766,225 @@ function drawArcade(){
   if (A.done) {
     R(50, 56, 140, 46, '#000'); R(51, 57, 138, 44, '#1a1040');
     txt(A.lives > 0 ? '¡TIEMPO!' : 'GAME OVER', 120, 64, '#fce040', 'center', '#000');
-    tiny('PUNTOS: ' + A.score + '   PREMIO: ' + money(Math.floor(A.score / 3) * COIN_X), 120, 80, '#fff', 'center');
+    const pz = arcadePrize(ARCADE_GAMES[0], A.score); tiny('PUNTOS: ' + A.score + ' / META 25   PREMIO: ' + (pz ? money(pz) : 'NADA'), 120, 80, pz ? '#fff' : '#ff9080', 'center');
     if (A.t - A.doneT > 40 && (frame >> 4) & 1) tiny('A PARA SALIR', 120, 90, '#c8c0e8', 'center');
   }
+}
+
+/* ---- PREMODERN KOMBAT (pelea 1 contra 1) ---- */
+const FLOOR_Y = 136;
+function mkFighter(P, x, face, n){ return { P, n, x, hgt:0, vh:0, hp:100, face, st:'idle', st_t:0, cd:0, hitDone:false, blk:false, flash:0 }; }
+function initPelea(A){
+  const pool = CHARS.map((c, i) => i).filter(i => CHARS[i] !== CH());
+  const oi = pool[rnd(pool.length)];
+  A.f = [mkFighter(playerLook(), 70, 1, CH().n), mkFighter(CHARS[oi], 170, -1, CHARS[oi].n)];
+  A.wins = [0, 0]; A.round = 1; A.phase = 'intro'; A.pt = 0; A.score = 0; A.bolts = []; A.sparks = []; A.rt = 60 * 60; A.lives = 1;
+}
+function peleaAttack(A, i, kind){
+  const F = A.f[i]; if (F.st !== 'idle' && F.st !== 'walk') return;
+  if (kind === 'bolt') { if (F.cd > 0) return; F.cd = 150; F.st = 'cast'; F.st_t = 0; A.bolts.push({ x:F.x + F.face * 14, y:FLOOR_Y - 30 - F.hgt, vx:F.face * 3, o:i }); tone(900, 300, 0.15, 'square', 0.3); return; }
+  F.st = kind; F.st_t = 0; F.hitDone = false; SFX.swing();
+}
+function peleaHit(A, i, dmg, push){
+  const D = A.f[i], from = A.f[1 - i];
+  const blocked = D.blk && D.hgt === 0 && Math.sign(from.x - D.x) === D.face;
+  if (blocked) { dmg = 1; SFX.ok(); } else { D.st = 'hit'; D.st_t = 0; D.flash = 8; SFX.hit(); }
+  D.hp = Math.max(0, D.hp - dmg); D.x += Math.sign(D.x - from.x) * (blocked ? 2 : push);
+  if (i === 1) A.score += dmg;
+  for (let k = 0; k < 6; k++) A.sparks.push({ x:D.x, y:FLOOR_Y - 30 - D.hgt, vx:(Math.random() - 0.5) * 3, vy:-Math.random() * 2.5, t:0, c:blocked ? '#88e0ff' : '#fce040' });
+}
+function updatePelea(A){
+  A.pt++;
+  for (const s of A.sparks) { s.t++; s.x += s.vx; s.y += s.vy; s.vy += 0.15; } A.sparks = A.sparks.filter(s => s.t < 20);
+  if (A.phase === 'intro') { if (A.pt > 100) { A.phase = 'fight'; A.pt = 0; } return; }
+  if (A.phase === 'ko') {
+    if (A.pt > 110) {
+      if (A.wins[0] >= 2 || A.wins[1] >= 2) { A.won = A.wins[0] >= 2; A.title = A.won ? '¡GANASTE!' : 'PERDISTE'; A.resultText = 'ROUNDS ' + A.wins[0] + '-' + A.wins[1]; A.score += A.wins[0] * 150; A.done = true; A.doneT = A.t; (A.won ? SFX.win : SFX.lose)(); return; }
+      A.round++; A.phase = 'intro'; A.pt = 0; A.rt = 60 * 60; A.bolts = [];
+      A.f.forEach((F, i) => Object.assign(F, { x:i ? 170 : 70, hgt:0, vh:0, hp:100, st:'idle', st_t:0, cd:0 }));
+    }
+    return;
+  }
+  const [P1, P2] = A.f;
+  // jugador
+  P1.blk = !!K.down && P1.hgt === 0 && (P1.st === 'idle' || P1.st === 'walk');
+  if (P1.st === 'idle' || P1.st === 'walk') {
+    const mv = (K.right ? 1 : 0) - (K.left ? 1 : 0);
+    if (!P1.blk && mv) { P1.x += mv * 1.4; P1.st = 'walk'; } else P1.st = 'idle';
+    if (pressed('up') && P1.hgt === 0) { P1.vh = 4.4; SFX.move(); }
+    if (pressed('a')) peleaAttack(A, 0, 'punch'); else if (pressed('b')) peleaAttack(A, 0, 'kick'); else if (pressed('c') || pressed('v')) peleaAttack(A, 0, 'bolt');
+  }
+  // rival (se pone más bravo cada round)
+  const lv = A.round + (CH().coder ? 0 : 0), dist = Math.abs(P2.x - P1.x);
+  P2.blk = P2.blkT > 0; if (P2.blkT > 0) P2.blkT--;
+  if ((P2.st === 'idle' || P2.st === 'walk') && !P2.blk) {
+    if ((P1.st === 'punch' || P1.st === 'kick') && dist < 44 && Math.random() < 0.05 * lv) P2.blkT = 22;
+    else if (dist > 40) { P2.x += Math.sign(P1.x - P2.x) * (0.9 + 0.2 * lv); P2.st = 'walk'; if (dist > 90 && Math.random() < 0.008 * lv) peleaAttack(A, 1, 'bolt'); }
+    else { P2.st = 'idle'; const r = Math.random(); if (r < 0.025 + 0.015 * lv) peleaAttack(A, 1, Math.random() < 0.55 ? 'punch' : 'kick'); else if (r < 0.032 + 0.015 * lv && P2.hgt === 0) P2.vh = 4.2; else if (r < 0.045 + 0.015 * lv) P2.x -= Math.sign(P1.x - P2.x) * 6; }
+  }
+  for (let i = 0; i < 2; i++) {
+    const F = A.f[i], O_ = A.f[1 - i];
+    F.face = Math.sign(O_.x - F.x) || F.face;
+    if (F.cd > 0) F.cd--; if (F.flash > 0) F.flash--;
+    F.hgt += F.vh; if (F.hgt > 0) F.vh -= 0.24; else { F.hgt = 0; F.vh = 0; }
+    F.x = Math.max(36, Math.min(204, F.x));
+    if (F.st !== 'idle' && F.st !== 'walk') F.st_t++;
+    const A_ = { punch:[4, 8, 30, 7, 5, 14], kick:[7, 12, 36, 11, 8, 20] }[F.st];
+    if (A_) {
+      if (F.st_t >= A_[0] && F.st_t <= A_[1] && !F.hitDone && Math.abs(O_.x - F.x) < A_[2] && Math.abs(O_.hgt - F.hgt) < 26) { F.hitDone = true; peleaHit(A, 1 - i, A_[3], A_[4]); }
+      if (F.st_t >= A_[5]) F.st = 'idle';
+    } else if ((F.st === 'hit' && F.st_t > 14) || (F.st === 'cast' && F.st_t > 16)) F.st = 'idle';
+  }
+  for (const b of A.bolts) { b.x += b.vx; const D = A.f[1 - b.o]; if (!b.dead && Math.abs(D.x - b.x) < 10 && D.hgt < 22) { b.dead = true; peleaHit(A, 1 - b.o, 12, 10); } if (b.x < 20 || b.x > 220) b.dead = true; }
+  A.bolts = A.bolts.filter(b => !b.dead);
+  if (--A.rt <= 0 || P1.hp <= 0 || P2.hp <= 0) {
+    const w = P1.hp === P2.hp ? 1 : P1.hp > P2.hp ? 0 : 1; A.wins[w]++; A.phase = 'ko'; A.pt = 0; A.koWin = w; SFX.boss();
+  }
+}
+function drawPelea(A){
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#1a0a30'); g.addColorStop(1, '#5a1a3a'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 30; i++) { const x = i * 8 + 2, y = 78 + ((i * 7) % 5); R(x, y, 6, 8, '#20102a'); disc(x + 3, y - 2, 3, '#20102a'); if ((frame >> 4) % 6 === i % 6) R(x + 2, y - 3, 1, 1, '#fce040'); }
+  R(0, 90, W, 50, '#3a2a3a'); for (let x = 0; x < W; x += 16) for (let y = 90; y < 140; y += 8) R(x + ((y >> 3) % 2) * 8, y, 15, 7, '#4a3848');
+  R(0, FLOOR_Y, W, H - FLOOR_Y, '#2a1a28');
+  txt('PREMODERN KOMBAT', 120, 2, '#fce040', 'center', '#a01010');
+  A.f.forEach((F, i) => {
+    const bx = i ? 132 : 8; R(bx, 14, 100, 7, '#1a1020'); R(bx + 1, 15, 98, 5, '#601010'); const w = Math.round(98 * F.hp / 100); R(i ? bx + 99 - w : bx + 1, 15, w, 5, F.hp > 30 ? '#f8d830' : '#f05030');
+    tiny(F.n, i ? 230 : 10, 23, '#fff', i ? 'right' : 'left'); for (let k = 0; k < A.wins[i]; k++) disc(i ? 220 - k * 7 : 14 + k * 7, 33, 2, '#fce040');
+  });
+  tiny(String(Math.ceil(Math.max(0, A.rt) / 60)), 120, 15, '#fff', 'center');
+  for (const F of A.f) {
+    ctx.save(); ctx.translate(Math.round(F.x - 24), Math.round(FLOOR_Y - 48 - F.hgt)); ctx.scale(3, 3);
+    const dir = F.face > 0 ? 3 : 2, ox = F.face > 0 ? 13 : -3;
+    if (F.flash & 2) ctx.globalAlpha = 0.6;
+    drawPerson(0, 0, F.P, dir, F.st === 'walk' ? (frame >> 3) & 1 : 0);
+    const C = F.P.c, act = (F.st === 'punch' && F.st_t >= 3 && F.st_t <= 10) ? 'p' : (F.st === 'kick' && F.st_t >= 5 && F.st_t <= 14) ? 'k' : '';
+    if (act === 'p') { ctx.fillStyle = '#1a1020'; ctx.fillRect(ox - 1, 7, 8, 4); ctx.fillStyle = C.sleeve || C.shirt; ctx.fillRect(ox, 8, 4, 2); ctx.fillStyle = C.skin; ctx.fillRect(ox + 4, 8, 2, 2); }
+    if (act === 'k') { ctx.fillStyle = '#1a1020'; ctx.fillRect(ox - 1, 10, 9, 4); ctx.fillStyle = C.pants; ctx.fillRect(ox, 11, 5, 2); ctx.fillStyle = C.shoe; ctx.fillRect(ox + 5, 11, 2, 2); }
+    if (F.blk) { ctx.fillStyle = 'rgba(136,224,255,.55)'; ctx.fillRect(F.face > 0 ? 13 : 0, 2, 3, 12); }
+    if (F.st === 'cast') { ctx.fillStyle = '#fce040'; ctx.fillRect(ox + 2, 6, 2, 2); }
+    ctx.restore();
+  }
+  for (const b of A.bolts) { for (let k = 0; k < 4; k++) R(Math.round(b.x - k * 3 * Math.sign(b.vx)), Math.round(b.y + (k % 2) * 3 - 1), 3, 2, k ? '#f8d830' : '#ffffff'); }
+  for (const s of A.sparks) R(Math.round(s.x), Math.round(s.y), 2, 2, s.c);
+  if (A.phase === 'intro') { txt('ROUND ' + A.round, 120, 54, '#fff', 'center', '#a01010'); if (A.pt > 50) txt('¡PELEA!', 120, 70, '#fce040', 'center', '#a01010'); }
+  if (A.phase === 'ko') { txt(A.koWin === 0 ? '¡K.O.!' : 'K.O.', 120, 54, '#fce040', 'center', '#a01010'); tiny(A.f[A.koWin].n + ' GANA EL ROUND', 120, 72, '#fff', 'center'); }
+  if (A.phase === 'fight' && A.pt < 200) tiny(TOUCH ? 'A GOLPE  B PATADA  C RAYO' : 'Z GOLPE  X PATADA  C RAYO  ABAJO BLOQUEA', 120, 148, '#c8c0e8', 'center');
+}
+
+/* ---- MANA KART (carrera en pseudo 3D) ---- */
+const KSEG = 200, KRW = 2000, KCAMH = 1000, KDEPTH = 0.84, KDRAW = 90, KLAPS = 3, KMAX = 160, KHOR = 58;
+let KTRACK = null;
+function buildKTrack(){
+  const secs = [[30,0],[40,2],[20,0],[50,-3],[30,0],[40,4],[25,-2],[45,0],[35,-4],[35,3],[25,0],[40,-2],[30,2],[35,0]];
+  const T = []; for (const [n, c] of secs) for (let i = 0; i < n; i++) { const e = Math.min(1, Math.min(i, n - i) / 8); T.push({ curve:c * e, box:null }); }
+  for (let i = 40; i < T.length - 10; i += 70) T[i].box = [-0.5, 0, 0.5][(i / 70 | 0) % 3];
+  return T;
+}
+function initKart(A){
+  KTRACK = KTRACK || buildKTrack();
+  const pool = CHARS.filter(c => c !== CH()), opp = [];
+  for (let i = 0; i < 3; i++) opp.push(pool.splice(rnd(pool.length), 1)[0]);
+  const cols = ['#3a7ae8','#40c060','#e8a020'];
+  A.k = { z:0, x:0, spd:0, lap:0, turbo:0, bg:0, taken:{}, cd:200, done:false, bump:0,
+    opps:opp.map((c, i) => ({ c, col:cols[i], z:KSEG * (6 + i * 5), x:[-0.5, 0.5, 0][i], spd:KMAX * (0.86 + i * 0.035 + Math.random() * 0.03), wob:Math.random() * 6 })) };
+  A.lives = 1; A.score = 0;
+}
+const kLen = () => KTRACK.length * KSEG;
+function updateKart(A){
+  const k = A.k, L = kLen(), N = KTRACK.length;
+  if (k.cd > 0) { k.cd--; if (k.cd % 60 === 0 && k.cd > 0) tone(440, 440, 0.12, 'square', 0.3); if (k.cd === 0) tone(880, 880, 0.3, 'square', 0.3); return; }
+  const seg = KTRACK[Math.floor(k.z / KSEG) % N], pct = k.spd / KMAX;
+  const max = (Math.abs(k.x) > 1 ? 60 : KMAX) * (k.turbo > 0 ? 1.35 : 1);
+  if (K.a || K.up) k.spd += 2.2; else if (K.down) k.spd -= 6; else k.spd -= 1;
+  if (k.spd > max) k.spd = Math.max(max, k.spd - 4); k.spd = Math.max(0, k.spd);
+  if (k.turbo > 0) k.turbo--;
+  const steer = (K.right ? 1 : 0) - (K.left ? 1 : 0);
+  k.x += steer * 0.04 * Math.min(1, pct * 2) - seg.curve * pct * 0.011; k.x = Math.max(-2.2, Math.min(2.2, k.x));
+  k.bg += seg.curve * pct * 0.6;
+  k.z += k.spd; if (k.z >= L) { k.z -= L; k.lap++; k.taken = {}; if (k.lap < KLAPS) { SFX.ok(); toast('VUELTA ' + (k.lap + 1) + '/' + KLAPS, '#fce040'); } }
+  // cajas de turbo
+  const si = Math.floor(k.z / KSEG) % N;
+  for (let d = 0; d < 2; d++) { const j = (si + d) % N, b = KTRACK[j].box; if (b !== null && !k.taken[j] && Math.abs(k.x - b) < 0.25 && d === 0) { k.taken[j] = true; k.turbo = 110; SFX.card(); toast('¡TURBO BALL LIGHTNING!', '#fce040'); } }
+  // rivales
+  for (const o of k.opps) {
+    o.wob += 0.02; const os = KTRACK[Math.floor((o.z % L) / KSEG) % N];
+    o.z += o.spd * (0.98 + Math.sin(o.wob) * 0.03); o.x += (Math.sin(o.wob * 0.7) * 0.6 - o.x) * 0.01 - os.curve * 0.0006;
+    const rel = ((o.z % L) - k.z + L) % L;
+    if ((rel < KSEG * 0.7 || rel > L - KSEG * 0.4) && Math.abs(o.x - k.x) < 0.33 && k.bump <= 0) { k.spd *= 0.55; k.x += k.x > o.x ? 0.25 : -0.25; k.bump = 30; SFX.hurt(); }
+  }
+  if (k.bump > 0) k.bump--;
+  if (k.lap >= KLAPS) {
+    const me = KLAPS * L, place = 1 + k.opps.filter(o => o.z > me).length;
+    A.place = place; A.won = place <= 2; A.score = [150, 90, 40, 10][place - 1]; A.title = place === 1 ? '¡1° LUGAR!' : place + '° LUGAR';
+    A.resultText = 'LLEGASTE ' + place + '° DE 4'; A.done = true; A.doneT = A.t; (A.won ? SFX.win : SFX.lose)();
+  }
+}
+function kartSprite(x, y, s, col, P, steer){
+  ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.scale(s, s);
+  const r = (a, b, w, hh, c) => { ctx.fillStyle = c; ctx.fillRect(a, b, w, hh); };
+  r(-11, -9, 22, 10, '#1a1020'); r(-10, -8, 20, 8, col); r(-10, -3, 20, 3, shadeCol(col, 0.65));
+  r(-12, -4, 5, 5, '#1a1020'); r(7, -4, 5, 5, '#1a1020'); r(-11, -3, 3, 3, '#3a3a48'); r(8, -3, 3, 3, '#3a3a48');
+  r(-4, -16, 8, 8, '#1a1020'); r(-3, -15, 6, 6, P ? P.c.skin : '#f0c890'); r(-3, -15, 6, 2, P ? (P.c.hat || P.c.hair) : '#5a3a20');
+  r(-6 + steer, -10, 12, 2, '#1a1020');
+  ctx.restore();
+}
+function drawKart(A){
+  const k = A.k, N = KTRACK.length, L = kLen();
+  const sky = ctx.createLinearGradient(0, 0, 0, KHOR); sky.addColorStop(0, '#3a8ae8'); sky.addColorStop(1, '#a8d8ff'); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, KHOR);
+  for (let i = -1; i < 6; i++) { const mx = ((i * 60 - k.bg * 0.5) % 300 + 300) % 300 - 40; ctx.fillStyle = '#5a6a9a'; ctx.beginPath(); ctx.moveTo(mx, KHOR); ctx.lineTo(mx + 30, KHOR - 22); ctx.lineTo(mx + 60, KHOR); ctx.fill(); ctx.fillStyle = '#f4f4f8'; ctx.beginPath(); ctx.moveTo(mx + 24, KHOR - 16); ctx.lineTo(mx + 30, KHOR - 22); ctx.lineTo(mx + 36, KHOR - 16); ctx.fill(); }
+  R(0, KHOR, W, H - KHOR, '#3a9a3a');
+  const base = Math.floor(k.z / KSEG), pct = (k.z % KSEG) / KSEG, camZ = 840;
+  let x = 0, dx = -(KTRACK[base % N].curve * pct); const prj = [], segDraw = [];
+  const proj = (zrel, wx) => { const sc = KDEPTH / (zrel + camZ); return { x:W / 2 + sc * (wx - k.x * KRW) * W / 2, y:KHOR + sc * KCAMH * 104, w:sc * KRW * W / 2, sc }; };
+  for (let n = 0; n < KDRAW; n++) {
+    const i = (base + n) % N, s = KTRACK[i], z1 = n * KSEG - pct * KSEG, z2 = z1 + KSEG;
+    const p1 = proj(z1, x), p2 = proj(z2, x + dx); prj.push({ i, p:p1, n });
+    x += dx; dx += s.curve;
+    if (p2.y >= p1.y) continue;
+    segDraw.push(() => {
+    const alt = ((base + n) >> 2) & 1, ya = Math.round(p1.y) + 1, yb = Math.round(p2.y), quad = (a, b, c, d, col) => { ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(Math.round(a.x - c), ya); ctx.lineTo(Math.round(a.x + c), ya); ctx.lineTo(Math.round(b.x + d), yb); ctx.lineTo(Math.round(b.x - d), yb); ctx.fill(); };
+    ctx.fillStyle = alt ? '#3a9a3a' : '#2e8a30'; ctx.fillRect(0, yb, W, ya - yb);
+    quad(p1, p2, p1.w * 1.15, p2.w * 1.15, alt ? '#f4f4f8' : '#e83030');
+    quad(p1, p2, p1.w, p2.w, alt ? '#6a6a78' : '#646472');
+    if (alt) quad(p1, p2, p1.w * 0.03, p2.w * 0.03, '#f4f4f8');
+    });
+  }
+  for (let j = segDraw.length - 1; j >= 0; j--) segDraw[j]();
+  // cajas y rivales, de lejos a cerca
+  const sprites = [];
+  for (const q of prj) { const b = KTRACK[q.i].box; if (b !== null && !k.taken[q.i] && q.n > 0) sprites.push({ d:q.n, f:() => { const s = Math.min(2.5, q.p.sc * 900), bx = q.p.x + b * q.p.w; if (s < 0.15) return; ctx.save(); ctx.translate(bx, q.p.y); ctx.scale(s, s); R(-5, -11, 10, 10, '#1a1020'); R(-4, -10, 8, 8, (frame >> 3) & 1 ? '#fce040' : '#f0a020'); ctx.fillStyle = '#fff'; ctx.fillRect(-1, -8, 2, 1); ctx.fillRect(0, -7, 1, 2); ctx.fillRect(-1, -4, 2, 1); ctx.restore(); } }); }
+  for (const o of k.opps) {
+    const rel = ((o.z % L) - k.z + L) % L, n = Math.floor((rel + pct * KSEG) / KSEG);
+    if (n < 1 || n >= prj.length) continue;
+    const q = prj[n]; sprites.push({ d:n, f:() => { const s = Math.min(2, q.p.sc * 700); if (s < 0.12) return; kartSprite(q.p.x + o.x * q.p.w, q.p.y, s, o.col, o.c, 0); } });
+  }
+  sprites.sort((a, b) => b.d - a.d).forEach(s => s.f());
+  const steer = (K.right ? 1 : 0) - (K.left ? 1 : 0);
+  if (k.turbo > 0 && (frame >> 1) & 1) { R(W / 2 - 8, 150, 4, 4, '#fce040'); R(W / 2 + 4, 150, 4, 4, '#f86020'); }
+  kartSprite(W / 2, 154 + ((frame >> 2) & 1) * (k.spd > 10 ? 1 : 0), 1.6, '#e83040', playerLook(), steer * 2);
+  const L3 = KLAPS * L, prog = Math.min(L3, k.lap * L + k.z), place = 1 + k.opps.filter(o => o.z > prog).length;
+  R(0, 0, W, 11, 'rgba(0,0,0,.5)');
+  tiny('VUELTA ' + Math.min(KLAPS, k.lap + 1) + '/' + KLAPS, 4, 3, '#fff'); tiny('POSICION ' + place + '/4', 120, 3, place <= 2 ? '#fce040' : '#fff', 'center'); tiny(Math.round(k.spd * 0.8) + ' KM/H', 236, 3, '#fff', 'right');
+  if (k.cd > 0) txt(k.cd > 60 ? String(Math.ceil((k.cd - 60) / 60)) : '¡YA!', 120, 50, '#fce040', 'center', '#000');
+  else if (A.t < 420) tiny(TOUCH ? 'A ACELERA, FLECHAS DOBLAN' : 'Z O ARRIBA ACELERA, FLECHAS DOBLAN', 120, 14, '#fff', 'center');
+}
+
+/* ---- SUPER TRIO BROS: el juego de plataformas de la casa, dentro de la máquina ---- */
+function stbUrl(){
+  const local = location.protocol === 'file:' || location.hostname.endsWith('github.io') || location.hostname === 'localhost';
+  return (local ? '../super-trio-bros/index.html' : 'https://mjimenezq.github.io/super-trio-bros/') + '?arcade=1';
+}
+function openStb(A){
+  G.state = 'arcade'; playMusic(null);
+  const box = document.createElement('div'); box.id = 'stbBox';
+  box.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center';
+  const fr = document.createElement('iframe'); fr.src = stbUrl(); fr.allow = 'autoplay'; fr.style.cssText = 'border:0;width:min(100vw,100vh*1.0667);height:min(100vh - 44px,100vw*0.9375)';
+  const bt = document.createElement('button'); bt.textContent = 'Salir de la maquina (sin premio)'; bt.style.cssText = 'margin-top:6px;font:14px monospace;padding:6px 14px;background:#2a1a3a;color:#fff;border:1px solid #ff40c0;border-radius:6px';
+  box.append(fr, bt); document.body.append(box);
+  fr.addEventListener('load', () => { try { fr.focus(); } catch(_) {} });
+  const end = (score, cleared) => { removeEventListener('message', onMsg); box.remove(); A.score = score || 0; A.won = !!cleared; A.title = cleared ? '¡NIVEL SUPERADO!' : 'GAME OVER'; A.resultText = (cleared ? 'NIVEL SUPERADO, ' : 'NO TERMINASTE EL NIVEL, ') + A.score + ' PUNTOS'; arcadeExit(A); };
+  const onMsg = e => { const d = e.data; if (d && d.type === 'stb-end') end(d.score, d.cleared); };
+  addEventListener('message', onMsg); bt.onclick = () => end(0, false);
 }
 
 function scanlines(){ ctx.fillStyle = 'rgba(0,0,0,.18)'; for (let y = 0; y < H; y += 2) ctx.fillRect(0, y, W, 1); }
@@ -5408,10 +5645,11 @@ function loop(now){
     if (location.hash === '#test-arcade' && !G.tested) { G.tested = true; S = newSave(0); S.coins = 50; G.state = 'world'; loadRoom('arcade', 7 * TS + 3, 7 * TS + 4); }
     if (location.hash.startsWith('#elegir') && !G.tested) { G.tested = true; G.state = 'select'; G.sel = +location.hash.slice(8) || 0; }
     if (location.hash.startsWith('#intro=') && !G.tested) { G.tested = true; const n = +location.hash.slice(7); for (let i = 0; i < n; i++) step(); G.freeze = true; }
-    if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } if (extra === 'mascota') { S.pet = 24; S.dex = { 24:true, 3:true, 131:true }; } if (extra === 'reliquias') S.relics = { moai:1, alpha:1, moneda:3 }; if (extra && extra.startsWith('montura')) { const m = extra.slice(7) || 'mesa'; S.mounts = [m]; S.mount = m; } if (extra === 'pokes') { G.pokeTest = true; } loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4);
+    if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } if (extra === 'mascota') { S.pet = 24; S.dex = { 24:true, 3:true, 131:true }; } if (extra === 'reliquias') S.relics = { moai:1, alpha:1, moneda:3 }; if (extra && extra.startsWith('montura')) { const m = extra.slice(7) || 'mesa'; S.mounts = [m]; S.mount = m; } if (extra === 'pokes') { G.pokeTest = true; } if (extra === 'pelea' || extra === 'kart') { G.arcTest = extra; } loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4);
       if (extra === 'viajar' || extra === 'volar') { S.stones = { home:true, tolaria:true }; if (extra === 'volar') for (const d of DECKS.slice(0, 6)) for (const c of d.cards) S.cards[c] = 1; openTravel(); G.dialog.ch = 999; G.dialog.showChoices = true; }
       if (extra === 'atascado') { loadRoom('bosqueRoca', W - PL.w - 2, 7 * TS + 4); }
       if (extra === 'mox') addCard(LEGEND);
+      if (G.arcTest) { startArcade(G.arcTest); const A = G.arc; if (A.k) { A.k.cd = 0; A.k.spd = 130; A.k.z = KSEG * 75; A.k.opps[0].z = KSEG * 80; A.k.opps[1].z = KSEG * 90; } if (A.f) { A.phase = 'fight'; A.f[0].st = 'punch'; A.f[0].st_t = 5; A.f[0].x = 100; A.f[1].x = 128; A.f[1].hp = 64; } G.freeze = true; }
       if (extra === 'tomo') { S.ch = 10; G.enemies = []; for (let i = 0; i < 70; i++) step(); G.freeze = true; }
       if (extra === 'mapa') { S.visited = { pueblo:true, bosque:true, tolaria:true, pantano:true, costa:true, pradera:true }; dispatchEvent(new KeyboardEvent('keydown', { code:'KeyM' })); }
       if (extra === 'ircasa') { S.stones = { home:true }; travelTo('hogar', 'stone'); }
