@@ -2686,9 +2686,11 @@ const DIRV = [[0,1],[0,-1],[-1,0],[1,0]];
 function toast(s, col='#fff'){ G.toasts.push({ s, t:0, col }); if (G.toasts.length > 3) G.toasts.shift(); }
 function floatText(s, x, y, col='#fff'){ G.floats.push({ s, x, y, t:0, col }); }
 
+const MAX_LVL = 200; // nivel máximo (1 oct): la mitad Premodern llega cerca del 100, el mundo Pokémon lleva al 200
 function addXP(n){
+  if (S.lvl >= MAX_LVL) { S.xp = 0; return; }
   S.xp += n;
-  while (S.xp >= xpNeed()) {
+  while (S.lvl < MAX_LVL && S.xp >= xpNeed()) {
     S.xp -= xpNeed(); S.lvl++;
     const main = CH().main, others = ['fue','des','agi','int'].filter(k => k !== main);
     S.st[main]++; S.st[pick(others)]++;
@@ -2696,6 +2698,7 @@ function addXP(n){
     S.hp = S.maxHp; S.mp = maxMp(); G.lvlFx = 90;
     for (let i = 0; i < 16; i++) G.parts.push({ k:'heal', x:PL.x + 5 + Math.cos(i * 0.4) * 10, y:PL.y + 2 + Math.sin(i * 0.4) * 6, vx:0, vy:-0.8, t:0 });
     SFX.lvl(); toast('NIVEL ' + S.lvl + ': +1 ' + main.toUpperCase() + ', VIDA Y MAGIA AL MAXIMO', '#fcd84a');
+    if (S.lvl >= MAX_LVL) { S.xp = 0; SFX.win(); say(['¡NIVEL 200! Llegaste al nivel maximo.', 'Ya no hay criatura en Dominaria ni en el mundo Pokemon que te asuste. Eres leyenda.']); break; }
   }
 }
 function addCard(id){
@@ -4259,7 +4262,7 @@ function drawMenu(){
     txt(CH().n, 36, 80, '#fff', 'center', '#000');
     tiny(CH().tag, 36, 91, '#9db8a8', 'center');
     txt('NIVEL ' + S.lvl, 76, 22, '#fcd84a', 'left', null);
-    R(76, 33, 100, 4, '#2a3a3a'); R(76, 33, Math.round(100 * S.xp / xpNeed()), 4, '#60c8e8');
+    R(76, 33, 100, 4, '#2a3a3a'); R(76, 33, Math.round(100 * (S.lvl >= MAX_LVL ? 1 : S.xp / xpNeed())), 4, '#60c8e8');
     tiny('EXP ' + S.xp + '/' + xpNeed(), 180, 32, '#9db8a8');
     const st = stats(), b = SWORDS[S.eq].st;
     [['FUE','fue','DANO'],['DES','des','CRITICOS Y CARTAS'],['AGI','agi','VELOCIDAD'],['INT','int','TORNEOS']].forEach(([l, k, h], i) => {
@@ -4524,8 +4527,8 @@ function drawHUD(){
   }
   const hy = 13;
   R(3, hy, 64, 15, 'rgba(0,0,0,.4)');
-  tiny('NV ' + S.lvl, 5, hy + 2, '#fcd84a');
-  R(26, hy + 3, 38, 3, '#1a1020'); R(26, hy + 3, Math.round(38 * S.xp / xpNeed()), 3, '#fcd84a');
+  tiny('NV ' + S.lvl + (S.lvl >= MAX_LVL ? ' MAX' : ''), 5, hy + 2, '#fcd84a');
+  R(26, hy + 3, 38, 3, '#1a1020'); R(26, hy + 3, Math.round(38 * (S.lvl >= MAX_LVL ? 1 : S.xp / xpNeed())), 3, '#fcd84a');
   const mm = maxMp(); R(5, hy + 9, 59, 4, '#1a1020'); R(5, hy + 9, Math.round(59 * Math.min(1, (S.mp || 0) / mm)), 4, '#3a8ae8'); R(5, hy + 9, Math.round(59 * Math.min(1, (S.mp || 0) / mm)), 1, '#a8d8ff');
   if (S.spells && S.spells.length) { const sid = S.spells[(S.spellSel || 0) % S.spells.length], nm = SPELLS[sid].n + ' NV' + spellLvl(sid); R(3, hy + 16, nm.length * 4 + 14, 8, 'rgba(0,0,0,.4)'); R(5, hy + 17, 5, 5, '#88e0ff'); tiny(nm, 12, hy + 17, '#c8f0ff'); }
   ctx.globalAlpha = 1;
