@@ -507,7 +507,7 @@ const NPCDEF = {
   vendedora:{ n:'VENDEDORA DE SOBRES', style:'bun', c:{ hair:'#e8c040', skin:'#fbdcc4', shirt:'#2a6ad8', shirtD:'#1a4a98', pants:'#2a2a38', shoe:'#1a1a22' } },
   profesor:{ n:'PROFESOR ALERCE', style:'bald', c:{ hair:'#d8d8e0', skin:'#f1c9a0', shirt:'#f4f4f8', shirtD:'#c8ccd8', emblem:'#e83040', pants:'#5a4a3a', shoe:'#2a1a0c', belt:'#5a4a3a' } },
   curador:{ n:'CURADORA DEL MUSEO', style:'bun', c:{ hair:'#8a8a98', skin:'#f1c9a0', shirt:'#3a2a58', shirtD:'#1a1438', emblem:'#e8c040', pants:'#2a2a38', shoe:'#1a1a22' } },
-  coleccionista:{ n:'COLECCIONISTA', style:'bald', glasses:true, c:{ hair:'#c8c8d0', skin:'#e8c4a0', glass:'#e8c040', shirt:'#2a1a3a', shirtD:'#140a20', emblem:'#e8c040', pants:'#1a1a22', shoe:'#0a0a10', belt:'#e8c040' } },
+  marchante:{ n:'EL MARCHANTE', style:'bald', glasses:true, c:{ hair:'#c8c8d0', skin:'#e8c4a0', glass:'#e8c040', shirt:'#2a1a3a', shirtD:'#140a20', emblem:'#e8c040', pants:'#1a1a22', shoe:'#0a0a10', belt:'#e8c040' } },
   caballerizo:{ n:'CABALLERIZO', style:'cap', c:{ hat:'#8a5a28', hatD:'#5a3a18', hair:'#5a3a20', skin:'#e0a878', shirt:'#c84030', shirtD:'#8a2018', emblem:'#e8c040', pants:'#4a3a2a', shoe:'#2a1a0c', belt:'#2a1a0c' } },
   viejo:{ n:'VIEJO DEL RIO', style:'wizard', c:{ hat:'#1a3a78', hatD:'#0a1a48', hair:'#f0f0f4', skin:'#e8b088', shirt:'#1a3a78', shirtD:'#0a1a48', pants:'#1a3a78', shoe:'#1a1a22' } },
 };
@@ -1008,8 +1008,8 @@ const ROOMS = {
     npcs:[{id:'ligaOrg',x:7,y:2},{id:'fan4',x:3,y:5}] },
   mercado:{ name:'MERCADO DE MOX', theme:'town', music:'town',
     map:['TTTTTT...TTTTTT','T.,..........,T','T.YYY.....YYY.T','T.yyy..o..yyy.T','..............T','T.............T','T.YYY.....YYY.T','T.yyy.....yyy.T','T,.....S.....,T','TTTTTTTTTTTTTTT'],
-    signs:{'7,8':'MERCADO DE MOX: ARMAS Y ARMADURAS, MAGIA, MONTURAS, HOGAR, PREMIOS DE LA LIGA Y LA BOVEDA DEL COLECCIONISTA.'},
-    npcs:[{id:'armero',x:3,y:4},{id:'mago',x:11,y:4},{id:'mueblero',x:3,y:8},{id:'premiador',x:11,y:8},{id:'caballerizo',x:7,y:5},{id:'coleccionista',x:9,y:5}] },
+    signs:{'7,8':'MERCADO DE MOX: ARMAS Y ARMADURAS, MAGIA, MONTURAS, HOGAR, PREMIOS DE LA LIGA Y LA BOVEDA DEL MARCHANTE.'},
+    npcs:[{id:'armero',x:3,y:4},{id:'mago',x:11,y:4},{id:'mueblero',x:3,y:8},{id:'premiador',x:11,y:8},{id:'caballerizo',x:7,y:5},{id:'marchante',x:9,y:5}] },
   hogar:{ name:'TU CASA', theme:'inside', music:'town', interior:true, exitTo:{room:'pueblo',tx:12,ty:8},
     map:['kkkkkkkkkkkkkkk','k2FF3FF8FF4FF6k','kFFFFFFFFFFFFFk','k1FFFFF7FFFFF5k','kF^^^^FFF^^^^Fk','k9FFF0FFF@FFF%k','kFFFFFFFFFFFFFk','k&FFFFFFFFFFF$k','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'] },
   arcade:{ name:'ARCADE TOLARIA', theme:'inside', music:'town', interior:true, exitTo:{room:'tolaria',tx:9,ty:8},
@@ -3774,9 +3774,9 @@ function talkTo(id, npc, skipQuest){
     return;
   }
   if (id === 'armero') { say(['ARMERO: Acero de Mishra y cuero de Llanowar. Mira lo que tengo.'], null, () => openShop('armas', 'ARMAS Y ARMADURAS')); return; }
-  if (id === 'coleccionista') {
+  if (id === 'marchante') {
     const have = LUXURY.filter(it => it.kind === 'sword' ? S.swords.includes(it.id) : it.kind === 'armor' ? (S.armor || []).includes(it.id) : it.kind === 'mount' ? (S.mounts || []).includes(it.id) : S.house[it.id]).length;
-    say(['COLECCIONISTA: Aqui no hay ofertas, cabro. Solo piezas unicas de Dominaria para los jugadores de verdad.', 'Tienes ' + have + ' de ' + LUXURY.length + ' piezas de mi coleccion. Algunas piden nivel y trofeos de liga: no le vendo un Mox Eterno a cualquiera.'], null, () => openShop('lujo', 'COLECCIONISTA'));
+    say(['EL MARCHANTE: Aqui no hay ofertas, cabro. Solo piezas unicas de Dominaria para los jugadores de verdad.', 'Tienes ' + have + ' de ' + LUXURY.length + ' piezas de mi coleccion. Algunas piden nivel y trofeos de liga: no le vendo un Mox Eterno a cualquiera.'], null, () => openShop('lujo', 'EL MARCHANTE'));
     return;
   }
   if (id === 'caballerizo') {
@@ -5846,7 +5846,7 @@ function loop(now){
       if (extra === 'viajar' || extra === 'volar') { S.stones = { home:true, tolaria:true }; if (extra === 'volar') for (const d of DECKS.slice(0, 6)) for (const c of d.cards) S.cards[c] = 1; openTravel(); G.dialog.ch = 999; G.dialog.showChoices = true; }
       if (extra === 'atascado') { loadRoom('bosqueRoca', W - PL.w - 2, 7 * TS + 4); }
       if (extra === 'mox') addCard(LEGEND);
-      if (G.lujoTest) { S.lvl = 40; S.coins = 3000000; openShop('lujo', 'COLECCIONISTA'); }
+      if (G.lujoTest) { S.lvl = 40; S.coins = 3000000; openShop('lujo', 'EL MARCHANTE'); }
       if (G.arcTest) { startArcade(G.arcTest); const A = G.arc; if (A.k) { A.k.cd = 0; A.k.spd = 130; A.k.z = KSEG * 75; A.k.opps[0].z = KSEG * 80; A.k.opps[1].z = KSEG * 90; } if (A.f) { A.phase = 'fight'; A.f[0].st = 'punch'; A.f[0].st_t = 5; A.f[0].x = 100; A.f[1].x = 128; A.f[1].hp = 64; } G.freeze = true; }
       if (extra === 'tomo') { S.ch = 10; G.enemies = []; for (let i = 0; i < 70; i++) step(); G.freeze = true; }
       if (extra === 'mapa') { S.visited = { pueblo:true, bosque:true, tolaria:true, pantano:true, costa:true, pradera:true }; dispatchEvent(new KeyboardEvent('keydown', { code:'KeyM' })); }
