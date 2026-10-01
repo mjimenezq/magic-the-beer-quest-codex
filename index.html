@@ -507,6 +507,7 @@ const NPCDEF = {
   vendedora:{ n:'VENDEDORA DE SOBRES', style:'bun', c:{ hair:'#e8c040', skin:'#fbdcc4', shirt:'#2a6ad8', shirtD:'#1a4a98', pants:'#2a2a38', shoe:'#1a1a22' } },
   profesor:{ n:'PROFESOR ALERCE', style:'bald', c:{ hair:'#d8d8e0', skin:'#f1c9a0', shirt:'#f4f4f8', shirtD:'#c8ccd8', emblem:'#e83040', pants:'#5a4a3a', shoe:'#2a1a0c', belt:'#5a4a3a' } },
   curador:{ n:'CURADORA DEL MUSEO', style:'bun', c:{ hair:'#8a8a98', skin:'#f1c9a0', shirt:'#3a2a58', shirtD:'#1a1438', emblem:'#e8c040', pants:'#2a2a38', shoe:'#1a1a22' } },
+  coleccionista:{ n:'COLECCIONISTA', style:'bald', glasses:true, c:{ hair:'#c8c8d0', skin:'#e8c4a0', glass:'#e8c040', shirt:'#2a1a3a', shirtD:'#140a20', emblem:'#e8c040', pants:'#1a1a22', shoe:'#0a0a10', belt:'#e8c040' } },
   caballerizo:{ n:'CABALLERIZO', style:'cap', c:{ hat:'#8a5a28', hatD:'#5a3a18', hair:'#5a3a20', skin:'#e0a878', shirt:'#c84030', shirtD:'#8a2018', emblem:'#e8c040', pants:'#4a3a2a', shoe:'#2a1a0c', belt:'#2a1a0c' } },
   viejo:{ n:'VIEJO DEL RIO', style:'wizard', c:{ hat:'#1a3a78', hatD:'#0a1a48', hair:'#f0f0f4', skin:'#e8b088', shirt:'#1a3a78', shirtD:'#0a1a48', pants:'#1a3a78', shoe:'#1a1a22' } },
 };
@@ -668,8 +669,13 @@ const SWORDS = {
   baculo:{n:'Baculo de la Quietud',st:{int:7,des:3},col:'#80c0ff'},
   hachaRoca:{n:'Hacha de la Roca',st:{fue:8,des:2},col:'#5a8a3a'},
   martilloKarn:{n:'Martillo de Karn',st:{fue:9,int:2},col:'#e0e0f0'},
+  argivia:{n:'Espada de Argivia',st:{fue:10,des:4},col:'#f0d8a0'},
+  phyrexia:{n:'Filo de Phyrexia',st:{fue:12,int:4},col:'#a0b0a0'},
+  masticoreBlade:{n:'Hoja del Masticore',st:{fue:14,des:6},col:'#c8a878'},
+  yawgmoth:{n:'Mazo de Yawgmoth',st:{fue:16,int:8},col:'#6a3a8a'},
+  moxEterno:{n:'Espada del Mox Eterno',st:{fue:12,des:12,agi:12,int:12},col:'#a0fff0'},
 };
-const SWORD_ORDER = ['palo','hierro','goblin','sombra','urza','mar','serra','mishra','tourach','avatar','campeon','shivanSword','hachaKjeldor','guadana','garra','baculo','hachaRoca','martilloKarn'];
+const SWORD_ORDER = ['palo','hierro','goblin','sombra','urza','mar','serra','mishra','tourach','avatar','campeon','shivanSword','hachaKjeldor','guadana','garra','baculo','hachaRoca','martilloKarn','argivia','phyrexia','masticoreBlade','yawgmoth','moxEterno'];
 // Economia (30 sept): todo cuesta mucho mas. Un sobre vale $80.000 (pedido de Matias: que cueste juntar plata).
 const PACK_PRICE = 80000;
 const SWORD_PRICE = { hierro:10000, sombra:35000, urza:40000, mar:38000 };
@@ -710,6 +716,41 @@ ARMOR.botasTierra = { n:'Botas de la Tierra Arrasada', slot:'feet', def:5, st:{a
 ARMOR.coronaHada = { n:'Corona del Conclave', slot:'head', def:6, st:{int:3}, tier:5, col:'#80c0ff' };
 ARMOR.corazaRoca = { n:'Coraza de la Roca', slot:'body', def:11, st:{fue:2}, tier:5, col:'#4a7a3a' };
 ARMOR.escudoMox = { n:'Escudo de Mox', slot:'shield', def:9, st:{des:2,int:1}, tier:5, col:'#c0e8ff' };
+// Objetos de lujo (1 oct): carísimos y con requisitos, para que tome mucho juntarlos todos
+ARMOR.escudoArgivia = { n:'Escudo de Argivia', slot:'shield', def:12, st:{des:2}, tier:6, col:'#e0c890' };
+ARMOR.coronaYawgmoth = { n:'Corona de Yawgmoth', slot:'head', def:9, st:{int:4}, tier:6, col:'#4a2a6a' };
+ARMOR.armaduraKarn = { n:'Armadura de Karn', slot:'body', def:15, st:{fue:2}, tier:6, col:'#d8d8e8' };
+ARMOR.grebasArgivia = { n:'Grebas de Argivia', slot:'legs', def:9, st:{des:2}, tier:6, col:'#c8a868' };
+ARMOR.botasGaea = { n:'Botas de Gaea', slot:'feet', def:7, st:{agi:5}, tier:6, col:'#4a9a3a' };
+ARMOR.egidaSerra = { n:'Egida de Serra', slot:'shield', def:18, st:{fue:2,des:2,agi:2,int:2}, tier:7, col:'#fff8d8' };
+ARMOR.yelmoPhyrexia = { n:'Yelmo de Phyrexia', slot:'head', def:14, st:{int:6}, tier:7, col:'#7a8a7a' };
+ARMOR.corazaMox = { n:'Coraza de Mox', slot:'body', def:22, st:{fue:3,des:3,agi:3,int:3}, tier:7, col:'#80f0e0' };
+ARMOR.grebasAbismo = { n:'Grebas del Abismo', slot:'legs', def:13, st:{fue:3,agi:3}, tier:7, col:'#5a1a6a' };
+ARMOR.botasPlaneswalker = { n:'Botas del Planeswalker', slot:'feet', def:10, st:{agi:8}, tier:7, col:'#f0c040' };
+const LUXURY = [
+  { kind:'sword', id:'argivia', price:2500000, req:{ lvl:35 } },
+  { kind:'armor', id:'grebasArgivia', price:1200000, req:{ lvl:30 } },
+  { kind:'armor', id:'botasGaea', price:1400000, req:{ lvl:30 } },
+  { kind:'armor', id:'coronaYawgmoth', price:1500000, req:{ lvl:32 } },
+  { kind:'armor', id:'escudoArgivia', price:1800000, req:{ lvl:34 } },
+  { kind:'armor', id:'armaduraKarn', price:2500000, req:{ lvl:36 } },
+  { kind:'sword', id:'phyrexia', price:6000000, req:{ lvl:45 } },
+  { kind:'armor', id:'grebasAbismo', price:8000000, req:{ lvl:48, trophies:1 } },
+  { kind:'armor', id:'botasPlaneswalker', price:9000000, req:{ lvl:50, trophies:1 } },
+  { kind:'armor', id:'yelmoPhyrexia', price:10000000, req:{ lvl:52, trophies:1 } },
+  { kind:'armor', id:'egidaSerra', price:12000000, req:{ lvl:55, trophies:2 } },
+  { kind:'sword', id:'masticoreBlade', price:15000000, req:{ lvl:55, trophies:2 } },
+  { kind:'mount', id:'crosis', price:20000000, req:{ lvl:58, trophies:2 } },
+  { kind:'armor', id:'corazaMox', price:25000000, req:{ lvl:60, trophies:3 } },
+  { kind:'house', id:'castillo', price:30000000, req:{ lvl:60, trophies:3 } },
+  { kind:'sword', id:'yawgmoth', price:40000000, req:{ lvl:70, trophies:3 } },
+  { kind:'mount', id:'darigaaz', price:45000000, req:{ lvl:72, trophies:4 } },
+  { kind:'house', id:'islaTolaria', price:80000000, req:{ lvl:75, trophies:4 } },
+  { kind:'sword', id:'moxEterno', price:100000000, req:{ lvl:80, trophies:5 } },
+  { kind:'house', id:'trofeoMundial', price:500000000, req:{ lvl:90, trophies:6 } },
+];
+const reqOk = r => !r || ((S.lvl || 1) >= (r.lvl || 0) && (S.trophies || 0) >= (r.trophies || 0));
+const reqText = r => !r ? '' : 'REQUIERE NV ' + r.lvl + (r.trophies ? ' Y ' + r.trophies + ' TROFEO' + (r.trophies > 1 ? 'S' : '') : '');
 const BOSS_GEAR = { siege:'yelmoGuardian', dread:'grebasLangostino', reyMinas:'escudoCampeon', negAnc:'botasMox', serraAsc:'armaduraSerra', shivan:'coronaShivan', kjeldor:'armaduraHielo', pit:'escudoAbismo',
   terraBoss:'botasTierra', conclaveQ:'coronaHada', mongerAnc:'corazaRoca', masticore:'escudoMox' };
 const SPELLS = {
@@ -724,6 +765,8 @@ const MOUNTS = {
   nightmare:{ n:'Nightmare', price:150000, spd:0.45, kind:'horse', body:'#2a2032', mane:'#f86020', fire:true, desc:'Caballo negro de crin en llamas. +45% velocidad.' },
   charger:{ n:'Pegasus Charger', price:250000, spd:0.55, kind:'horse', body:'#f8ecd0', mane:'#80c0ff', wings:true, desc:'Pegaso de carga. +55% velocidad.' },
   mammoth:{ n:'War Mammoth', price:350000, spd:0.25, def:4, kind:'mammoth', body:'#8a6a50', mane:'#5a4030', desc:'Mamut de guerra. +25% velocidad y +4 DEF.' },
+  crosis:{ n:'Crosis, the Purger', spd:0.9, def:4, kind:'dragon', body:'#2a3a7a', mane:'#80c0ff', boss:true, desc:'Dragon legendario de Invasion. +90% velocidad y +4 DEF.' },
+  darigaaz:{ n:'Darigaaz, the Igniter', spd:1.0, def:6, kind:'dragon', body:'#6a1010', mane:'#60c040', boss:true, desc:'El dragon mas temido de Dominaria. Doble de velocidad y +6 DEF.' },
   shivan:{ n:'Shivan Dragon', spd:0.8, def:2, kind:'dragon', body:'#d83020', mane:'#f8c030', boss:true, desc:'Se gana venciendo al Shivan Dragon. +80% velocidad.' },
 };
 const mounted = () => S && S.mount && MOUNTS[S.mount] && G.def && !G.def.interior ? MOUNTS[S.mount] : null;
@@ -808,6 +851,9 @@ const HOUSE = {
   fuente:{ n:'Fuente de mana', price:500000, desc:'+2 corazones maximos y +4 magia maxima.', bonus:{ maxHp:4, mp:4 } },
   boveda:{ n:'Boveda de la Caja de Urza', price:800000, desc:'+50% monedas de las criaturas.', bonus:{ coinPct:50 } },
   salon:{ n:'Salon de torneos privado', price:1200000, desc:'+3 INT en torneos y +1 a todo.', bonus:{ tourInt:3, st:{fue:1,des:1,agi:1,int:1} } },
+  castillo:{ n:'Castillo de Urza', price:30000000, desc:'Un castillo al lado de tu casa. +3 a todo y +4 corazones.', bonus:{ maxHp:8, st:{fue:3,des:3,agi:3,int:3} }, lux:true },
+  islaTolaria:{ n:'Isla privada en Tolaria', price:80000000, desc:'Tu propia isla de magos. +4 INT, +8 magia y +100% monedas.', bonus:{ st:{int:4}, mp:8, coinPct:100 }, lux:true },
+  trofeoMundial:{ n:'Trofeo Mundial de Premodern', price:500000000, desc:'El objeto mas caro de Chile. +5 a todo y +6 corazones.', bonus:{ maxHp:12, st:{fue:5,des:5,agi:5,int:5}, tourInt:5 }, lux:true },
   mansion:{ n:'Ala de la mansion', price:2000000, desc:'La casa mas cara de Chile. +2 a todo y +2 corazones.', bonus:{ maxHp:4, st:{fue:2,des:2,agi:2,int:2} } },
 };
 const PRIZES = {
@@ -962,8 +1008,8 @@ const ROOMS = {
     npcs:[{id:'ligaOrg',x:7,y:2},{id:'fan4',x:3,y:5}] },
   mercado:{ name:'MERCADO DE MOX', theme:'town', music:'town',
     map:['TTTTTT...TTTTTT','T.,..........,T','T.YYY.....YYY.T','T.yyy..o..yyy.T','..............T','T.............T','T.YYY.....YYY.T','T.yyy.....yyy.T','T,.....S.....,T','TTTTTTTTTTTTTTT'],
-    signs:{'7,8':'MERCADO DE MOX: ARMAS Y ARMADURAS, MAGIA, MONTURAS, HOGAR Y PREMIOS DE LA LIGA.'},
-    npcs:[{id:'armero',x:3,y:4},{id:'mago',x:11,y:4},{id:'mueblero',x:3,y:8},{id:'premiador',x:11,y:8},{id:'caballerizo',x:7,y:5}] },
+    signs:{'7,8':'MERCADO DE MOX: ARMAS Y ARMADURAS, MAGIA, MONTURAS, HOGAR, PREMIOS DE LA LIGA Y LA BOVEDA DEL COLECCIONISTA.'},
+    npcs:[{id:'armero',x:3,y:4},{id:'mago',x:11,y:4},{id:'mueblero',x:3,y:8},{id:'premiador',x:11,y:8},{id:'caballerizo',x:7,y:5},{id:'coleccionista',x:9,y:5}] },
   hogar:{ name:'TU CASA', theme:'inside', music:'town', interior:true, exitTo:{room:'pueblo',tx:12,ty:8},
     map:['kkkkkkkkkkkkkkk','k2FF3FF8FF4FF6k','kFFFFFFFFFFFFFk','k1FFFFF7FFFFF5k','kF^^^^FFF^^^^Fk','k9FFF0FFF@FFF%k','kFFFFFFFFFFFFFk','k&FFFFFFFFFFF$k','kkkkkkkEkkkkkkk','kkkkkkkkkkkkkkk'] },
   arcade:{ name:'ARCADE TOLARIA', theme:'inside', music:'town', interior:true, exitTo:{room:'tolaria',tx:9,ty:8},
@@ -3483,7 +3529,11 @@ function shopItems(kind){
   } else if (kind === 'magia') { for (const id of SPELL_ORDER) { const s = SPELLS[id]; L.push({ kind:'spell', id, name:s.n + (S.spells.includes(id) ? ' ' + spellXpLine(id) : ''), price:s.price, info:s.mp + ' MP. ' + s.desc + ' SUBE DE NIVEL CON EL USO (HASTA 5).', owned:S.spells.includes(id) }); } }
   else if (kind === 'sur') { for (const [id, p] of Object.entries(SUR_SHOP)) { const a = ARMOR[id]; L.push({ kind:'armor', id, name:a.n, price:p, info:GEAR_SLOTS.find(g => g[0] === a.slot)[1] + '. +' + a.def + ' DEF ' + (Object.keys(a.st).length ? statLine(a.st) : ''), owned:S.armor.includes(id) }); } }
   else if (kind === 'monturas') { for (const [id, m] of Object.entries(MOUNTS)) if (!m.boss) L.push({ kind:'mount', id, name:m.n, price:m.price, info:'MONTURA. ' + m.desc, owned:(S.mounts || []).includes(id) }); }
-  else if (kind === 'hogar') { for (const [id, h] of Object.entries(HOUSE)) L.push({ kind:'house', id, name:h.n, price:h.price, info:h.desc, owned:!!S.house[id] }); }
+  else if (kind === 'lujo') { for (const it of LUXURY) { const name = it.kind === 'sword' ? SWORDS[it.id].n : it.kind === 'armor' ? ARMOR[it.id].n : it.kind === 'mount' ? MOUNTS[it.id].n : HOUSE[it.id].n;
+      const info = (it.kind === 'sword' ? 'ARMA. ' + statLine(SWORDS[it.id].st) : it.kind === 'armor' ? GEAR_SLOTS.find(g => g[0] === ARMOR[it.id].slot)[1] + '. +' + ARMOR[it.id].def + ' DEF ' + statLine(ARMOR[it.id].st) : it.kind === 'mount' ? 'MONTURA. ' + MOUNTS[it.id].desc : HOUSE[it.id].desc) + (reqOk(it.req) ? '' : '  ' + reqText(it.req));
+      const owned = it.kind === 'sword' ? S.swords.includes(it.id) : it.kind === 'armor' ? (S.armor || []).includes(it.id) : it.kind === 'mount' ? (S.mounts || []).includes(it.id) : !!S.house[it.id];
+      L.push({ kind:it.kind, id:it.id, name, price:it.price, info, owned, req:it.req }); } }
+  else if (kind === 'hogar') { for (const [id, h] of Object.entries(HOUSE)) if (!h.lux) L.push({ kind:'house', id, name:h.n, price:h.price, info:h.desc, owned:!!S.house[id] }); }
   else { for (const [id, h] of Object.entries(PRIZES)) L.push({ kind:'house', id, name:h.n, price:h.price, info:h.desc, owned:!!S.house[id] }); }
   return L;
 }
@@ -3491,6 +3541,7 @@ function openShop(kind, title){ G.shop = { kind, title, sel:0, scroll:0, items:s
 function buyItem(it){
   const sh = G.shop;
   if (it.owned) { sh.msg = 'YA LO TIENES'; sh.msgT = 60; SFX.back(); return; }
+  if (it.req && !reqOk(it.req)) { sh.msg = reqText(it.req); sh.msgT = 80; SFX.back(); return; }
   if (S.coins < it.price) { sh.msg = 'TE FALTAN ' + money(it.price - S.coins); sh.msgT = 60; SFX.back(); return; }
   S.coins -= it.price;
   if (it.kind === 'sword') { S.swords.push(it.id); const sum = o => Object.values(o).reduce((a, b) => a + b, 0); if (sum(SWORDS[it.id].st) > sum(SWORDS[S.eq].st)) S.eq = it.id; }
@@ -3720,6 +3771,11 @@ function talkTo(id, npc, skipQuest){
     return;
   }
   if (id === 'armero') { say(['ARMERO: Acero de Mishra y cuero de Llanowar. Mira lo que tengo.'], null, () => openShop('armas', 'ARMAS Y ARMADURAS')); return; }
+  if (id === 'coleccionista') {
+    const have = LUXURY.filter(it => it.kind === 'sword' ? S.swords.includes(it.id) : it.kind === 'armor' ? (S.armor || []).includes(it.id) : it.kind === 'mount' ? (S.mounts || []).includes(it.id) : S.house[it.id]).length;
+    say(['COLECCIONISTA: Aqui no hay ofertas, cabro. Solo piezas unicas de Dominaria para los jugadores de verdad.', 'Tienes ' + have + ' de ' + LUXURY.length + ' piezas de mi coleccion. Algunas piden nivel y trofeos de liga: no le vendo un Mox Eterno a cualquiera.'], null, () => openShop('lujo', 'COLECCIONISTA'));
+    return;
+  }
   if (id === 'caballerizo') {
     const own = (S.mounts || []);
     const ch = [{ t:'COMPRAR MONTURA', fn:() => openShop('monturas', 'MONTURAS DE PREMODERN') }];
@@ -5783,10 +5839,11 @@ function loop(now){
     if (location.hash === '#test-arcade' && !G.tested) { G.tested = true; S = newSave(0); S.coins = 50; G.state = 'world'; loadRoom('arcade', 7 * TS + 3, 7 * TS + 4); }
     if (location.hash.startsWith('#elegir') && !G.tested) { G.tested = true; G.state = 'select'; G.sel = +location.hash.slice(8) || 0; }
     if (location.hash.startsWith('#intro=') && !G.tested) { G.tested = true; const n = +location.hash.slice(7); for (let i = 0; i < n; i++) step(); G.freeze = true; }
-    if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } if (extra === 'mascota') { S.pet = 24; S.dex = { 24:true, 3:true, 131:true }; } if (extra === 'reliquias') S.relics = { moai:1, alpha:1, moneda:3 }; if (extra && extra.startsWith('montura')) { const m = extra.slice(7) || 'mesa'; S.mounts = [m]; S.mount = m; } if (extra === 'pokes') { G.pokeTest = true; } if (extra === 'pelea' || extra === 'kart') { G.arcTest = extra; } if (extra === 'noche') G.forcePhase = 'night'; if (extra === 'atardecer') G.forcePhase = 'dusk'; if (extra === 'dia') G.forcePhase = 'day'; loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4);
+    if (location.hash.startsWith('#probar=') && !G.tested) { G.tested = true; S = newSave(0); S.lvl = 20; S.maxHp = S.hp = 99; G.state = 'world'; const [id, extra] = decodeURIComponent(location.hash.slice(8)).split('&'); if (extra === 'trofeos') { S.trophies = 2; S.ligaWins = 1; S.leagues = { vina:true, curico:true, pmontt:true, urza:true }; } if (extra === 'mascota') { S.pet = 24; S.dex = { 24:true, 3:true, 131:true }; } if (extra === 'reliquias') S.relics = { moai:1, alpha:1, moneda:3 }; if (extra && extra.startsWith('montura')) { const m = extra.slice(7) || 'mesa'; S.mounts = [m]; S.mount = m; } if (extra === 'pokes') { G.pokeTest = true; } if (extra === 'pelea' || extra === 'kart') { G.arcTest = extra; } if (extra === 'noche') G.forcePhase = 'night'; if (extra === 'lujo') G.lujoTest = true; if (extra === 'atardecer') G.forcePhase = 'dusk'; if (extra === 'dia') G.forcePhase = 'day'; loadRoom(id, 7 * TS + 3, (id.startsWith('D:') ? 7 : 5) * TS + 4);
       if (extra === 'viajar' || extra === 'volar') { S.stones = { home:true, tolaria:true }; if (extra === 'volar') for (const d of DECKS.slice(0, 6)) for (const c of d.cards) S.cards[c] = 1; openTravel(); G.dialog.ch = 999; G.dialog.showChoices = true; }
       if (extra === 'atascado') { loadRoom('bosqueRoca', W - PL.w - 2, 7 * TS + 4); }
       if (extra === 'mox') addCard(LEGEND);
+      if (G.lujoTest) { S.lvl = 40; S.coins = 3000000; openShop('lujo', 'COLECCIONISTA'); }
       if (G.arcTest) { startArcade(G.arcTest); const A = G.arc; if (A.k) { A.k.cd = 0; A.k.spd = 130; A.k.z = KSEG * 75; A.k.opps[0].z = KSEG * 80; A.k.opps[1].z = KSEG * 90; } if (A.f) { A.phase = 'fight'; A.f[0].st = 'punch'; A.f[0].st_t = 5; A.f[0].x = 100; A.f[1].x = 128; A.f[1].hp = 64; } G.freeze = true; }
       if (extra === 'tomo') { S.ch = 10; G.enemies = []; for (let i = 0; i < 70; i++) step(); G.freeze = true; }
       if (extra === 'mapa') { S.visited = { pueblo:true, bosque:true, tolaria:true, pantano:true, costa:true, pradera:true }; dispatchEvent(new KeyboardEvent('keydown', { code:'KeyM' })); }
